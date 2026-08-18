@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>簡單甘丹 輕茶飲 | 課內點餐系統</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f4fbf6',
+              100: '#e3f6ea',
+              600: '#2d6a4f',
+              700: '#1b4332',
+              800: '#081c15',
+            },
+            accent: '#d97706'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
+
+  <!-- 頂部導航 -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-[#1b4332] flex items-center justify-center text-white shadow-md font-bold text-lg">
+          甘
+        </div>
+        <div>
+          <h1 class="font-bold text-lg text-slate-900 tracking-tight flex items-center gap-2">
+            甘丹簡單 輕茶飲
+            <span id="room-badge" class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-medium">點餐開放中 🟢</span>
+          </h1>
+          <p class="text-xs text-slate-500">課內點餐系統 ｜ 100% 菜單價格校正版</p>
+        </div>
+      </div>
+
+      <!-- 切換模式按鈕 -->
+      <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold">
+        <button onclick="switchView('user')" id="btn-tab-user" class="px-3 py-1.5 rounded-lg bg-white shadow-sm text-emerald-900 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-mug-saucer"></i> 同事點餐
+        </button>
+        <button onclick="switchView('admin')" id="btn-tab-admin" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-chart-pie"></i> 主揪後台統計
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主內容容器 -->
+  <main class="max-w-6xl mx-auto px-4 py-6 flex-1 w-full">
+
+    <!-- ==================== 1. 同事點餐介面 (前台) ==================== -->
+    <section id="view-user" class="block">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- 左側：分類標籤與商品列表 (8欄) -->
+        <div class="lg:col-span-8 space-y-5">
+          
+          <!-- 橫幅公告 -->
+          <div class="bg-gradient-to-r from-[#1b4332] to-[#2d6a4f] rounded-2xl p-5 text-white shadow-md">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-white/20 backdrop-blur-sm text-emerald-100 uppercase tracking-wider">今日特選</span>
+                <h2 class="text-xl font-bold mt-2">🌿 甘丹喝好茶・簡單過生活</h2>
+                <p class="text-emerald-100 text-xs mt-1">自備環保杯折5元 ｜ 本店提供純蔗糖及手炒黑糖調味</p>
+              </div>
+              <div class="text-right">
+                <span class="text-xs text-emerald-200">菜單版本</span>
+                <p class="font-mono font-bold text-sm bg-black/20 px-2.5 py-1 rounded-lg mt-0.5">#2026-MENU</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 分類標籤切換 -->
+          <div id="category-tabs" class="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+            <!-- 動態生成分類按鈕 -->
+          </div>
+
+          <!-- 商品卡片網格 -->
+          <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- 動態生成商品卡片 -->
+          </div>
+        </div>
+
+        <!-- 右側：購物車 (4欄) -->
+        <div class="lg:col-span-4">
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm sticky top-24 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-basket-shopping text-amber-600"></i> 您的點餐清單
+              </h3>
+              <button onclick="clearCart()" class="text-xs text-slate-400 hover:text-red-500 transition">清空</button>
+            </div>
+
+            <!-- 同事名字輸入 -->
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">點餐人姓名 / 分機 <span class="text-red-500">*</span></label>
+              <input type="text" id="user-name" placeholder="例如：王小明 (#301)" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-700">
+            </div>
+
+            <!-- 購物車項目清單 -->
+            <div id="cart-items-list" class="divide-y divide-slate-100 max-h-64 overflow-y-auto pr-1">
+              <p class="text-slate-400 text-xs text-center py-8">購物車目前是空的，快去點杯茶吧！</p>
+            </div>
+
+            <!-- 金額小計與送出按鈕 -->
+            <div class="border-t border-slate-100 pt-3 space-y-2">
+              <div class="flex justify-between items-center text-sm font-semibold text-slate-900">
+                <span>合計金額</span>
+                <span id="cart-total-price" class="text-xl font-bold text-amber-600">$0</span>
+              </div>
+              <button onclick="submitOrder()" class="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-md shadow-amber-100 transition flex items-center justify-center gap-2">
+                <i class="fa-regular fa-paper-plane"></i> 送出點餐
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== 2. 主揪管理與統計介面 (後台) ==================== -->
+    <section id="view-admin" class="hidden space-y-6">
+      
+      <!-- 統計數據卡片 -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs text-slate-500 font-medium">累積總金額</p>
+            <h3 id="stat-total-amount" class="text-2xl font-black text-slate-900 mt-1">$0</h3>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-coins"></i>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs text-slate-500 font-medium">已點餐人數 / 杯數</p>
+            <h3 id="stat-total-count" class="text-2xl font-black text-slate-900 mt-1">0 人 / 0 杯</h3>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-users"></i>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs text-slate-500 font-medium">點餐活動狀態</p>
+            <div class="flex items-center gap-2 mt-1">
+              <button onclick="toggleRoomStatus()" id="btn-toggle-room" class="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition">
+                點餐開放中
+              </button>
+            </div>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-clock"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- 操作按鈕列 -->
+      <div class="flex flex-wrap gap-2 justify-end">
+        <button onclick="copyStoreSummary()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-sm transition">
+          <i class="fa-regular fa-copy"></i> 複製叫餐清單 (給店家/LINE)
+        </button>
+        <button onclick="exportCSV()" class="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-sm transition">
+          <i class="fa-solid fa-file-excel"></i> 匯出 Excel (CSV)
+        </button>
+        <button onclick="resetAllOrders()" class="px-3.5 py-2 border border-red-200 text-red-600 hover:bg-red-50 text-xs font-semibold rounded-xl transition">
+          <i class="fa-solid fa-trash-can"></i> 清空所有訂單
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- 店家品項加總清單 (5欄) -->
+        <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
+          <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+            <i class="fa-solid fa-store text-emerald-700"></i> 店家總計匯總 (打電話用)
+          </h4>
+          <div id="aggregated-summary-list" class="divide-y divide-slate-100 text-sm">
+            <!-- 動態生成統計清單 -->
+          </div>
+        </div>
+
+        <!-- 個人明細清單 (7欄) -->
+        <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
+          <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+            <i class="fa-solid fa-receipt text-amber-600"></i> 各員點餐與收款明細
+          </h4>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-slate-50 text-slate-500 border-b border-slate-100">
+                  <th class="p-2.5">姓名</th>
+                  <th class="p-2.5">點選品項與客製規格</th>
+                  <th class="p-2.5 text-right">應收金額</th>
+                  <th class="p-2.5 text-center">操作</th>
+                </tr>
+              </thead>
+              <tbody id="orders-table-body" class="divide-y divide-slate-100">
+                <!-- 動態生成訂單明細 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ==================== 規格選擇彈跳視窗 (Modal) ==================== -->
+  <div id="modal-option" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh] animate-scale-up">
+      <!-- 視窗頭部 -->
+      <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+        <div class="flex items-center space-x-3">
+          <span id="modal-item-icon" class="text-3xl">🍵</span>
+          <div>
+            <h3 id="modal-item-name" class="font-bold text-base text-slate-900">飲品名稱</h3>
+            <p id="modal-item-baseprice" class="text-xs text-emerald-800 font-semibold">$35 起</p>
+          </div>
+        </div>
+        <button onclick="closeOptionModal()" class="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-600 text-sm">✕</button>
+      </div>
+
+      <!-- 視窗選項動態內容 -->
+      <div id="modal-options-body" class="p-5 overflow-y-auto space-y-5 flex-1">
+        <!-- 動態渲染容量、甜度、冰塊、加料、重乳升級 -->
+      </div>
+
+      <!-- 視窗底部加入購物車 -->
+      <div class="p-4 border-t border-slate-100 bg-white flex items-center justify-between">
+        <div>
+          <span class="text-xs text-slate-400 block">當前小計</span>
+          <span id="modal-calculated-price" class="text-xl font-bold text-amber-600">$35</span>
+        </div>
+        <button onclick="confirmAddToCart()" class="px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-amber-100 transition flex items-center gap-2">
+          <i class="fa-solid fa-cart-plus"></i> 加入購物車
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部版權 -->
+  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400 mt-auto">
+    甘丹簡單 輕茶飲 ｜ 課內線上點餐系統
+  </footer>
+
+  <!-- ==================== 核心菜單資料庫與邏輯 ==================== -->
+  <script>
+    // 1. 菜單標準規格定義 (完全對應圖片右側規格)
+    const sweetnessOptions = [
+      { name: '無糖', price: 0 },
+      { name: '微糖 (2分糖)', price: 0 },
+      { name: '半糖 (5分糖)', price: 0 }
+    ];
+
+    const fixedSweetnessOptions = [
+      { name: '甜度固定', price: 0 }
+    ];
+
+    const iceOptions = [
+      { name: '正常冰', price: 0 },
+      { name: '少冰', price: 0 },
+      { name: '微冰', price: 0 },
+      { name: '去冰', price: 0 },
+      { name: '熱飲', price: 0 }
+    ];
+
+    const toppingOptions = [
+      { name: '珍珠', price: 5 },
+      { name: '冬瓜琥珀凍', price: 10 },
+      { name: '手工嫩仙草', price: 10 },
+      { name: '鴉片檸檬凍', price: 15 },
+      { name: '明列子', price: 10 },
+      { name: '布丁一顆', price: 10 }
+    ];
+
+    // 2. 100% 精準對照圖片品項與價格
+    const rawGandanMenu = [
+      // ====== 樂活純茶系列 (BEST! 無糖推薦) ======
+      { cat: '樂活純茶系列', name: '不知四季春', l: 35, xl: 50, fixedSweet: false, icon: '🍵' },
+      { cat: '樂活純茶系列', name: '黃金輕烏龍', l: 35, xl: 50, fixedSweet: false, icon: '🍵' },
+      { cat: '樂活純茶系列', name: '嫩葉蜜香紅', l: 35, xl: 50, fixedSweet: false, icon: '🍵' },
+      { cat: '樂活純茶系列', name: '小山紅茶', l: 35, xl: 50, fixedSweet: false, icon: '🍵' },
+      { cat: '樂活純茶系列', name: '茉莉綠茶', l: 35, xl: 50, fixedSweet: false, icon: '🍵' },
+      { cat: '樂活純茶系列', name: '焙煎金黃麥茶', l: 35, xl: 50, fixedSweet: false, icon: '🌾' },
+      { cat: '樂活純茶系列', name: '私藏東方美人茶', l: 55, xl: 75, fixedSweet: false, icon: '🍵' },
+      { cat: '樂活純茶系列', name: '輕檸檬水', l: 35, xl: 50, fixedSweet: false, icon: '🍋' },
+      { cat: '樂活純茶系列', name: '黑金仙草茶', l: 35, xl: 50, fixedSweet: false, icon: '🌿' },
+      { cat: '樂活純茶系列', name: '熟成老冬瓜茶', l: 35, xl: 50, fixedSweet: true, icon: '🍈' },
+
+      // ====== 自然經典系列 ======
+      { cat: '自然經典系列', name: '鴉片檸檬', l: 60, xl: 80, fixedSweet: false, icon: '🍋' },
+      { cat: '自然經典系列', name: '鴉片檸檬PLUS', l: 75, xl: null, fixedSweet: false, icon: '🍋' },
+      { cat: '自然經典系列', name: '明列子鴉片檸檬', l: 70, xl: null, fixedSweet: false, icon: '🍋' },
+      { cat: '自然經典系列', name: '鴉片紅茶', l: 60, xl: null, fixedSweet: false, icon: '🍹' },
+      { cat: '自然經典系列', name: '老欉柳丁綠茶', l: 65, xl: null, fixedSweet: false, note: '11-3月限定', icon: '🍊' },
+      { cat: '自然經典系列', name: '手工鳳梨青茶', l: 55, xl: null, fixedSweet: false, icon: '🍍' },
+      { cat: '自然經典系列', name: '手工鳳梨冰茶', l: 50, xl: null, fixedSweet: false, icon: '🍍' },
+      { cat: '自然經典系列', name: '天然手工水果茶', l: 65, xl: null, fixedSweet: false, icon: '🍎' },
+      { cat: '自然經典系列', name: '白玉甘蔗檸檬', l: 75, xl: null, fixedSweet: false, icon: '🎋' },
+      { cat: '自然經典系列', name: '白玉甘蔗青', l: 65, xl: null, fixedSweet: false, icon: '🎋' },
+      { cat: '自然經典系列', name: '芭樂檸檬綠茶', l: 65, xl: null, fixedSweet: false, icon: '🍈' },
+      { cat: '自然經典系列', name: '芭樂香檸多多', l: 70, xl: null, fixedSweet: false, icon: '🍈' },
+      { cat: '自然經典系列', name: '燕巢芭樂梅', l: 70, xl: null, fixedSweet: false, icon: '🍈' },
+      { cat: '自然經典系列', name: '檸檬紅玉', l: 55, xl: null, fixedSweet: false, icon: '🍋' },
+      { cat: '自然經典系列', name: '翡翠檸檬綠', l: 55, xl: null, fixedSweet: false, icon: '🍋' },
+
+      // ====== 甘丹特調系列 ======
+      { cat: '甘丹特調系列', name: '洛梅仙女飲', l: 50, xl: null, fixedSweet: false, icon: '🌺' },
+      { cat: '甘丹特調系列', name: '風潮檸檬氣泡飲', l: 70, xl: null, fixedSweet: false, icon: '🫧' },
+      { cat: '甘丹特調系列', name: '鴉片檸檬氣泡飲', l: 70, xl: null, fixedSweet: false, icon: '🫧' },
+      { cat: '甘丹特調系列', name: '夏日水果氣泡飲', l: 70, xl: null, fixedSweet: false, icon: '🫧' },
+      { cat: '甘丹特調系列', name: '甘蔗香檸氣泡飲', l: 70, xl: null, fixedSweet: false, icon: '🫧' },
+      { cat: '甘丹特調系列', name: '草莓香檸氣泡飲', l: 65, xl: null, fixedSweet: false, icon: '🍓' },
+      { cat: '甘丹特調系列', name: '熟成冬梅氣泡飲', l: 60, xl: null, fixedSweet: true, icon: '🫧' },
+      { cat: '甘丹特調系列', name: '輕檸檬氣泡飲', l: 50, xl: null, fixedSweet: false, icon: '🍋' },
+      { cat: '甘丹特調系列', name: '老冬瓜檸檬', l: 45, xl: null, fixedSweet: true, icon: '🍈' },
+      { cat: '甘丹特調系列', name: '老冬瓜青茶', l: 35, xl: null, fixedSweet: true, icon: '🍈' },
+      { cat: '甘丹特調系列', name: '老冬瓜麥茶', l: 35, xl: null, fixedSweet: true, icon: '🍈' },
+      { cat: '甘丹特調系列', name: '埔里百香綠', l: 55, xl: null, fixedSweet: false, icon: '🧃' },
+      { cat: '甘丹特調系列', name: '百香多多', l: 60, xl: null, fixedSweet: false, icon: '🧃' },
+      { cat: '甘丹特調系列', name: '脆梅綠茶', l: 55, xl: null, fixedSweet: false, icon: '🫐' },
+      { cat: '甘丹特調系列', name: '養樂多綠茶', l: 55, xl: null, fixedSweet: false, icon: '🥛' },
+
+      // ====== 濃醇鮮奶系列 ======
+      { cat: '濃醇鮮奶系列', name: '甘丹鮮奶紅茶', l: 60, xl: null, fixedSweet: false, heavyMilkOption: true, icon: '🥛' },
+      { cat: '濃醇鮮奶系列', name: '小山鮮奶紅茶', l: 60, xl: null, fixedSweet: false, heavyMilkOption: true, icon: '🥛' },
+      { cat: '濃醇鮮奶系列', name: '穀香大麥拿鐵', l: 60, xl: null, fixedSweet: false, heavyMilkOption: true, icon: '🌾' },
+      { cat: '濃醇鮮奶系列', name: '厚焙烏龍鮮奶茶', l: 60, xl: null, fixedSweet: false, heavyMilkOption: true, icon: '🥛' },
+      { cat: '濃醇鮮奶系列', name: '鮮奶烏龍/綠/青', l: 60, xl: null, fixedSweet: false, heavyMilkOption: true, icon: '🥛' },
+      { cat: '濃醇鮮奶系列', name: '琥珀凍鮮奶紅茶', l: 70, xl: null, fixedSweet: false, heavyMilkOption: true, icon: '🧋' },
+      { cat: '濃醇鮮奶系列', name: '嫩仙草鮮奶烏龍', l: 70, xl: null, fixedSweet: false, heavyMilkOption: true, icon: '🌿' },
+      { cat: '濃醇鮮奶系列', name: '榛果紅茶拿鐵', l: 65, xl: null, fixedSweet: false, icon: '🌰' },
+      { cat: '濃醇鮮奶系列', name: '鮮奶老冬瓜', l: 65, xl: null, fixedSweet: true, icon: '🍈' },
+      { cat: '濃醇鮮奶系列', name: '手炒黑糖鮮奶', l: 75, xl: null, fixedSweet: true, icon: '🍯' },
+      { cat: '濃醇鮮奶系列', name: '珍珠黑糖鮮奶', l: 80, xl: null, fixedSweet: true, icon: '🧋' },
+      { cat: '濃醇鮮奶系列', name: '鮮奶嫩仙草', l: 80, xl: null, fixedSweet: true, icon: '🌿' },
+      { cat: '濃醇鮮奶系列', name: '鮮奶阿華田', l: 70, xl: null, fixedSweet: false, icon: '🍫' },
+
+      // ====== 醇品奶香系列 ======
+      { cat: '醇品奶香系列', name: '珍珠奶茶', l: 55, xl: null, fixedSweet: false, icon: '🧋' },
+      { cat: '醇品奶香系列', name: '嫩仙草奶茶', l: 60, xl: null, fixedSweet: false, icon: '🌿' },
+      { cat: '醇品奶香系列', name: '布丁奶茶', l: 60, xl: null, fixedSweet: false, icon: '🍮' },
+      { cat: '醇品奶香系列', name: '甘丹奶茶', l: 50, xl: null, fixedSweet: false, icon: '🧋' },
+      { cat: '醇品奶香系列', name: '穀香大麥奶茶', l: 50, xl: null, fixedSweet: false, icon: '🌾' },
+      { cat: '醇品奶香系列', name: '厚焙烏龍奶茶', l: 50, xl: null, fixedSweet: false, icon: '🧋' },
+      { cat: '醇品奶香系列', name: '手焙烏龍奶', l: 50, xl: null, fixedSweet: false, icon: '🧋' },
+      { cat: '醇品奶香系列', name: '茉香奶綠', l: 50, xl: null, fixedSweet: false, icon: '🧋' },
+      { cat: '醇品奶香系列', name: '阿華田', l: 55, xl: null, fixedSweet: false, icon: '🍫' },
+
+      // ====== 海鹽雲朵奶霜 ======
+      { cat: '海鹽雲朵奶霜', name: '雲朵紅茶奶霜', l: 50, xl: null, fixedSweet: false, icon: '☁️' },
+      { cat: '海鹽雲朵奶霜', name: '雲朵四季/烏龍奶霜', l: 50, xl: null, fixedSweet: false, icon: '☁️' },
+      { cat: '海鹽雲朵奶霜', name: '雲朵綠茶/麥茶奶霜', l: 50, xl: null, fixedSweet: false, icon: '☁️' },
+
+      // ====== 自然純蜜系列 (頂級黑葉荔枝蜜) ======
+      { cat: '自然純蜜系列', name: '鮮榨檸檬蜜', l: 65, xl: null, fixedSweet: true, icon: '🍯' },
+      { cat: '自然純蜜系列', name: '四季春茶蜜', l: 55, xl: null, fixedSweet: true, icon: '🍯' },
+      { cat: '自然純蜜系列', name: '台灣紅茶蜜', l: 55, xl: null, fixedSweet: true, icon: '🍯' },
+      { cat: '自然純蜜系列', name: '黃金烏龍蜜', l: 55, xl: null, fixedSweet: true, icon: '🍯' },
+      { cat: '自然純蜜系列', name: '茉香綠茶蜜', l: 55, xl: null, fixedSweet: true, icon: '🍯' },
+      { cat: '自然純蜜系列', name: '黑葉荔枝蜜茶', l: 50, xl: null, fixedSweet: true, icon: '🍯' },
+
+      // ====== 冬季限定系列 ======
+      { cat: '冬季限定系列', name: '紫米紅豆鮮奶', m: null, l: 80, fixedSweet: true, icon: '🥣' },
+      { cat: '冬季限定系列', name: '古制仙草燒', m: null, l: 40, fixedSweet: true, icon: '🌿' },
+      { cat: '冬季限定系列', name: '粉角仙草燒', m: null, l: 45, fixedSweet: true, icon: '🌿' },
+      { cat: '冬季限定系列', name: '綜合仙草燒', m: null, l: 50, fixedSweet: true, icon: '🌿' },
+      { cat: '冬季限定系列', name: '黑糖薑母茶', m: 45, l: null, fixedSweet: true, icon: '🫖' },
+      { cat: '冬季限定系列', name: '黑糖薑母奶茶', m: 55, l: null, fixedSweet: true, icon: '🫖' }
+    ];
+
+    // 初始化狀態
+    let products = rawGandanMenu.map((item, idx) => ({
+      id: 'g_' + idx,
+      ...item,
+      basePrice: item.l || item.m
+    }));
+
+    let orders = JSON.parse(localStorage.getItem('gandan_orders_2026')) || [];
+    let cart = [];
+    let isRoomOpen = true;
+    let selectedCategory = '全部';
+    let currentModalProduct = null;
+    let currentModalSelections = {};
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderCategoryTabs();
+      renderProductGrid();
+      renderCart();
+      renderAdminStats();
+      renderAdminOrders();
+    });
+
+    // 分類標籤
+    function renderCategoryTabs() {
+      const categories = ['全部', ...new Set(products.map(p => p.cat))];
+      const container = document.getElementById('category-tabs');
+      container.innerHTML = categories.map(cat => `
+        <button onclick="selectCategory('${cat}')" class="px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition ${selectedCategory === cat ? 'bg-[#1b4332] text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'}">
+          ${cat}
+        </button>
+      `).join('');
+    }
+
+    function selectCategory(cat) {
+      selectedCategory = cat;
+      renderCategoryTabs();
+      renderProductGrid();
+    }
+
+    function renderProductGrid() {
+      const grid = document.getElementById('product-grid');
+      const filtered = selectedCategory === '全部' ? products : products.filter(p => p.cat === selectedCategory);
+
+      grid.innerHTML = filtered.map(p => {
+        let priceTag = '';
+        if (p.l && p.xl) {
+          priceTag = `大杯 $${p.l} / 瓶裝 $${p.xl}`;
+        } else if (p.m) {
+          priceTag = `中杯 $${p.m}`;
+        } else {
+          priceTag = `大杯 $${p.l}`;
+        }
+
+        return `
+          <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+            <div>
+              <div class="w-full h-20 bg-emerald-50/50 rounded-xl flex items-center justify-center text-3xl mb-2.5">
+                ${p.icon}
+              </div>
+              <div class="flex justify-between items-start">
+                <h3 class="font-bold text-slate-900 text-sm">${p.name}</h3>
+                <span class="font-bold text-emerald-800 text-xs">${priceTag}</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-1">${p.fixedSweet ? '🍯 甜度固定' : '✅ 甜度冰塊可調'} ${p.note ? '・' + p.note : ''}</p>
+            </div>
+            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-[10px] bg-emerald-50 text-emerald-800 font-semibold px-2 py-0.5 rounded">${p.cat}</span>
+              <button onclick="openOptionModal('${p.id}')" class="px-3 py-1.5 bg-[#1b4332] hover:bg-[#2d6a4f] text-white rounded-lg text-xs font-bold transition flex items-center gap-1">
+                + 選規格
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 規格彈窗邏輯
+    function openOptionModal(productId) {
+      currentModalProduct = products.find(p => p.id === productId);
+      if (!currentModalProduct) return;
+
+      document.getElementById('modal-item-name').innerText = currentModalProduct.name;
+      document.getElementById('modal-item-icon').innerText = currentModalProduct.icon;
+      document.getElementById('modal-item-baseprice').innerText = `$${currentModalProduct.basePrice} 起`;
+
+      // 初始化預設選擇
+      currentModalSelections = {
+        size: currentModalProduct.l ? { name: '大杯 (L 700cc)', price: currentModalProduct.l } : { name: '中杯 (M 480cc)', price: currentModalProduct.m },
+        sweetness: currentModalProduct.fixedSweet ? fixedSweetnessOptions[0] : sweetnessOptions[0],
+        ice: iceOptions[0],
+        heavyMilk: null,
+        toppings: []
+      };
+
+      renderModalOptions();
+      updateModalPrice();
+      document.getElementById('modal-option').classList.remove('hidden');
+    }
+
+    function closeOptionModal() {
+      document.getElementById('modal-option').classList.add('hidden');
+    }
+
+    function renderModalOptions() {
+      const container = document.getElementById('modal-options-body');
+      const p = currentModalProduct;
+
+      // 1. 容量群組
+      let sizeChoices = [];
+      if (p.l) sizeChoices.push({ name: '大杯 (L 700cc)', price: p.l });
+      if (p.xl) sizeChoices.push({ name: '生活瓶 (XL 960cc)', price: p.xl });
+      if (p.m) sizeChoices.push({ name: '中杯 (M 480cc)', price: p.m });
+
+      let html = `
+        <div class="space-y-2">
+          <h4 class="text-xs font-bold text-slate-700">容量大小</h4>
+          <div class="grid grid-cols-2 gap-2">
+            ${sizeChoices.map(s => `
+              <button type="button" onclick="selectModalSize('${s.name}', ${s.price})" 
+                class="px-3 py-2 rounded-xl text-xs font-medium border flex items-center justify-between transition ${
+                  currentModalSelections.size.name === s.name ? 'bg-[#1b4332] text-white border-[#1b4332]' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                }">
+                <span>${s.name}</span>
+                <span class="${currentModalSelections.size.name === s.name ? 'text-emerald-100' : 'text-slate-500 font-bold'}">$${s.price}</span>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      // 2. 甜度群組
+      const sweetList = p.fixedSweet ? fixedSweetnessOptions : sweetnessOptions;
+      html += `
+        <div class="space-y-2">
+          <h4 class="text-xs font-bold text-slate-700">甜度</h4>
+          <div class="grid grid-cols-3 gap-2">
+            ${sweetList.map(s => `
+              <button type="button" onclick="selectModalSweetness('${s.name}')" 
+                class="px-3 py-2 rounded-xl text-xs font-medium border text-center transition ${
+                  currentModalSelections.sweetness.name === s.name ? 'bg-[#1b4332] text-white border-[#1b4332]' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                }">
+                ${s.name}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      // 3. 冰塊群組
+      html += `
+        <div class="space-y-2">
+          <h4 class="text-xs font-bold text-slate-700">冰塊</h4>
+          <div class="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+            ${iceOptions.map(i => `
+              <button type="button" onclick="selectModalIce('${i.name}')" 
+                class="px-2 py-2 rounded-xl text-xs font-medium border text-center transition ${
+                  currentModalSelections.ice.name === i.name ? 'bg-[#1b4332] text-white border-[#1b4332]' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                }">
+                ${i.name}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      // 4. 重乳升級 (鮮奶系列限定)
+      if (p.heavyMilkOption) {
+        const isHeavy = !!currentModalSelections.heavyMilk;
+        html += `
+          <div class="space-y-2">
+            <h4 class="text-xs font-bold text-slate-700">奶香加倍</h4>
+            <button type="button" onclick="toggleModalHeavyMilk()" 
+              class="w-full px-3 py-2 rounded-xl text-xs font-medium border flex items-center justify-between transition ${
+                isHeavy ? 'bg-amber-600 text-white border-amber-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+              }">
+              <span>升級重乳 (+5元)</span>
+              <span class="${isHeavy ? 'text-amber-100' : 'text-amber-600 font-bold'}">+5</span>
+            </button>
+          </div>
+        `;
+      }
+
+      // 5. 加料專區 (生活瓶不提供加料備註)
+      const isXL = currentModalSelections.size.name.includes('XL');
+      if (!isXL) {
+        html += `
+          <div class="space-y-2">
+            <h4 class="text-xs font-bold text-slate-700">加料專區 (可複選)</h4>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              ${toppingOptions.map(t => {
+                const isSelected = currentModalSelections.toppings.some(item => item.name === t.name);
+                return `
+                  <button type="button" onclick="toggleModalTopping('${t.name}', ${t.price})" 
+                    class="px-3 py-2 rounded-xl text-xs font-medium border flex items-center justify-between transition ${
+                      isSelected ? 'bg-[#1b4332] text-white border-[#1b4332]' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                    }">
+                    <span>${t.name}</span>
+                    <span class="${isSelected ? 'text-emerald-100' : 'text-amber-600 font-bold'}">+${t.price}</span>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      } else {
+        html += `<p class="text-[11px] text-slate-400 bg-slate-50 p-2.5 rounded-xl">⚠️ 菜單規定：生活瓶 (XL) 不提供加料服務。</p>`;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function selectModalSize(name, price) {
+      currentModalSelections.size = { name, price };
+      // 如果切到生活瓶，清空加料
+      if (name.includes('XL')) {
+        currentModalSelections.toppings = [];
+      }
+      renderModalOptions();
+      updateModalPrice();
+    }
+
+    function selectModalSweetness(name) {
+      currentModalSelections.sweetness = { name, price: 0 };
+      renderModalOptions();
+    }
+
+    function selectModalIce(name) {
+      currentModalSelections.ice = { name, price: 0 };
+      renderModalOptions();
+    }
+
+    function toggleModalHeavyMilk() {
+      if (currentModalSelections.heavyMilk) {
+        currentModalSelections.heavyMilk = null;
+      } else {
+        currentModalSelections.heavyMilk = { name: '升級重乳', price: 5 };
+      }
+      renderModalOptions();
+      updateModalPrice();
+    }
+
+    function toggleModalTopping(name, price) {
+      const idx = currentModalSelections.toppings.findIndex(t => t.name === name);
+      if (idx > -1) {
+        currentModalSelections.toppings.splice(idx, 1);
+      } else {
+        currentModalSelections.toppings.push({ name, price });
+      }
+      renderModalOptions();
+      updateModalPrice();
+    }
+
+    function updateModalPrice() {
+      let total = currentModalSelections.size.price;
+      if (currentModalSelections.heavyMilk) total += currentModalSelections.heavyMilk.price;
+      currentModalSelections.toppings.forEach(t => total += t.price);
+      document.getElementById('modal-calculated-price').innerText = `$${total}`;
+    }
+
+    function confirmAddToCart() {
+      let specs = [];
+      specs.push(currentModalSelections.size.name);
+      specs.push(currentModalSelections.sweetness.name);
+      specs.push(currentModalSelections.ice.name);
+      if (currentModalSelections.heavyMilk) specs.push('升級重乳(+5)');
+      currentModalSelections.toppings.forEach(t => specs.push(`${t.name}(+${t.price})`));
+
+      let total = currentModalSelections.size.price;
+      if (currentModalSelections.heavyMilk) total += currentModalSelections.heavyMilk.price;
+      currentModalSelections.toppings.forEach(t => total += t.price);
+
+      cart.push({
+        name: currentModalProduct.name,
+        specs: specs.join(', '),
+        price: total
+      });
+
+      renderCart();
+      closeOptionModal();
+    }
+
+    // 購物車渲染與提交
+    function renderCart() {
+      const container = document.getElementById('cart-items-list');
+      const totalDisplay = document.getElementById('cart-total-price');
+
+      if (cart.length === 0) {
+        container.innerHTML = `<p class="text-slate-400 text-xs text-center py-8">購物車目前是空的，快去點杯茶吧！</p>`;
+        totalDisplay.innerText = '$0';
+        return;
+      }
+
+      let total = 0;
+      container.innerHTML = cart.map((item, index) => {
+        total += item.price;
+        return `
+          <div class="py-2.5 flex justify-between items-start">
+            <div class="space-y-0.5">
+              <h4 class="text-xs font-bold text-slate-800">${item.name}</h4>
+              <p class="text-[11px] text-slate-500">${item.specs}</p>
+            </div>
+            <div class="text-right flex items-center space-x-2">
+              <span class="text-xs font-bold text-slate-900">$${item.price}</span>
+              <button onclick="removeCartItem(${index})" class="text-slate-300 hover:text-red-500 text-xs">✕</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      totalDisplay.innerText = `$${total}`;
+    }
+
+    function removeCartItem(index) {
+      cart.splice(index, 1);
+      renderCart();
+    }
+
+    function clearCart() {
+      cart = [];
+      renderCart();
+    }
+
+    function submitOrder() {
+      if (!isRoomOpen) {
+        alert('抱歉，今日點餐已經截止！');
+        return;
+      }
+      const userName = document.getElementById('user-name').value.trim();
+      if (!userName) {
+        alert('請輸入您的姓名或分機！');
+        document.getElementById('user-name').focus();
+        return;
+      }
+      if (cart.length === 0) {
+        alert('購物車目前是空的，請先挑選飲料！');
+        return;
+      }
+
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      cart.forEach(item => {
+        orders.push({
+          id: Date.now() + Math.random(),
+          user: userName,
+          item: item.name,
+          specs: item.specs,
+          price: item.price,
+          time: timeStr
+        });
+      });
+
+      localStorage.setItem('gandan_orders_2026', JSON.stringify(orders));
+      alert(`🎉 點餐成功！已為 ${userName} 送出 ${cart.length} 杯飲料。`);
+      clearCart();
+      renderAdminStats();
+      renderAdminOrders();
+    }
+
+    // 後台管理
+    function renderAdminStats() {
+      const totalAmount = orders.reduce((sum, o) => sum + o.price, 0);
+      const uniqueUsers = new Set(orders.map(o => o.user)).size;
+      document.getElementById('stat-total-amount').innerText = `$${totalAmount}`;
+      document.getElementById('stat-total-count').innerText = `${uniqueUsers} 人 / ${orders.length} 杯`;
+    }
+
+    function renderAdminOrders() {
+      const aggregatedContainer = document.getElementById('aggregated-summary-list');
+      const itemMap = {};
+
+      orders.forEach(o => {
+        const key = `${o.item} 【${o.specs}】`;
+        itemMap[key] = (itemMap[key] || 0) + 1;
+      });
+
+      if (Object.keys(itemMap).length === 0) {
+        aggregatedContainer.innerHTML = `<p class="text-slate-400 text-xs py-4 text-center">尚無任何訂單紀錄</p>`;
+      } else {
+        aggregatedContainer.innerHTML = Object.entries(itemMap).map(([spec, count]) => `
+          <div class="py-2 flex justify-between items-center">
+            <span class="text-slate-700 font-medium">${spec}</span>
+            <span class="font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md">x ${count}</span>
+          </div>
+        `).join('');
+      }
+
+      const tableBody = document.getElementById('orders-table-body');
+      if (orders.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-slate-400">目前尚無訂單</td></tr>`;
+      } else {
+        tableBody.innerHTML = orders.map((o, idx) => `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="p-2.5 font-bold text-slate-900">${o.user} <span class="text-[10px] font-normal text-slate-400">(${o.time})</span></td>
+            <td class="p-2.5 text-slate-600">${o.item} <span class="text-slate-400">(${o.specs})</span></td>
+            <td class="p-2.5 text-right font-bold text-amber-600">$${o.price}</td>
+            <td class="p-2.5 text-center">
+              <button onclick="deleteOrder(${idx})" class="text-slate-300 hover:text-red-500"><i class="fa-solid fa-trash-can"></i></button>
+            </td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    function deleteOrder(idx) {
+      if (confirm('確定要刪除這筆訂單嗎？')) {
+        orders.splice(idx, 1);
+        localStorage.setItem('gandan_orders_2026', JSON.stringify(orders));
+        renderAdminStats();
+        renderAdminOrders();
+      }
+    }
+
+    function resetAllOrders() {
+      if (confirm('⚠️ 確定要清空所有點餐紀錄嗎？')) {
+        orders = [];
+        localStorage.setItem('gandan_orders_2026', JSON.stringify(orders));
+        renderAdminStats();
+        renderAdminOrders();
+      }
+    }
+
+    function copyStoreSummary() {
+      const itemMap = {};
+      orders.forEach(o => {
+        const key = `${o.item} (${o.specs})`;
+        itemMap[key] = (itemMap[key] || 0) + 1;
+      });
+
+      let text = `📋 【甘丹簡單 輕茶飲 - 訂單統計】\n總杯數：${orders.length} 杯 ｜ 總金額：$${orders.reduce((s,o)=>s+o.price,0)} 元\n-------------------------\n`;
+      Object.entries(itemMap).forEach(([name, count]) => {
+        text += `• ${name} x ${count}\n`;
+      });
+
+      navigator.clipboard.writeText(text).then(() => {
+        alert('✅ 已複製叫餐清單至剪貼簿！可直接貼至 LINE 給店家叫餐。');
+      });
+    }
+
+    function exportCSV() {
+      if (orders.length === 0) {
+        alert('目前無訂單可匯出！');
+        return;
+      }
+      let csv = "﻿姓名,餐點,規格,金額,時間\n";
+      orders.forEach(o => {
+        csv += `"${o.user}","${o.item}","${o.specs}",${o.price},"${o.time}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `甘丹茶飲點餐明細_${new Date().toISOString().slice(0,10)}.csv`;
+      link.click();
+    }
+
+    function toggleRoomStatus() {
+      isRoomOpen = !isRoomOpen;
+      const badge = document.getElementById('room-badge');
+      const btn = document.getElementById('btn-toggle-room');
+
+      if (isRoomOpen) {
+        badge.className = "text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-medium";
+        badge.innerText = "點餐開放中 🟢";
+        btn.className = "px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition";
+        btn.innerText = "點餐開放中";
+      } else {
+        badge.className = "text-xs px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 font-medium";
+        badge.innerText = "已截止點餐 🔴";
+        btn.className = "px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition";
+        btn.innerText = "已截止點餐";
+      }
+    }
+
+    function switchView(view) {
+      const userView = document.getElementById('view-user');
+      const adminView = document.getElementById('view-admin');
+      const btnUser = document.getElementById('btn-tab-user');
+      const btnAdmin = document.getElementById('btn-tab-admin');
+
+      if (view === 'user') {
+        userView.classList.remove('hidden');
+        adminView.classList.add('hidden');
+        btnUser.className = "px-3 py-1.5 rounded-lg bg-white shadow-sm text-emerald-900 transition flex items-center gap-1.5";
+        btnAdmin.className = "px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
+      } else {
+        userView.classList.add('hidden');
+        adminView.classList.remove('hidden');
+        btnAdmin.className = "px-3 py-1.5 rounded-lg bg-white shadow-sm text-emerald-900 transition flex items-center gap-1.5";
+        btnUser.className = "px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
+        renderAdminStats();
+        renderAdminOrders();
+      }
+    }
+  </script>
+</body>
+</html>
