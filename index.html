@@ -47,14 +47,17 @@
         </button>
       </div>
 
-      <!-- 切換 點餐 / 後台 模式 -->
-      <div class="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold flex-shrink-0">
-        <button onclick="switchView('user')" id="btn-tab-user" class="px-3 py-1.5 rounded-xl bg-white shadow-xs text-slate-900 transition flex items-center gap-1">
-          <i class="fa-solid fa-mug-saucer text-sm text-emerald-700"></i> <span>點餐</span>
-        </button>
-        <button onclick="switchView('admin')" id="btn-tab-admin" class="px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center gap-1">
-          <i class="fa-solid fa-chart-pie text-sm text-amber-600"></i> <span>後台</span>
-        </button>
+      <!-- 狀態顯示與切換 點餐 / 後台 模式 -->
+      <div class="flex items-center gap-2">
+        <span id="room-badge" class="hidden sm:inline-block text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold whitespace-nowrap">點餐中 🟢</span>
+        <div class="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold flex-shrink-0">
+          <button onclick="switchView('user')" id="btn-tab-user" class="px-3 py-1.5 rounded-xl bg-white shadow-xs text-slate-900 transition flex items-center gap-1">
+            <i class="fa-solid fa-mug-saucer text-sm text-emerald-700"></i> <span>點餐</span>
+          </button>
+          <button onclick="switchView('admin')" id="btn-tab-admin" class="px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center gap-1">
+            <i class="fa-solid fa-chart-pie text-sm text-amber-600"></i> <span>後台</span>
+          </button>
+        </div>
       </div>
     </div>
   </header>
@@ -161,10 +164,10 @@
 
         <div class="col-span-2 sm:col-span-1 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
-            <p class="text-xs text-slate-500 font-medium">點餐狀態</p>
+            <p class="text-xs text-slate-500 font-medium">點餐狀態控制</p>
             <div class="flex items-center gap-2 mt-1">
-              <button onclick="toggleRoomStatus()" id="btn-toggle-room" class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition">
-                點餐開放中
+              <button type="button" onclick="toggleRoomStatus()" id="btn-toggle-room" class="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition shadow-xs">
+                點餐開放中 🟢
               </button>
             </div>
           </div>
@@ -282,7 +285,7 @@
 
     let currentStore = '甘丹茶飲';
 
-    // ==================== 1. 甘丹茶飲 菜單 ====================
+    // 1. 甘丹茶飲 菜單
     const rawGandanMenu = [
       { cat: '樂活純茶系列', name: '不知四季春', l: 35, xl: 50, fixedSweet: false, icon: '🍵' },
       { cat: '樂活純茶系列', name: '黃金輕烏龍', l: 35, xl: 50, fixedSweet: false, icon: '🍵' },
@@ -380,7 +383,7 @@
       { name: '布丁一顆', price: 10 }
     ];
 
-    // ==================== 2. 50嵐 菜單 ====================
+    // 2. 50嵐 菜單
     const raw50LanMenu = [
       { cat: '找好茶', name: '茉莉綠茶 / 阿薩姆紅茶', m: 30, l: 35, fixedSweet: false, icon: '🍵' },
       { cat: '找好茶', name: '四季春青茶', m: 30, l: 35, fixedSweet: false, icon: '🍵' },
@@ -450,9 +453,8 @@
       { name: '冰淇淋一球', price: 10 }
     ];
 
-    // ==================== 3. 鮮茶道 PRESOTEA 菜單 ====================
+    // 3. 鮮茶道 PRESOTEA 菜單
     const rawPresoteaMenu = [
-      // 鮮萃茶 (L / 瓶)
       { cat: '鮮萃茶', name: '阿里山冰茶', l: 30, xl: 60, fixedSweet: false, icon: '🍵' },
       { cat: '鮮萃茶', name: '頂級茉莉綠茶', l: 30, xl: 60, fixedSweet: false, icon: '🍵' },
       { cat: '鮮萃茶', name: '琥珀紅茶', l: 30, xl: 60, fixedSweet: false, icon: '🍵' },
@@ -465,7 +467,6 @@
       { cat: '鮮萃茶', name: '炭燒焙茶', l: 35, xl: 65, fixedSweet: false, icon: '🌾' },
       { cat: '鮮萃茶', name: '白桃風味烏龍茶', l: 35, xl: 65, fixedSweet: false, icon: '🍑' },
 
-      // 奶茶繽紛樂 (L / 瓶)
       { cat: '奶茶繽紛樂', name: '熊貓黑糖珍奶茶', l: 70, xl: null, fixedSweet: false, icon: '🐼' },
       { cat: '奶茶繽紛樂', name: '英倫奶茶', l: 50, xl: 90, fixedSweet: false, icon: '🧋' },
       { cat: '奶茶繽紛樂', name: '茉香奶茶', l: 45, xl: 85, fixedSweet: false, icon: '🧋' },
@@ -478,18 +479,15 @@
       { cat: '奶茶繽紛樂', name: '一番極品抹茶奶綠', l: 65, xl: null, fixedSweet: false, icon: '🍵' },
       { cat: '奶茶繽紛樂', name: '泰式奶茶', l: 60, xl: null, fixedSweet: false, icon: '🧋' },
 
-      // 鮮奶系列 (L / 瓶)
       { cat: '鮮奶系列', name: '黑糖珍珠撞奶', l: 65, xl: null, fixedSweet: false, icon: '🧋' },
       { cat: '鮮奶系列', name: '紅/綠茶拿鐵', l: 60, xl: 100, fixedSweet: false, icon: '🥛' },
       { cat: '鮮奶系列', name: '伯爵拿鐵', l: 65, xl: 105, fixedSweet: false, icon: '🥛' },
 
-      // 奶霜系列 (L)
       { cat: '奶霜系列', name: '英倫奶霜', l: 55, xl: null, fixedSweet: false, icon: '☁️' },
       { cat: '奶霜系列', name: '桃韻烏龍奶霜', l: 55, xl: null, fixedSweet: false, icon: '☁️' },
       { cat: '奶霜系列', name: '茶花綠茶奶霜', l: 55, xl: null, fixedSweet: false, icon: '☁️' },
       { cat: '奶霜系列', name: '一番極品抹茶奶霜', l: 75, xl: null, fixedSweet: false, icon: '☁️' },
 
-      // 特等茶 & 雨林認證 (L)
       { cat: '特等茶&雨林認證', name: '阿里山里佳甘露', l: 45, xl: null, fixedSweet: false, icon: '🍵' },
       { cat: '特等茶&雨林認證', name: '日月潭紅玉', l: 45, xl: null, fixedSweet: false, icon: '🍵' },
       { cat: '特等茶&雨林認證', name: '四季春', l: 35, xl: null, fixedSweet: false, icon: '🍵' },
@@ -499,7 +497,6 @@
       { cat: '特等茶&雨林認證', name: '寒天四季奶青', l: 60, xl: null, fixedSweet: false, icon: '🧋' },
       { cat: '特等茶&雨林認證', name: '蜜柚美人茶', l: 70, xl: null, fixedSweet: false, icon: '🍊' },
 
-      // 無咖啡因 (L / 瓶)
       { cat: '無咖啡因', name: '台灣三麥穀奶', l: 65, xl: null, fixedSweet: false, icon: '🌾' },
       { cat: '無咖啡因', name: '蕎麥穀物茶', l: 40, xl: null, fixedSweet: false, icon: '🌾' },
       { cat: '無咖啡因', name: '蕎麥穀物冬瓜', l: 50, xl: null, fixedSweet: false, icon: '🍈' },
@@ -511,7 +508,6 @@
       { cat: '無咖啡因', name: '蜂蜜檸好', l: 65, xl: 105, fixedSweet: false, icon: '🍯' },
       { cat: '無咖啡因', name: '橙美荔', l: 65, xl: null, fixedSweet: false, icon: '🍊' },
 
-      // 果然續滋味 (L)
       { cat: '果然續滋味', name: '招牌水果茶', l: 70, xl: null, fixedSweet: false, icon: '🍎' },
       { cat: '果然續滋味', name: '鮮果雙Q綠茶', l: 70, xl: null, fixedSweet: false, icon: '🍹' },
       { cat: '果然續滋味', name: '橙香金萱', l: 65, xl: null, fixedSweet: false, icon: '🍊' },
@@ -520,7 +516,6 @@
       { cat: '果然續滋味', name: '墾丁冰茶', l: 45, xl: null, fixedSweet: false, icon: '🍹' },
       { cat: '果然續滋味', name: '荔枝QQ金萱', l: 40, xl: null, fixedSweet: false, icon: '🍑' },
 
-      // 季節限定 (L / 瓶)
       { cat: '季節限定', name: '洛神打檸', l: 70, xl: null, fixedSweet: false, icon: '🌺' },
       { cat: '季節限定', name: '洛神多多', l: 65, xl: 105, fixedSweet: false, icon: '🌺' },
       { cat: '季節限定', name: '洛神汁', l: 45, xl: 85, fixedSweet: false, icon: '🌺' },
@@ -545,7 +540,7 @@
       { name: '布丁一顆', price: 15 }
     ];
 
-    // ==================== 通用規格選項 ====================
+    // 通用規格選項
     const sweetnessOptions = [
       { name: '無糖 (0分)', price: 0 },
       { name: '微糖 (2分)', price: 0 },
@@ -599,7 +594,6 @@
       const bannerSub = document.getElementById('store-banner-sub');
       const badge = document.getElementById('store-badge');
 
-      // 重置按鈕樣式
       btnGd.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
       btn50.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
       btnPr.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
@@ -896,7 +890,7 @@
                     <span class="${isSelected ? 'text-white/90' : 'text-amber-600 font-black'}">${priceTag}</span>
                   </button>
                 `;
-              }).join('')}
+              })}
             </div>
           </div>
         `;
@@ -1219,15 +1213,15 @@
       const btn = document.getElementById('btn-toggle-room');
 
       if (isRoomOpen) {
-        badge.className = "text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-medium whitespace-nowrap";
+        badge.className = "hidden sm:inline-block text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold whitespace-nowrap";
         badge.innerText = "點餐中 🟢";
-        btn.className = "px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition";
-        btn.innerText = "點餐開放中";
+        btn.className = "px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition shadow-xs";
+        btn.innerText = "點餐開放中 🟢";
       } else {
-        badge.className = "text-xs px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 font-medium whitespace-nowrap";
+        badge.className = "hidden sm:inline-block text-xs px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 font-bold whitespace-nowrap";
         badge.innerText = "已截止 🔴";
-        btn.className = "px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition";
-        btn.innerText = "已截止點餐";
+        btn.className = "px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-xs";
+        btn.innerText = "已截止點餐 🔴";
       }
     }
 
