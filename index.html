@@ -77,10 +77,10 @@
                 <h2 id="store-banner-title" class="text-base sm:text-lg font-bold flex items-center gap-2">
                   <span>🌿</span> 甘丹簡單 輕茶飲
                 </h2>
-                <p id="store-banner-sub" class="text-white/80 text-xs sm:text-sm mt-1">選好甜冰加料送出，即時同步至試算表分頁</p>
+                <p id="store-banner-sub" class="text-white/80 text-xs sm:text-sm mt-1">選好規格、甜度、冰塊送出，即時同步至試算表分頁</p>
               </div>
               <div class="text-right pl-2">
-                <span id="store-badge" class="font-mono font-bold text-xs sm:text-sm bg-black/20 px-2.5 py-1 rounded-lg text-white">#甘丹專屬分頁</span>
+                <span id="store-badge" class="font-mono font-bold text-xs sm:text-sm bg-black/20 px-2.5 py-1 rounded-lg text-white">#甘丹茶飲分頁</span>
               </div>
             </div>
           </div>
@@ -268,7 +268,7 @@
       <div class="p-4 border-t border-slate-100 bg-white flex items-center justify-between flex-shrink-0">
         <div>
           <span class="text-xs text-slate-400 block font-medium">小計金額</span>
-          <span id="modal-calculated-price" class="text-2xl font-black text-amber-600">$35</span>
+          <span id="modal-calculated-price" class="text-2xl font-black text-amber-600">$0</span>
         </div>
         <button onclick="confirmAddToCart()" class="px-6 py-3.5 bg-amber-600 hover:bg-amber-700 active:scale-98 text-white font-bold text-sm sm:text-base rounded-xl shadow-md transition flex items-center gap-2">
           <i class="fa-solid fa-cart-plus"></i> 加入購物清單
@@ -500,7 +500,13 @@
     let isRoomOpen = true;
     let selectedCategory = '全部';
     let currentModalProduct = null;
-    let currentModalSelections = {};
+    let currentModalSelections = {
+      size: null,
+      sweetness: null,
+      ice: null,
+      heavyMilk: null,
+      toppings: []
+    };
 
     window.addEventListener('DOMContentLoaded', () => {
       initStoreData('甘丹茶飲');
@@ -519,7 +525,7 @@
         document.getElementById('btn-store-50lan').className = "px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
         document.getElementById('store-banner').className = "bg-gradient-to-r from-[#1b4332] to-[#2d6a4f] rounded-2xl p-4 sm:p-5 text-white shadow-xs transition-colors";
         document.getElementById('store-banner-title').innerHTML = "<span>🌿</span> 甘丹簡單 輕茶飲";
-        document.getElementById('store-banner-sub').innerText = "選好甜冰加料送出，即時同步至【甘丹茶飲】分頁";
+        document.getElementById('store-banner-sub').innerText = "選好規格、甜度、冰塊送出，即時同步至【甘丹茶飲】分頁";
         document.getElementById('store-badge').innerText = "#甘丹茶飲分頁";
       } else {
         products = raw50LanMenu.map((item, idx) => ({ id: '50_' + idx, ...item, basePrice: item.m || item.l }));
@@ -530,7 +536,7 @@
         document.getElementById('btn-store-gandan').className = "px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
         document.getElementById('store-banner').className = "bg-gradient-to-r from-blue-700 to-amber-500 rounded-2xl p-4 sm:p-5 text-white shadow-xs transition-colors";
         document.getElementById('store-banner-title').innerHTML = "<span>🧋</span> 50嵐 好茶陪伴你的日常";
-        document.getElementById('store-banner-sub').innerText = "選好甜冰加料送出，即時同步至【50嵐】分頁";
+        document.getElementById('store-banner-sub').innerText = "選好規格、甜度、冰塊送出，即時同步至【50嵐】分頁";
         document.getElementById('store-badge').innerText = "#50嵐分頁";
       }
 
@@ -614,22 +620,27 @@
       document.getElementById('modal-item-icon').innerText = currentModalProduct.icon;
       document.getElementById('modal-item-baseprice').innerText = `$${currentModalProduct.basePrice} 起`;
 
-      let defaultSize = null;
-      if (currentModalProduct.m && currentModalProduct.l) {
-        defaultSize = { name: '大杯 (L)', price: currentModalProduct.l };
-      } else if (currentModalProduct.l) {
-        defaultSize = { name: '大杯 (L)', price: currentModalProduct.l };
-      } else {
-        defaultSize = { name: '中杯 (M)', price: currentModalProduct.m };
-      }
-
       currentModalSelections = {
-        size: defaultSize,
-        sweetness: currentModalProduct.fixedSweet ? fixedSweetnessOptions[0] : sweetnessOptions[0],
-        ice: iceOptions[0],
+        size: null,
+        sweetness: currentModalProduct.fixedSweet ? fixedSweetnessOptions[0] : null,
+        ice: null,
         heavyMilk: null,
         toppings: []
       };
+
+      let sizeChoices = [];
+      if (currentStore === '50嵐') {
+        if (currentModalProduct.m) sizeChoices.push({ name: '中杯 (M 500cc)', price: currentModalProduct.m });
+        if (currentModalProduct.l) sizeChoices.push({ name: '大杯 (L 700cc)', price: currentModalProduct.l });
+      } else {
+        if (currentModalProduct.m) sizeChoices.push({ name: '中杯 (M 480cc)', price: currentModalProduct.m });
+        if (currentModalProduct.l) sizeChoices.push({ name: '大杯 (L 700cc)', price: currentModalProduct.l });
+        if (currentModalProduct.xl) sizeChoices.push({ name: '生活瓶 (XL 960cc)', price: currentModalProduct.xl });
+      }
+
+      if (sizeChoices.length === 1) {
+        currentModalSelections.size = sizeChoices[0];
+      }
 
       renderModalOptions();
       updateModalPrice();
@@ -657,35 +668,51 @@
 
       let html = '';
 
-      // 1. 容量規格
+      // 1. 容量規格 (必選)
+      const sizeSelected = !!currentModalSelections.size;
       html += `
         <div class="space-y-2">
-          <h4 class="text-sm font-bold text-slate-800">容量規格</h4>
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+              <span>1. 容量規格</span>
+              <span class="text-xs px-2 py-0.5 rounded-full ${sizeSelected ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-600 font-bold'}">
+                ${sizeSelected ? '已選擇 ✓' : '必選 *'}
+              </span>
+            </h4>
+          </div>
           <div class="grid grid-cols-2 sm:grid-cols-${sizeChoices.length} gap-2.5">
             ${sizeChoices.map(s => `
               <button type="button" onclick="selectModalSize('${s.name}', ${s.price})" 
                 class="px-3.5 py-3 rounded-2xl text-sm font-bold border flex items-center justify-between transition ${
-                  currentModalSelections.size.name === s.name ? themeColor + ' text-white' : 'bg-white text-slate-700 border-slate-200'
+                  currentModalSelections.size && currentModalSelections.size.name === s.name ? themeColor + ' text-white' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
                 }">
                 <span>${s.name}</span>
-                <span class="${currentModalSelections.size.name === s.name ? 'text-white/90' : 'text-slate-600'} font-black">$${s.price}</span>
+                <span class="${currentModalSelections.size && currentModalSelections.size.name === s.name ? 'text-white/90' : 'text-slate-600'} font-black">$${s.price}</span>
               </button>
             `).join('')}
           </div>
         </div>
       `;
 
-      // 2. 甜度
+      // 2. 甜度 (必選)
       const sweetList = p.fixedSweet ? fixedSweetnessOptions : sweetnessOptions;
+      const sweetSelected = !!currentModalSelections.sweetness;
       const sweetGridCols = p.fixedSweet ? 'grid-cols-1' : 'grid-cols-2 sm:grid-cols-5';
       html += `
         <div class="space-y-2">
-          <h4 class="text-sm font-bold text-slate-800">甜度</h4>
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+              <span>2. 甜度</span>
+              <span class="text-xs px-2 py-0.5 rounded-full ${sweetSelected ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-600 font-bold'}">
+                ${sweetSelected ? '已選擇 ✓' : '必選 *'}
+              </span>
+            </h4>
+          </div>
           <div class="grid ${sweetGridCols} gap-2">
             ${sweetList.map(s => `
               <button type="button" onclick="selectModalSweetness('${s.name}')" 
                 class="px-3 py-2.5 rounded-2xl text-sm font-bold border text-center transition ${
-                  currentModalSelections.sweetness.name === s.name ? themeColor + ' text-white' : 'bg-white text-slate-700 border-slate-200'
+                  currentModalSelections.sweetness && currentModalSelections.sweetness.name === s.name ? themeColor + ' text-white' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
                 }">
                 ${s.name}
               </button>
@@ -694,15 +721,23 @@
         </div>
       `;
 
-      // 3. 冰塊
+      // 3. 冰塊 (必選)
+      const iceSelected = !!currentModalSelections.ice;
       html += `
         <div class="space-y-2">
-          <h4 class="text-sm font-bold text-slate-800">冰塊</h4>
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+              <span>3. 冰塊溫度</span>
+              <span class="text-xs px-2 py-0.5 rounded-full ${iceSelected ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-600 font-bold'}">
+                ${iceSelected ? '已選擇 ✓' : '必選 *'}
+              </span>
+            </h4>
+          </div>
           <div class="grid grid-cols-3 sm:grid-cols-5 gap-2">
             ${iceOptions.map(i => `
               <button type="button" onclick="selectModalIce('${i.name}')" 
                 class="px-2 py-2.5 rounded-2xl text-sm font-bold border text-center transition ${
-                  currentModalSelections.ice.name === i.name ? themeColor + ' text-white' : 'bg-white text-slate-700 border-slate-200'
+                  currentModalSelections.ice && currentModalSelections.ice.name === i.name ? themeColor + ' text-white' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
                 }">
                 ${i.name}
               </button>
@@ -711,12 +746,12 @@
         </div>
       `;
 
-      // 4. 重乳升級 (甘丹特有)
+      // 4. 重乳升級 (甘丹特有，選填)
       if (p.heavyMilkOption) {
         const isHeavy = !!currentModalSelections.heavyMilk;
         html += `
           <div class="space-y-2">
-            <h4 class="text-sm font-bold text-slate-800">奶香加倍</h4>
+            <h4 class="text-sm font-bold text-slate-800">奶香加倍 (選填)</h4>
             <button type="button" onclick="toggleModalHeavyMilk()" 
               class="w-full px-4 py-3 rounded-2xl text-sm font-bold border flex items-center justify-between transition ${
                 isHeavy ? 'bg-amber-600 text-white border-amber-600' : 'bg-white text-slate-700 border-slate-200'
@@ -728,12 +763,14 @@
         `;
       }
 
-      // 5. 加料
-      const isXL = currentModalSelections.size.name.includes('XL');
+      // 5. 加料專區 (選填)
+      const isXL = currentModalSelections.size && currentModalSelections.size.name.includes('XL');
       if (!isXL) {
         html += `
           <div class="space-y-2">
-            <h4 class="text-sm font-bold text-slate-800">加料專區 (可複選)</h4>
+            <div class="flex items-center justify-between">
+              <h4 class="text-sm font-bold text-slate-800">4. 加料專區 (可複選，不加請跳過)</h4>
+            </div>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
               ${currentToppings.map(t => {
                 const isSelected = currentModalSelections.toppings.some(item => item.name === t.name);
@@ -797,6 +834,10 @@
     }
 
     function updateModalPrice() {
+      if (!currentModalSelections.size) {
+        document.getElementById('modal-calculated-price').innerText = `請選規格`;
+        return;
+      }
       let total = currentModalSelections.size.price;
       if (currentModalSelections.heavyMilk) total += currentModalSelections.heavyMilk.price;
       currentModalSelections.toppings.forEach(t => total += t.price);
@@ -804,6 +845,19 @@
     }
 
     function confirmAddToCart() {
+      if (!currentModalSelections.size) {
+        alert('⚠️ 請選擇【容量規格】（中杯 / 大杯）！');
+        return;
+      }
+      if (!currentModalSelections.sweetness) {
+        alert('⚠️ 請選擇【甜度】！');
+        return;
+      }
+      if (!currentModalSelections.ice) {
+        alert('⚠️ 請選擇【冰塊溫度】！');
+        return;
+      }
+
       let specs = [];
       specs.push(currentModalSelections.size.name);
       specs.push(currentModalSelections.sweetness.name);
@@ -968,9 +1022,9 @@
         orders = [];
         renderAdminStats();
         renderAdminOrders();
-      } catch (err) {
+      } catch (err) {{
         alert('清除失敗，請重試！');
-      }
+      }}
     }
 
     function renderAdminStats() {
