@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>線上點餐系統 | 甘丹茶飲 & 50嵐</title>
+  <title>線上點餐系統 | 甘丹・50嵐・鮮茶道</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Font Awesome -->
@@ -13,13 +13,9 @@
       theme: {
         extend: {
           colors: {
-            brand: {
-              50: '#f4fbf6',
-              100: '#e3f6ea',
-              600: '#2d6a4f',
-              700: '#1b4332',
-              800: '#081c15',
-            }
+            gandan: { 700: '#1b4332', 800: '#081c15' },
+            fifty: { 600: '#2563eb', 700: '#1d4ed8' },
+            preso: { 600: '#0f766e', 700: '#115e59' }
           }
         }
       }
@@ -34,17 +30,20 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased pb-24 lg:pb-6">
 
-  <!-- 頂部導航 (店家切換 + 點餐/後台) -->
+  <!-- 頂部導航 (三店家切換 + 點餐/後台) -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
     <div class="max-w-6xl mx-auto px-3.5 sm:px-4 h-16 flex items-center justify-between gap-2">
       
       <!-- 店家快速切換 Tab -->
-      <div class="flex items-center space-x-1.5 sm:space-x-2 bg-slate-100 p-1 rounded-2xl border border-slate-200">
-        <button onclick="switchStore('甘丹茶飲')" id="btn-store-gandan" class="px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-[#1b4332] text-white shadow-xs transition flex items-center gap-1.5">
+      <div class="flex items-center space-x-1 sm:space-x-1.5 bg-slate-100 p-1 rounded-2xl border border-slate-200 overflow-x-auto hide-scrollbar">
+        <button onclick="switchStore('甘丹茶飲')" id="btn-store-gandan" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition flex items-center gap-1.5">
           <span class="w-2 h-2 rounded-full bg-emerald-400"></span> 甘丹茶飲
         </button>
-        <button onclick="switchStore('50嵐')" id="btn-store-50lan" class="px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5">
+        <button onclick="switchStore('50嵐')" id="btn-store-50lan" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition flex items-center gap-1.5">
           <span class="w-2 h-2 rounded-full bg-blue-500"></span> 50嵐
+        </button>
+        <button onclick="switchStore('鮮茶道')" id="btn-store-preso" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-teal-400"></span> 鮮茶道
         </button>
       </div>
 
@@ -71,7 +70,7 @@
         <div class="lg:col-span-8 space-y-4">
           
           <!-- 橫幅公告 -->
-          <div id="store-banner" class="bg-gradient-to-r from-[#1b4332] to-[#2d6a4f] rounded-2xl p-4 sm:p-5 text-white shadow-xs transition-colors">
+          <div id="store-banner" class="rounded-2xl p-4 sm:p-5 text-white shadow-xs transition-colors">
             <div class="flex justify-between items-center">
               <div>
                 <h2 id="store-banner-title" class="text-base sm:text-lg font-bold flex items-center gap-2">
@@ -283,9 +282,8 @@
 
     let currentStore = '甘丹茶飲';
 
-    // ==================== 甘丹茶飲 菜單資料 ====================
+    // ==================== 1. 甘丹茶飲 菜單 ====================
     const rawGandanMenu = [
-      // 1. 樂活純茶系列
       { cat: '樂活純茶系列', name: '不知四季春', l: 35, xl: 50, fixedSweet: false, icon: '🍵' },
       { cat: '樂活純茶系列', name: '黃金輕烏龍', l: 35, xl: 50, fixedSweet: false, icon: '🍵' },
       { cat: '樂活純茶系列', name: '嫩葉蜜香紅', l: 35, xl: 50, fixedSweet: false, icon: '🍵' },
@@ -297,7 +295,6 @@
       { cat: '樂活純茶系列', name: '黑金仙草茶', l: 35, xl: 50, fixedSweet: true, icon: '🌿' },
       { cat: '樂活純茶系列', name: '熟成老冬瓜茶', l: 35, xl: 50, fixedSweet: false, icon: '🍈' },
 
-      // 2. 自然經典系列
       { cat: '自然經典系列', name: '鴉片檸檬', l: 60, xl: 80, fixedSweet: true, icon: '🍋' },
       { cat: '自然經典系列', name: '鴉片檸檬PLUS', l: 75, xl: null, fixedSweet: true, icon: '🍋' },
       { cat: '自然經典系列', name: '明列子鴉片檸檬', l: 70, xl: null, fixedSweet: true, icon: '🍋' },
@@ -314,7 +311,6 @@
       { cat: '自然經典系列', name: '檸檬紅玉', l: 55, xl: null, fixedSweet: false, icon: '🍋' },
       { cat: '自然經典系列', name: '翡翠檸檬綠', l: 55, xl: null, fixedSweet: false, icon: '🍋' },
 
-      // 3. 甘丹特調系列
       { cat: '甘丹特調系列', name: '洛梅仙女飲', l: 50, xl: null, fixedSweet: true, icon: '🌺' },
       { cat: '甘丹特調系列', name: '風潮檸檬氣泡飲', l: 70, xl: null, fixedSweet: true, icon: '🫧' },
       { cat: '甘丹特調系列', name: '鴉片檸檬氣泡飲', l: 70, xl: null, fixedSweet: true, icon: '🫧' },
@@ -331,7 +327,6 @@
       { cat: '甘丹特調系列', name: '脆梅綠茶', l: 55, xl: null, fixedSweet: false, icon: '🫐' },
       { cat: '甘丹特調系列', name: '養樂多綠茶', l: 55, xl: null, fixedSweet: false, icon: '🥛' },
 
-      // 4. 濃醇鮮奶系列
       { cat: '濃醇鮮奶系列', name: '甘丹鮮奶紅茶', l: 60, xl: null, fixedSweet: false, heavyMilkOption: true, icon: '🥛' },
       { cat: '濃醇鮮奶系列', name: '小山鮮奶紅茶', l: 60, xl: null, fixedSweet: false, heavyMilkOption: true, icon: '🥛' },
       { cat: '濃醇鮮奶系列', name: '穀香大麥拿鐵', l: 60, xl: null, fixedSweet: false, heavyMilkOption: true, icon: '🌾' },
@@ -346,7 +341,6 @@
       { cat: '濃醇鮮奶系列', name: '鮮奶嫩仙草', l: 80, xl: null, fixedSweet: true, heavyMilkOption: false, icon: '🌿' },
       { cat: '濃醇鮮奶系列', name: '鮮奶阿華田', l: 70, xl: null, fixedSweet: false, heavyMilkOption: false, icon: '🍫' },
 
-      // 5. 醇品奶香系列
       { cat: '醇品奶香系列', name: '珍珠奶茶', l: 55, xl: null, fixedSweet: false, icon: '🧋' },
       { cat: '醇品奶香系列', name: '嫩仙草奶茶', l: 60, xl: null, fixedSweet: false, icon: '🌿' },
       { cat: '醇品奶香系列', name: '布丁奶茶', l: 60, xl: null, fixedSweet: false, icon: '🍮' },
@@ -357,12 +351,10 @@
       { cat: '醇品奶香系列', name: '茉香奶綠', l: 50, xl: null, fixedSweet: false, icon: '🧋' },
       { cat: '醇品奶香系列', name: '阿華田', l: 55, xl: null, fixedSweet: false, icon: '🍫' },
 
-      // 6. 海鹽雲朵奶霜
       { cat: '海鹽雲朵奶霜', name: '雲朵紅茶奶霜', l: 50, xl: null, fixedSweet: false, icon: '☁️' },
       { cat: '海鹽雲朵奶霜', name: '雲朵四季/烏龍奶霜', l: 50, xl: null, fixedSweet: false, icon: '☁️' },
       { cat: '海鹽雲朵奶霜', name: '雲朵綠茶/麥茶奶霜', l: 50, xl: null, fixedSweet: false, icon: '☁️' },
 
-      // 7. 自然純蜜系列
       { cat: '自然純蜜系列', name: '鮮榨檸檬蜜', l: 65, xl: null, fixedSweet: false, icon: '🍯' },
       { cat: '自然純蜜系列', name: '四季春茶蜜', l: 55, xl: null, fixedSweet: false, icon: '🍯' },
       { cat: '自然純蜜系列', name: '台灣紅茶蜜', l: 55, xl: null, fixedSweet: false, icon: '🍯' },
@@ -370,7 +362,6 @@
       { cat: '自然純蜜系列', name: '茉香綠茶蜜', l: 55, xl: null, fixedSweet: false, icon: '🍯' },
       { cat: '自然純蜜系列', name: '黑葉荔枝蜜茶', l: 50, xl: null, fixedSweet: false, icon: '🍯' },
 
-      // 8. 冬季限定系列
       { cat: '冬季限定系列', name: '紫米紅豆鮮奶', m: null, l: 80, fixedSweet: true, icon: '🥣' },
       { cat: '冬季限定系列', name: '古制仙草燒', m: null, l: 40, fixedSweet: true, icon: '🌿' },
       { cat: '冬季限定系列', name: '粉角仙草燒', m: null, l: 45, fixedSweet: true, icon: '🌿' },
@@ -379,10 +370,7 @@
       { cat: '冬季限定系列', name: '黑糖薑母奶茶', m: 55, l: null, fixedSweet: true, icon: '🫖' }
     ];
 
-    const gandanCategories = [
-      '全部', '樂活純茶系列', '自然經典系列', '甘丹特調系列', '濃醇鮮奶系列', '醇品奶香系列', '海鹽雲朵奶霜', '自然純蜜系列', '冬季限定系列'
-    ];
-
+    const gandanCategories = ['全部', '樂活純茶系列', '自然經典系列', '甘丹特調系列', '濃醇鮮奶系列', '醇品奶香系列', '海鹽雲朵奶霜', '自然純蜜系列', '冬季限定系列'];
     const gandanToppings = [
       { name: '珍珠', price: 5 },
       { name: '冬瓜琥珀凍', price: 10 },
@@ -392,9 +380,8 @@
       { name: '布丁一顆', price: 10 }
     ];
 
-    // ==================== 50嵐 菜單資料 ====================
+    // ==================== 2. 50嵐 菜單 ====================
     const raw50LanMenu = [
-      // 1. 找好茶 FLAVORED TEA (M / L)
       { cat: '找好茶', name: '茉莉綠茶 / 阿薩姆紅茶', m: 30, l: 35, fixedSweet: false, icon: '🍵' },
       { cat: '找好茶', name: '四季春青茶', m: 30, l: 35, fixedSweet: false, icon: '🍵' },
       { cat: '找好茶', name: '黃金烏龍', m: 30, l: 35, fixedSweet: false, icon: '🍵' },
@@ -411,7 +398,6 @@
       { cat: '找好茶', name: '柚子紅 / 烏', m: 40, l: 55, fixedSweet: false, icon: '🍊' },
       { cat: '找好茶', name: '鮮柚綠', m: 50, l: 65, fixedSweet: false, note: '季節限定', icon: '🍊' },
 
-      // 2. 找奶茶 CLASSIC MILK TEA (M / L)
       { cat: '找奶茶', name: '奶茶', m: 40, l: 55, fixedSweet: false, icon: '🧋' },
       { cat: '找奶茶', name: '奶綠', m: 40, l: 55, fixedSweet: false, icon: '🧋' },
       { cat: '找奶茶', name: '烏龍奶', m: 40, l: 55, fixedSweet: false, icon: '🧋' },
@@ -425,7 +411,6 @@
       { cat: '找奶茶', name: '青茶瑪奇朵', m: 40, l: 55, fixedSweet: false, icon: '☁️' },
       { cat: '找奶茶', name: '阿華田', m: 40, l: 55, fixedSweet: false, icon: '🍫' },
 
-      // 3. 找拿鐵 TEA LATTE (M / L)
       { cat: '找拿鐵', name: '紅茶拿鐵', m: 50, l: 65, fixedSweet: false, icon: '🥛' },
       { cat: '找拿鐵', name: '綠茶拿鐵', m: 50, l: 65, fixedSweet: false, icon: '🥛' },
       { cat: '找拿鐵', name: '重培烏龍拿鐵', m: 50, l: 65, fixedSweet: false, icon: '🥛' },
@@ -439,7 +424,6 @@
       { cat: '找拿鐵', name: '燕麥阿華田拿鐵', m: 50, l: 65, fixedSweet: false, icon: '🍫' },
       { cat: '找拿鐵', name: '麵茶紅茶拿鐵', m: 55, l: 75, fixedSweet: false, icon: '🌾' },
 
-      // 4. 找新鮮 FRESH JUICE (M / L)
       { cat: '找新鮮', name: '蜜茶', m: 40, l: 55, fixedSweet: false, icon: '🍯' },
       { cat: '找新鮮', name: '8冰茶 / 柚子茶', m: 40, l: 55, fixedSweet: false, icon: '🍹' },
       { cat: '找新鮮', name: '檸檬汁', m: 50, l: 65, fixedSweet: false, icon: '🍋' },
@@ -448,7 +432,6 @@
       { cat: '找新鮮', name: '檸檬多多', m: 55, l: 75, fixedSweet: false, icon: '🥛' },
       { cat: '找新鮮', name: '葡萄柚多多', m: 55, l: 75, fixedSweet: false, note: '季節限定', icon: '🍊' },
 
-      // 5. 找冰淇淋 ICE CREAM (M / L)
       { cat: '找冰淇淋', name: '冰淇淋紅茶', m: 40, l: 55, fixedSweet: false, icon: '🍨' },
       { cat: '找冰淇淋', name: '芒果青', m: 40, l: 55, fixedSweet: false, icon: '🥭' },
       { cat: '找冰淇淋', name: '荔枝烏龍', m: 40, l: 55, fixedSweet: false, icon: '🧊' },
@@ -457,10 +440,7 @@
       { cat: '找冰淇淋', name: '冰淇淋麵茶紅茶拿鐵', m: 60, l: 80, fixedSweet: false, icon: '🍨' }
     ];
 
-    const fiftyLanCategories = [
-      '全部', '找好茶', '找奶茶', '找拿鐵', '找新鮮', '找冰淇淋'
-    ];
-
+    const fiftyLanCategories = ['全部', '找好茶', '找奶茶', '找拿鐵', '找新鮮', '找冰淇淋'];
     const fiftyLanToppings = [
       { name: '波霸', price: 0 },
       { name: '珍珠', price: 0 },
@@ -468,6 +448,101 @@
       { name: '椰果', price: 0 },
       { name: '布丁一顆', price: 10 },
       { name: '冰淇淋一球', price: 10 }
+    ];
+
+    // ==================== 3. 鮮茶道 PRESOTEA 菜單 ====================
+    const rawPresoteaMenu = [
+      // 鮮萃茶 (L / 瓶)
+      { cat: '鮮萃茶', name: '阿里山冰茶', l: 30, xl: 60, fixedSweet: false, icon: '🍵' },
+      { cat: '鮮萃茶', name: '頂級茉莉綠茶', l: 30, xl: 60, fixedSweet: false, icon: '🍵' },
+      { cat: '鮮萃茶', name: '琥珀紅茶', l: 30, xl: 60, fixedSweet: false, icon: '🍵' },
+      { cat: '鮮萃茶', name: '烏龍綠茶', l: 30, xl: 60, fixedSweet: false, icon: '🍵' },
+      { cat: '鮮萃茶', name: '文山清茶', l: 30, xl: 60, fixedSweet: false, icon: '🍵' },
+      { cat: '鮮萃茶', name: '鮮露金萱茶', l: 30, xl: 60, fixedSweet: false, icon: '🍵' },
+      { cat: '鮮萃茶', name: '日式玄米茶', l: 35, xl: 65, fixedSweet: false, icon: '🌾' },
+      { cat: '鮮萃茶', name: '伯爵紅茶', l: 35, xl: 65, fixedSweet: false, icon: '🍵' },
+      { cat: '鮮萃茶', name: '茶花綠茶', l: 35, xl: 65, fixedSweet: false, icon: '🍵' },
+      { cat: '鮮萃茶', name: '炭燒焙茶', l: 35, xl: 65, fixedSweet: false, icon: '🌾' },
+      { cat: '鮮萃茶', name: '白桃風味烏龍茶', l: 35, xl: 65, fixedSweet: false, icon: '🍑' },
+
+      // 奶茶繽紛樂 (L / 瓶)
+      { cat: '奶茶繽紛樂', name: '熊貓黑糖珍奶茶', l: 70, xl: null, fixedSweet: false, icon: '🐼' },
+      { cat: '奶茶繽紛樂', name: '英倫奶茶', l: 50, xl: 90, fixedSweet: false, icon: '🧋' },
+      { cat: '奶茶繽紛樂', name: '茉香奶茶', l: 45, xl: 85, fixedSweet: false, icon: '🧋' },
+      { cat: '奶茶繽紛樂', name: '沖繩黑糖風味奶茶', l: 50, xl: 90, fixedSweet: false, icon: '🧋' },
+      { cat: '奶茶繽紛樂', name: '伯爵奶茶', l: 50, xl: 90, fixedSweet: false, icon: '🧋' },
+      { cat: '奶茶繽紛樂', name: '焙茶烤奶', l: 50, xl: 90, fixedSweet: false, icon: '🧋' },
+      { cat: '奶茶繽紛樂', name: '珍珠奶茶', l: 60, xl: null, fixedSweet: false, icon: '🧋' },
+      { cat: '奶茶繽紛樂', name: '仙草凍奶茶', l: 60, xl: null, fixedSweet: false, icon: '🌿' },
+      { cat: '奶茶繽紛樂', name: '布丁奶茶', l: 65, xl: null, fixedSweet: false, icon: '🍮' },
+      { cat: '奶茶繽紛樂', name: '一番極品抹茶奶綠', l: 65, xl: null, fixedSweet: false, icon: '🍵' },
+      { cat: '奶茶繽紛樂', name: '泰式奶茶', l: 60, xl: null, fixedSweet: false, icon: '🧋' },
+
+      // 鮮奶系列 (L / 瓶)
+      { cat: '鮮奶系列', name: '黑糖珍珠撞奶', l: 65, xl: null, fixedSweet: false, icon: '🧋' },
+      { cat: '鮮奶系列', name: '紅/綠茶拿鐵', l: 60, xl: 100, fixedSweet: false, icon: '🥛' },
+      { cat: '鮮奶系列', name: '伯爵拿鐵', l: 65, xl: 105, fixedSweet: false, icon: '🥛' },
+
+      // 奶霜系列 (L)
+      { cat: '奶霜系列', name: '英倫奶霜', l: 55, xl: null, fixedSweet: false, icon: '☁️' },
+      { cat: '奶霜系列', name: '桃韻烏龍奶霜', l: 55, xl: null, fixedSweet: false, icon: '☁️' },
+      { cat: '奶霜系列', name: '茶花綠茶奶霜', l: 55, xl: null, fixedSweet: false, icon: '☁️' },
+      { cat: '奶霜系列', name: '一番極品抹茶奶霜', l: 75, xl: null, fixedSweet: false, icon: '☁️' },
+
+      // 特等茶 & 雨林認證 (L)
+      { cat: '特等茶&雨林認證', name: '阿里山里佳甘露', l: 45, xl: null, fixedSweet: false, icon: '🍵' },
+      { cat: '特等茶&雨林認證', name: '日月潭紅玉', l: 45, xl: null, fixedSweet: false, icon: '🍵' },
+      { cat: '特等茶&雨林認證', name: '四季春', l: 35, xl: null, fixedSweet: false, icon: '🍵' },
+      { cat: '特等茶&雨林認證', name: '蜜香紅茶', l: 40, xl: null, fixedSweet: false, icon: '🍵' },
+      { cat: '特等茶&雨林認證', name: '東方美人茶', l: 40, xl: null, fixedSweet: false, icon: '🍵' },
+      { cat: '特等茶&雨林認證', name: '蜜香果茶', l: 50, xl: null, fixedSweet: false, icon: '🍎' },
+      { cat: '特等茶&雨林認證', name: '寒天四季奶青', l: 60, xl: null, fixedSweet: false, icon: '🧋' },
+      { cat: '特等茶&雨林認證', name: '蜜柚美人茶', l: 70, xl: null, fixedSweet: false, icon: '🍊' },
+
+      // 無咖啡因 (L / 瓶)
+      { cat: '無咖啡因', name: '台灣三麥穀奶', l: 65, xl: null, fixedSweet: false, icon: '🌾' },
+      { cat: '無咖啡因', name: '蕎麥穀物茶', l: 40, xl: null, fixedSweet: false, icon: '🌾' },
+      { cat: '無咖啡因', name: '蕎麥穀物冬瓜', l: 50, xl: null, fixedSweet: false, icon: '🍈' },
+      { cat: '無咖啡因', name: '古早味冬瓜茶', l: 35, xl: 75, fixedSweet: false, icon: '🍈' },
+      { cat: '無咖啡因', name: '冬瓜檸檬', l: 60, xl: 100, fixedSweet: false, icon: '🍋' },
+      { cat: '無咖啡因', name: '檸檬CC', l: 45, xl: 85, fixedSweet: false, icon: '🍋' },
+      { cat: '無咖啡因', name: '藍莓果茶', l: 45, xl: 85, fixedSweet: false, icon: '🫐' },
+      { cat: '無咖啡因', name: '鮮桔檸檬飲', l: 55, xl: 95, fixedSweet: false, icon: '🍋' },
+      { cat: '無咖啡因', name: '蜂蜜檸好', l: 65, xl: 105, fixedSweet: false, icon: '🍯' },
+      { cat: '無咖啡因', name: '橙美荔', l: 65, xl: null, fixedSweet: false, icon: '🍊' },
+
+      // 果然續滋味 (L)
+      { cat: '果然續滋味', name: '招牌水果茶', l: 70, xl: null, fixedSweet: false, icon: '🍎' },
+      { cat: '果然續滋味', name: '鮮果雙Q綠茶', l: 70, xl: null, fixedSweet: false, icon: '🍹' },
+      { cat: '果然續滋味', name: '橙香金萱', l: 65, xl: null, fixedSweet: false, icon: '🍊' },
+      { cat: '果然續滋味', name: '鳳梨清茶', l: 55, xl: null, fixedSweet: false, icon: '🍍' },
+      { cat: '果然續滋味', name: '養樂多綠茶', l: 50, xl: null, fixedSweet: false, icon: '🥛' },
+      { cat: '果然續滋味', name: '墾丁冰茶', l: 45, xl: null, fixedSweet: false, icon: '🍹' },
+      { cat: '果然續滋味', name: '荔枝QQ金萱', l: 40, xl: null, fixedSweet: false, icon: '🍑' },
+
+      // 季節限定 (L / 瓶)
+      { cat: '季節限定', name: '洛神打檸', l: 70, xl: null, fixedSweet: false, icon: '🌺' },
+      { cat: '季節限定', name: '洛神多多', l: 65, xl: 105, fixedSweet: false, icon: '🌺' },
+      { cat: '季節限定', name: '洛神汁', l: 45, xl: 85, fixedSweet: false, icon: '🌺' },
+      { cat: '季節限定', name: '翡翠檸檬冰鑽', l: 65, xl: null, fixedSweet: false, icon: '🧊' },
+      { cat: '季節限定', name: '鳳梨冰鑽', l: 60, xl: null, fixedSweet: false, icon: '🍍' },
+      { cat: '季節限定', name: '青梅冰鑽', l: 55, xl: null, fixedSweet: false, icon: '🫐' },
+      { cat: '季節限定', name: '梅果綠茶', l: 45, xl: null, fixedSweet: false, icon: '🍵' },
+      { cat: '季節限定', name: '芭樂檸檬綠茶', l: 65, xl: null, fixedSweet: false, note: '5-9月限定', icon: '🍈' },
+      { cat: '季節限定', name: '紅心芭樂梅', l: 70, xl: 110, fixedSweet: false, note: '5-9月限定', icon: '🍈' },
+      { cat: '季節限定', name: '紅心芭樂汁', l: 65, xl: 105, fixedSweet: false, note: '5-9月限定', icon: '🍈' },
+      { cat: '季節限定', name: '薑汁撞奶', l: 65, xl: null, fixedSweet: false, note: '11-2月限定', icon: '🫖' },
+      { cat: '季節限定', name: '黑糖薑茶', l: 55, xl: null, fixedSweet: false, note: '11-2月限定', icon: '🫖' },
+      { cat: '季節限定', name: '桂圓紅棗茶', l: 55, xl: null, fixedSweet: false, note: '11-2月限定', icon: '🫖' }
+    ];
+
+    const presoteaCategories = ['全部', '鮮萃茶', '奶茶繽紛樂', '鮮奶系列', '奶霜系列', '特等茶&雨林認證', '無咖啡因', '果然續滋味', '季節限定'];
+    const presoteaToppings = [
+      { name: '珍珠', price: 10 },
+      { name: '黑糖珍珠', price: 15 },
+      { name: '仙草凍', price: 10 },
+      { name: '寒天QQ', price: 10 },
+      { name: '布丁一顆', price: 15 }
     ];
 
     // ==================== 通用規格選項 ====================
@@ -516,28 +591,49 @@
 
     function initStoreData(storeName) {
       currentStore = storeName;
+      const btnGd = document.getElementById('btn-store-gandan');
+      const btn50 = document.getElementById('btn-store-50lan');
+      const btnPr = document.getElementById('btn-store-preso');
+      const banner = document.getElementById('store-banner');
+      const bannerTitle = document.getElementById('store-banner-title');
+      const bannerSub = document.getElementById('store-banner-sub');
+      const badge = document.getElementById('store-badge');
+
+      // 重置按鈕樣式
+      btnGd.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
+      btn50.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
+      btnPr.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
+
       if (storeName === '甘丹茶飲') {
         products = rawGandanMenu.map((item, idx) => ({ id: 'gd_' + idx, ...item, basePrice: item.l || item.m }));
         orderedCategories = gandanCategories;
         currentToppings = gandanToppings;
         
-        document.getElementById('btn-store-gandan').className = "px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-[#1b4332] text-white shadow-xs transition flex items-center gap-1.5";
-        document.getElementById('btn-store-50lan').className = "px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
-        document.getElementById('store-banner').className = "bg-gradient-to-r from-[#1b4332] to-[#2d6a4f] rounded-2xl p-4 sm:p-5 text-white shadow-xs transition-colors";
-        document.getElementById('store-banner-title').innerHTML = "<span>🌿</span> 甘丹簡單 輕茶飲";
-        document.getElementById('store-banner-sub').innerText = "選好規格、甜度、冰塊送出，即時同步至【甘丹茶飲】分頁";
-        document.getElementById('store-badge').innerText = "#甘丹茶飲分頁";
-      } else {
+        btnGd.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-[#1b4332] text-white shadow-xs transition flex items-center gap-1.5";
+        banner.className = "bg-gradient-to-r from-[#1b4332] to-[#2d6a4f] rounded-2xl p-4 sm:p-5 text-white shadow-xs transition-colors";
+        bannerTitle.innerHTML = "<span>🌿</span> 甘丹簡單 輕茶飲";
+        bannerSub.innerText = "選好規格、甜度、冰塊送出，即時同步至【甘丹茶飲】分頁";
+        badge.innerText = "#甘丹茶飲分頁";
+      } else if (storeName === '50嵐') {
         products = raw50LanMenu.map((item, idx) => ({ id: '50_' + idx, ...item, basePrice: item.m || item.l }));
         orderedCategories = fiftyLanCategories;
         currentToppings = fiftyLanToppings;
 
-        document.getElementById('btn-store-50lan').className = "px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-blue-600 text-white shadow-xs transition flex items-center gap-1.5";
-        document.getElementById('btn-store-gandan').className = "px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
-        document.getElementById('store-banner').className = "bg-gradient-to-r from-blue-700 to-amber-500 rounded-2xl p-4 sm:p-5 text-white shadow-xs transition-colors";
-        document.getElementById('store-banner-title').innerHTML = "<span>🧋</span> 50嵐 好茶陪伴你的日常";
-        document.getElementById('store-banner-sub').innerText = "選好規格、甜度、冰塊送出，即時同步至【50嵐】分頁";
-        document.getElementById('store-badge').innerText = "#50嵐分頁";
+        btn50.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-blue-600 text-white shadow-xs transition flex items-center gap-1.5";
+        banner.className = "bg-gradient-to-r from-blue-700 to-amber-500 rounded-2xl p-4 sm:p-5 text-white shadow-xs transition-colors";
+        bannerTitle.innerHTML = "<span>🧋</span> 50嵐 好茶陪伴你的日常";
+        bannerSub.innerText = "選好規格、甜度、冰塊送出，即時同步至【50嵐】分頁";
+        badge.innerText = "#50嵐分頁";
+      } else {
+        products = rawPresoteaMenu.map((item, idx) => ({ id: 'pr_' + idx, ...item, basePrice: item.l || item.xl }));
+        orderedCategories = presoteaCategories;
+        currentToppings = presoteaToppings;
+
+        btnPr.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-teal-700 text-white shadow-xs transition flex items-center gap-1.5";
+        banner.className = "bg-gradient-to-r from-teal-800 to-emerald-600 rounded-2xl p-4 sm:p-5 text-white shadow-xs transition-colors";
+        bannerTitle.innerHTML = "<span>🍃</span> 鮮茶道 PRESOTEA";
+        bannerSub.innerText = "現點現萃・新鮮好茶，即時同步至【鮮茶道】分頁";
+        badge.innerText = "#鮮茶道分頁";
       }
 
       selectedCategory = '全部';
@@ -555,7 +651,9 @@
 
     function renderCategoryTabs() {
       const container = document.getElementById('category-tabs');
-      const activeColorClass = currentStore === '50嵐' ? 'bg-blue-600 text-white shadow-xs' : 'bg-[#1b4332] text-white shadow-xs';
+      let activeColorClass = 'bg-[#1b4332] text-white shadow-xs';
+      if (currentStore === '50嵐') activeColorClass = 'bg-blue-600 text-white shadow-xs';
+      if (currentStore === '鮮茶道') activeColorClass = 'bg-teal-700 text-white shadow-xs';
       
       container.innerHTML = orderedCategories.map(cat => `
         <button onclick="selectCategory('${cat}')" class="px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition flex-shrink-0 ${selectedCategory === cat ? activeColorClass : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'}">
@@ -573,7 +671,10 @@
     function renderProductGrid() {
       const grid = document.getElementById('product-grid');
       const filtered = selectedCategory === '全部' ? products : products.filter(p => p.cat === selectedCategory);
-      const btnBgClass = currentStore === '50嵐' ? 'bg-blue-600 active:bg-blue-800' : 'bg-[#1b4332] active:bg-[#081c15]';
+      
+      let btnBgClass = 'bg-[#1b4332] active:bg-[#081c15]';
+      if (currentStore === '50嵐') btnBgClass = 'bg-blue-600 active:bg-blue-800';
+      if (currentStore === '鮮茶道') btnBgClass = 'bg-teal-700 active:bg-teal-900';
 
       grid.innerHTML = filtered.map(p => {
         let priceTag = '';
@@ -632,6 +733,10 @@
       if (currentStore === '50嵐') {
         if (currentModalProduct.m) sizeChoices.push({ name: '中杯 (M 500cc)', price: currentModalProduct.m });
         if (currentModalProduct.l) sizeChoices.push({ name: '大杯 (L 700cc)', price: currentModalProduct.l });
+      } else if (currentStore === '鮮茶道') {
+        if (currentModalProduct.l) sizeChoices.push({ name: '大杯 (L 700cc)', price: currentModalProduct.l });
+        if (currentModalProduct.xl) sizeChoices.push({ name: '瓶裝 (瓶)', price: currentModalProduct.xl });
+        if (currentModalProduct.m) sizeChoices.push({ name: '中杯 (M)', price: currentModalProduct.m });
       } else {
         if (currentModalProduct.m) sizeChoices.push({ name: '中杯 (M 480cc)', price: currentModalProduct.m });
         if (currentModalProduct.l) sizeChoices.push({ name: '大杯 (L 700cc)', price: currentModalProduct.l });
@@ -654,12 +759,19 @@
     function renderModalOptions() {
       const container = document.getElementById('modal-options-body');
       const p = currentModalProduct;
-      const themeColor = currentStore === '50嵐' ? 'bg-blue-600 border-blue-600' : 'bg-[#1b4332] border-[#1b4332]';
+      
+      let themeColor = 'bg-[#1b4332] border-[#1b4332]';
+      if (currentStore === '50嵐') themeColor = 'bg-blue-600 border-blue-600';
+      if (currentStore === '鮮茶道') themeColor = 'bg-teal-700 border-teal-700';
 
       let sizeChoices = [];
       if (currentStore === '50嵐') {
         if (p.m) sizeChoices.push({ name: '中杯 (M 500cc)', price: p.m });
         if (p.l) sizeChoices.push({ name: '大杯 (L 700cc)', price: p.l });
+      } else if (currentStore === '鮮茶道') {
+        if (p.l) sizeChoices.push({ name: '大杯 (L 700cc)', price: p.l });
+        if (p.xl) sizeChoices.push({ name: '瓶裝 (瓶)', price: p.xl });
+        if (p.m) sizeChoices.push({ name: '中杯 (M)', price: p.m });
       } else {
         if (p.m) sizeChoices.push({ name: '中杯 (M 480cc)', price: p.m });
         if (p.l) sizeChoices.push({ name: '大杯 (L 700cc)', price: p.l });
@@ -746,7 +858,7 @@
         </div>
       `;
 
-      // 4. 重乳升級 (甘丹特有，選填)
+      // 4. 重乳升級 (甘丹特有)
       if (p.heavyMilkOption) {
         const isHeavy = !!currentModalSelections.heavyMilk;
         html += `
@@ -764,7 +876,7 @@
       }
 
       // 5. 加料專區 (選填)
-      const isXL = currentModalSelections.size && currentModalSelections.size.name.includes('XL');
+      const isXL = currentModalSelections.size && (currentModalSelections.size.name.includes('XL') || currentModalSelections.size.name.includes('瓶'));
       if (!isXL) {
         html += `
           <div class="space-y-2">
@@ -789,7 +901,7 @@
           </div>
         `;
       } else {
-        html += `<p class="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-xl">⚠️ 菜單規定：生活瓶 (XL) 不提供加料服務。</p>`;
+        html += `<p class="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-xl">⚠️ 菜單規定：瓶裝規格不提供加料服務。</p>`;
       }
 
       container.innerHTML = html;
@@ -797,7 +909,7 @@
 
     function selectModalSize(name, price) {
       currentModalSelections.size = { name, price };
-      if (name.includes('XL')) currentModalSelections.toppings = [];
+      if (name.includes('XL') || name.includes('瓶')) currentModalSelections.toppings = [];
       renderModalOptions();
       updateModalPrice();
     }
@@ -846,7 +958,7 @@
 
     function confirmAddToCart() {
       if (!currentModalSelections.size) {
-        alert('⚠️ 請選擇【容量規格】（中杯 / 大杯）！');
+        alert('⚠️ 請選擇【容量規格】！');
         return;
       }
       if (!currentModalSelections.sweetness) {
@@ -1007,7 +1119,7 @@
         return;
       }
       
-      const confirmClear = confirm(`⚠️ 確定要清除【${currentStore}】的所有訂單嗎？\n\n此動作只會清空試算表中【${currentStore}】分頁的紀錄，另一家店的資料不會受到影響！`);
+      const confirmClear = confirm(`⚠️ 確定要清除【${currentStore}】的所有訂單嗎？\n\n此動作只會清空試算表中【${currentStore}】分頁的紀錄，其他店家的資料不會受到影響！`);
       if (!confirmClear) return;
 
       try {
@@ -1022,9 +1134,9 @@
         orders = [];
         renderAdminStats();
         renderAdminOrders();
-      } catch (err) {{
+      } catch (err) {
         alert('清除失敗，請重試！');
-      }}
+      }
     }
 
     function renderAdminStats() {
