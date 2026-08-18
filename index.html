@@ -178,7 +178,7 @@
         </div>
       </div>
 
-      <!-- 操作按鈕列 (已追加「清除所有訂單」按鈕) -->
+      <!-- 操作按鈕列 -->
       <div class="flex flex-wrap gap-2 justify-end">
         <button onclick="fetchCloudOrders()" class="flex-1 sm:flex-none px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
           <i class="fa-solid fa-rotate"></i> 重新整理
@@ -313,53 +313,53 @@
     ];
 
     const rawGandanMenu = [
-      // 樂活純茶系列
+      // 1. 樂活純茶系列 (大L / 生活瓶XL)
       { cat: '樂活純茶系列', name: '不知四季春', l: 35, xl: 50, fixedSweet: false, icon: '🍵' },
       { cat: '樂活純茶系列', name: '黃金輕烏龍', l: 35, xl: 50, fixedSweet: false, icon: '🍵' },
       { cat: '樂活純茶系列', name: '嫩葉蜜香紅', l: 35, xl: 50, fixedSweet: false, icon: '🍵' },
-      { cat: '樂活純茶系列', name: '小山紅茶', l: 35, xl: 50, fixedSweet: false, icon: '🍵' },
+      { cat: '樂活純茶系列', name: '小山紅茶', l: 35, xl: 50, fixedSweet: true, icon: '🍵' },
       { cat: '樂活純茶系列', name: '茉莉綠茶', l: 35, xl: 50, fixedSweet: false, icon: '🍵' },
       { cat: '樂活純茶系列', name: '焙煎金黃麥茶', l: 35, xl: 50, fixedSweet: false, icon: '🌾' },
       { cat: '樂活純茶系列', name: '私藏東方美人茶', l: 55, xl: 75, fixedSweet: false, icon: '🍵' },
-      { cat: '樂活純茶系列', name: '輕檸檬水', l: 35, xl: 50, fixedSweet: false, icon: '🍋' },
-      { cat: '樂活純茶系列', name: '黑金仙草茶', l: 35, xl: 50, fixedSweet: false, icon: '🌿' },
-      { cat: '熟成老冬瓜茶', l: 35, xl: 50, fixedSweet: true, icon: '🍈' },
+      { cat: '樂活純茶系列', name: '輕檸檬水', l: 35, xl: 50, fixedSweet: true, icon: '🍋' },
+      { cat: '樂活純茶系列', name: '黑金仙草茶', l: 35, xl: 50, fixedSweet: true, icon: '🌿' },
+      { cat: '樂活純茶系列', name: '熟成老冬瓜茶', l: 35, xl: 50, fixedSweet: false, icon: '🍈' },
 
-      // 自然經典系列
-      { cat: '自然經典系列', name: '鴉片檸檬', l: 60, xl: 80, fixedSweet: false, icon: '🍋' },
-      { cat: '自然經典系列', name: '鴉片檸檬PLUS', l: 75, xl: null, fixedSweet: false, icon: '🍋' },
-      { cat: '自然經典系列', name: '明列子鴉片檸檬', l: 70, xl: null, fixedSweet: false, icon: '🍋' },
-      { cat: '自然經典系列', name: '鴉片紅茶', l: 60, xl: null, fixedSweet: false, icon: '🍹' },
+      // 2. 自然經典系列 (大L / 生活瓶XL)
+      { cat: '自然經典系列', name: '鴉片檸檬', l: 60, xl: 80, fixedSweet: true, icon: '🍋' },
+      { cat: '自然經典系列', name: '鴉片檸檬PLUS', l: 75, xl: null, fixedSweet: true, icon: '🍋' },
+      { cat: '自然經典系列', name: '明列子鴉片檸檬', l: 70, xl: null, fixedSweet: true, icon: '🍋' },
+      { cat: '自然經典系列', name: '鴉片紅茶', l: 60, xl: null, fixedSweet: true, icon: '🍹' },
       { cat: '自然經典系列', name: '老欉柳丁綠茶', l: 65, xl: null, fixedSweet: false, note: '11-3月限定', icon: '🍊' },
       { cat: '自然經典系列', name: '手工鳳梨青茶', l: 55, xl: null, fixedSweet: false, icon: '🍍' },
       { cat: '自然經典系列', name: '手工鳳梨冰茶', l: 50, xl: null, fixedSweet: false, icon: '🍍' },
       { cat: '自然經典系列', name: '天然手工水果茶', l: 65, xl: null, fixedSweet: false, icon: '🍎' },
       { cat: '自然經典系列', name: '白玉甘蔗檸檬', l: 75, xl: null, fixedSweet: false, icon: '🎋' },
       { cat: '自然經典系列', name: '白玉甘蔗青', l: 65, xl: null, fixedSweet: false, icon: '🎋' },
-      { cat: '芭樂檸檬綠茶', l: 65, xl: null, fixedSweet: false, icon: '🍈' },
+      { cat: '自然經典系列', name: '芭樂檸檬綠茶', l: 65, xl: null, fixedSweet: false, icon: '🍈' },
       { cat: '自然經典系列', name: '芭樂香檸多多', l: 70, xl: null, fixedSweet: false, icon: '🍈' },
       { cat: '自然經典系列', name: '燕巢芭樂梅', l: 70, xl: null, fixedSweet: false, icon: '🍈' },
       { cat: '自然經典系列', name: '檸檬紅玉', l: 55, xl: null, fixedSweet: false, icon: '🍋' },
       { cat: '自然經典系列', name: '翡翠檸檬綠', l: 55, xl: null, fixedSweet: false, icon: '🍋' },
 
-      // 甘丹特調系列
-      { cat: '甘丹特調系列', name: '洛梅仙女飲', l: 50, xl: null, fixedSweet: false, icon: '🌺' },
-      { cat: '甘丹特調系列', name: '風潮檸檬氣泡飲', l: 70, xl: null, fixedSweet: false, icon: '🫧' },
-      { cat: '甘丹特調系列', name: '鴉片檸檬氣泡飲', l: 70, xl: null, fixedSweet: false, icon: '🫧' },
-      { cat: '甘丹特調系列', name: '夏日水果氣泡飲', l: 70, xl: null, fixedSweet: false, icon: '🫧' },
-      { cat: '甘丹特調系列', name: '甘蔗香檸氣泡飲', l: 70, xl: null, fixedSweet: false, icon: '🫧' },
-      { cat: '甘丹特調系列', name: '草莓香檸氣泡飲', l: 65, xl: null, fixedSweet: false, icon: '🍓' },
-      { cat: '熟成冬梅氣泡飲', l: 60, xl: null, fixedSweet: true, icon: '🫧' },
-      { cat: '甘丹特調系列', name: '輕檸檬氣泡飲', l: 50, xl: null, fixedSweet: false, icon: '🍋' },
-      { cat: '甘丹特調系列', name: '老冬瓜檸檬', l: 45, xl: null, fixedSweet: true, icon: '🍈' },
-      { cat: '甘丹特調系列', name: '老冬瓜青茶', l: 35, xl: null, fixedSweet: true, icon: '🍈' },
-      { cat: '甘丹特調系列', name: '老冬瓜麥茶', l: 35, xl: null, fixedSweet: true, icon: '🍈' },
+      // 3. 甘丹特調系列 (大L)
+      { cat: '甘丹特調系列', name: '洛梅仙女飲', l: 50, xl: null, fixedSweet: true, icon: '🌺' },
+      { cat: '甘丹特調系列', name: '風潮檸檬氣泡飲', l: 70, xl: null, fixedSweet: true, icon: '🫧' },
+      { cat: '甘丹特調系列', name: '鴉片檸檬氣泡飲', l: 70, xl: null, fixedSweet: true, icon: '🫧' },
+      { cat: '甘丹特調系列', name: '夏日水果氣泡飲', l: 70, xl: null, fixedSweet: true, icon: '🫧' },
+      { cat: '甘丹特調系列', name: '甘蔗香檸氣泡飲', l: 70, xl: null, fixedSweet: true, icon: '🫧' },
+      { cat: '甘丹特調系列', name: '草莓香檸氣泡飲', l: 65, xl: null, fixedSweet: true, icon: '🍓' },
+      { cat: '甘丹特調系列', name: '熟成冬梅氣泡飲', l: 60, xl: null, fixedSweet: true, icon: '🫧' },
+      { cat: '甘丹特調系列', name: '輕檸檬氣泡飲', l: 50, xl: null, fixedSweet: true, icon: '🍋' },
+      { cat: '甘丹特調系列', name: '老冬瓜檸檬', l: 45, xl: null, fixedSweet: false, icon: '🍈' },
+      { cat: '甘丹特調系列', name: '老冬瓜青茶', l: 35, xl: null, fixedSweet: false, icon: '🍈' },
+      { cat: '甘丹特調系列', name: '老冬瓜麥茶', l: 35, xl: null, fixedSweet: false, icon: '🍈' },
       { cat: '甘丹特調系列', name: '埔里百香綠', l: 55, xl: null, fixedSweet: false, icon: '🧃' },
       { cat: '甘丹特調系列', name: '百香多多', l: 60, xl: null, fixedSweet: false, icon: '🧃' },
       { cat: '甘丹特調系列', name: '脆梅綠茶', l: 55, xl: null, fixedSweet: false, icon: '🫐' },
       { cat: '甘丹特調系列', name: '養樂多綠茶', l: 55, xl: null, fixedSweet: false, icon: '🥛' },
 
-      // 濃醇鮮奶系列
+      // 4. 濃醇鮮奶系列 (大L)
       { cat: '濃醇鮮奶系列', name: '甘丹鮮奶紅茶', l: 60, xl: null, fixedSweet: false, heavyMilkOption: true, icon: '🥛' },
       { cat: '濃醇鮮奶系列', name: '小山鮮奶紅茶', l: 60, xl: null, fixedSweet: false, heavyMilkOption: true, icon: '🥛' },
       { cat: '濃醇鮮奶系列', name: '穀香大麥拿鐵', l: 60, xl: null, fixedSweet: false, heavyMilkOption: true, icon: '🌾' },
@@ -367,14 +367,14 @@
       { cat: '濃醇鮮奶系列', name: '鮮奶烏龍/綠/青', l: 60, xl: null, fixedSweet: false, heavyMilkOption: true, icon: '🥛' },
       { cat: '濃醇鮮奶系列', name: '琥珀凍鮮奶紅茶', l: 70, xl: null, fixedSweet: false, heavyMilkOption: true, icon: '🧋' },
       { cat: '濃醇鮮奶系列', name: '嫩仙草鮮奶烏龍', l: 70, xl: null, fixedSweet: false, heavyMilkOption: true, icon: '🌿' },
-      { cat: '濃醇鮮奶系列', name: '榛果紅茶拿鐵', l: 65, xl: null, fixedSweet: false, icon: '🌰' },
-      { cat: '濃醇鮮奶系列', name: '鮮奶老冬瓜', l: 65, xl: null, fixedSweet: true, icon: '🍈' },
-      { cat: '濃醇鮮奶系列', name: '手炒黑糖鮮奶', l: 75, xl: null, fixedSweet: true, icon: '🍯' },
-      { cat: '濃醇鮮奶系列', name: '珍珠黑糖鮮奶', l: 80, xl: null, fixedSweet: true, icon: '🧋' },
-      { cat: '濃醇鮮奶系列', name: '鮮奶嫩仙草', l: 80, xl: null, fixedSweet: true, icon: '🌿' },
-      { cat: '濃醇鮮奶系列', name: '鮮奶阿華田', l: 70, xl: null, fixedSweet: false, icon: '🍫' },
+      { cat: '濃醇鮮奶系列', name: '榛果紅茶拿鐵', l: 65, xl: null, fixedSweet: false, heavyMilkOption: false, icon: '🌰' },
+      { cat: '濃醇鮮奶系列', name: '鮮奶老冬瓜', l: 65, xl: null, fixedSweet: false, heavyMilkOption: false, icon: '🍈' },
+      { cat: '濃醇鮮奶系列', name: '手炒黑糖鮮奶', l: 75, xl: null, fixedSweet: true, heavyMilkOption: false, icon: '🍯' },
+      { cat: '濃醇鮮奶系列', name: '珍珠黑糖鮮奶', l: 80, xl: null, fixedSweet: true, heavyMilkOption: false, icon: '🧋' },
+      { cat: '濃醇鮮奶系列', name: '鮮奶嫩仙草', l: 80, xl: null, fixedSweet: true, heavyMilkOption: false, icon: '🌿' },
+      { cat: '濃醇鮮奶系列', name: '鮮奶阿華田', l: 70, xl: null, fixedSweet: false, heavyMilkOption: false, icon: '🍫' },
 
-      // 醇品奶香系列
+      // 5. 醇品奶香系列 (大L)
       { cat: '醇品奶香系列', name: '珍珠奶茶', l: 55, xl: null, fixedSweet: false, icon: '🧋' },
       { cat: '醇品奶香系列', name: '嫩仙草奶茶', l: 60, xl: null, fixedSweet: false, icon: '🌿' },
       { cat: '醇品奶香系列', name: '布丁奶茶', l: 60, xl: null, fixedSweet: false, icon: '🍮' },
@@ -385,26 +385,38 @@
       { cat: '醇品奶香系列', name: '茉香奶綠', l: 50, xl: null, fixedSweet: false, icon: '🧋' },
       { cat: '醇品奶香系列', name: '阿華田', l: 55, xl: null, fixedSweet: false, icon: '🍫' },
 
-      // 海鹽雲朵奶霜
+      // 6. 海鹽雲朵奶霜 (大L)
       { cat: '海鹽雲朵奶霜', name: '雲朵紅茶奶霜', l: 50, xl: null, fixedSweet: false, icon: '☁️' },
       { cat: '海鹽雲朵奶霜', name: '雲朵四季/烏龍奶霜', l: 50, xl: null, fixedSweet: false, icon: '☁️' },
       { cat: '海鹽雲朵奶霜', name: '雲朵綠茶/麥茶奶霜', l: 50, xl: null, fixedSweet: false, icon: '☁️' },
 
-      // 自然純蜜系列
-      { cat: '自然純蜜系列', name: '鮮榨檸檬蜜', l: 65, xl: null, fixedSweet: true, icon: '🍯' },
-      { cat: '自然純蜜系列', name: '四季春茶蜜', l: 55, xl: null, fixedSweet: true, icon: '🍯' },
-      { cat: '自然純蜜系列', name: '台灣紅茶蜜', l: 55, xl: null, fixedSweet: true, icon: '🍯' },
-      { cat: '自然純蜜系列', name: '黃金烏龍蜜', l: 55, xl: null, fixedSweet: true, icon: '🍯' },
-      { cat: '自然純蜜系列', name: '茉香綠茶蜜', l: 55, xl: null, fixedSweet: true, icon: '🍯' },
-      { cat: '自然純蜜系列', name: '黑葉荔枝蜜茶', l: 50, xl: null, fixedSweet: true, icon: '🍯' },
+      // 7. 自然純蜜系列 (大L)
+      { cat: '自然純蜜系列', name: '鮮榨檸檬蜜', l: 65, xl: null, fixedSweet: false, icon: '🍯' },
+      { cat: '自然純蜜系列', name: '四季春茶蜜', l: 55, xl: null, fixedSweet: false, icon: '🍯' },
+      { cat: '自然純蜜系列', name: '台灣紅茶蜜', l: 55, xl: null, fixedSweet: false, icon: '🍯' },
+      { cat: '自然純蜜系列', name: '黃金烏龍蜜', l: 55, xl: null, fixedSweet: false, icon: '🍯' },
+      { cat: '自然純蜜系列', name: '茉香綠茶蜜', l: 55, xl: null, fixedSweet: false, icon: '🍯' },
+      { cat: '自然純蜜系列', name: '黑葉荔枝蜜茶', l: 50, xl: null, fixedSweet: false, icon: '🍯' },
 
-      // 冬季限定系列
+      // 8. 冬季限定系列 (中M / 大L)
       { cat: '冬季限定系列', name: '紫米紅豆鮮奶', m: null, l: 80, fixedSweet: true, icon: '🥣' },
       { cat: '冬季限定系列', name: '古制仙草燒', m: null, l: 40, fixedSweet: true, icon: '🌿' },
       { cat: '冬季限定系列', name: '粉角仙草燒', m: null, l: 45, fixedSweet: true, icon: '🌿' },
       { cat: '冬季限定系列', name: '綜合仙草燒', m: null, l: 50, fixedSweet: true, icon: '🌿' },
       { cat: '冬季限定系列', name: '黑糖薑母茶', m: 45, l: null, fixedSweet: true, icon: '🫖' },
       { cat: '冬季限定系列', name: '黑糖薑母奶茶', m: 55, l: null, fixedSweet: true, icon: '🫖' }
+    ];
+
+    const orderedCategories = [
+      '全部',
+      '樂活純茶系列',
+      '自然經典系列',
+      '甘丹特調系列',
+      '濃醇鮮奶系列',
+      '醇品奶香系列',
+      '海鹽雲朵奶霜',
+      '自然純蜜系列',
+      '冬季限定系列'
     ];
 
     let products = rawGandanMenu.map((item, idx) => ({
@@ -428,9 +440,8 @@
     });
 
     function renderCategoryTabs() {
-      const categories = ['全部', ...new Set(products.map(p => p.cat))];
       const container = document.getElementById('category-tabs');
-      container.innerHTML = categories.map(cat => `
+      container.innerHTML = orderedCategories.map(cat => `
         <button onclick="selectCategory('${cat}')" class="px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition flex-shrink-0 ${selectedCategory === cat ? 'bg-[#1b4332] text-white shadow-xs' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'}">
           ${cat}
         </button>
@@ -531,7 +542,7 @@
                 <span>${s.name}</span>
                 <span class="${currentModalSelections.size.name === s.name ? 'text-emerald-100' : 'text-slate-600'} font-black">$${s.price}</span>
               </button>
-            `).join('')}}
+            `).join('')}
           </div>
         </div>
       `;
@@ -550,7 +561,7 @@
                 }">
                 ${s.name}
               </button>
-            `).join('')}}
+            `).join('')}
           </div>
         </div>
       `;
@@ -567,12 +578,12 @@
                 }">
                 ${i.name}
               </button>
-            `).join('')}}
+            `).join('')}
           </div>
         </div>
       `;
 
-      // 4. 重乳升級
+      // 4. 重乳升級 (僅濃醇鮮奶系列前7款)
       if (p.heavyMilkOption) {
         const isHeavy = !!currentModalSelections.heavyMilk;
         html += `
@@ -607,7 +618,7 @@
                     <span class="${isSelected ? 'text-emerald-100' : 'text-amber-600 font-black'}">+${t.price}</span>
                   </button>
                 `;
-              }).join('')}}
+              }).join('')}
             </div>
           </div>
         `;
@@ -803,7 +814,6 @@
       }
     }
 
-    // 後台「一鍵清除雲端試算表所有訂單」
     async function clearCloudOrders() {
       if (orders.length === 0) {
         alert('目前本來就沒有任何訂單紀錄喔！');
