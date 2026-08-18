@@ -72,17 +72,23 @@
         <!-- 左側：分類標籤與商品列表 (8欄) -->
         <div class="lg:col-span-8 space-y-4">
           
-          <!-- 橫幅公告 -->
-          <div id="store-banner" class="rounded-2xl p-4 sm:p-5 text-white shadow-xs transition-colors">
-            <div class="flex justify-between items-center">
-              <div>
-                <h2 id="store-banner-title" class="text-base sm:text-lg font-bold flex items-center gap-2">
-                  <span>🌿</span> 甘丹簡單 輕茶飲
-                </h2>
-                <p id="store-banner-sub" class="text-white/80 text-xs sm:text-sm mt-1">選好規格、甜度、冰塊送出，即時同步至試算表分頁</p>
+          <!-- 橫幅公告 (排版徹底優化：標籤不換行、文字自然對齊) -->
+          <div id="store-banner" class="rounded-2xl p-3.5 sm:p-4 text-white shadow-xs transition-colors">
+            <div class="flex items-center justify-between gap-2">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2">
+                  <h2 id="store-banner-title" class="text-base sm:text-lg font-black truncate flex items-center gap-1.5">
+                    <span>🌿</span> 甘丹簡單 輕茶飲
+                  </h2>
+                </div>
+                <p id="store-banner-sub" class="text-white/85 text-xs sm:text-sm mt-0.5 truncate">
+                  即時同步至試算表【甘丹茶飲】分頁
+                </p>
               </div>
-              <div class="text-right pl-2">
-                <span id="store-badge" class="font-mono font-bold text-xs sm:text-sm bg-black/20 px-2.5 py-1 rounded-lg text-white">#甘丹茶飲分頁</span>
+              <div class="flex-shrink-0">
+                <span id="store-badge" class="font-bold text-xs bg-black/25 px-2.5 py-1 rounded-xl text-white/95 whitespace-nowrap shadow-xs inline-block">
+                  甘丹茶飲
+                </span>
               </div>
             </div>
           </div>
@@ -320,7 +326,7 @@
       { cat: '甘丹特調系列', name: '夏日水果氣泡飲', l: 70, xl: null, fixedSweet: true, icon: '🫧' },
       { cat: '甘丹特調系列', name: '甘蔗香檸氣泡飲', l: 70, xl: null, fixedSweet: true, icon: '🫧' },
       { cat: '甘丹特調系列', name: '草莓香檸氣泡飲', l: 65, xl: null, fixedSweet: true, icon: '🍓' },
-      { cat: '甘丹特調系列', name: '熟成冬梅氣泡飲', l: 60, xl: null, fixedSweet: true, icon: '🫧' },
+      { cat: '熟成冬梅氣泡飲', l: 60, xl: null, fixedSweet: true, icon: '🫧' },
       { cat: '甘丹特調系列', name: '輕檸檬氣泡飲', l: 50, xl: null, fixedSweet: true, icon: '🍋' },
       { cat: '甘丹特調系列', name: '老冬瓜檸檬', l: 45, xl: null, fixedSweet: false, icon: '🍈' },
       { cat: '甘丹特調系列', name: '老冬瓜青茶', l: 35, xl: null, fixedSweet: false, icon: '🍈' },
@@ -604,30 +610,30 @@
         currentToppings = gandanToppings;
         
         btnGd.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-[#1b4332] text-white shadow-xs transition flex items-center gap-1.5";
-        banner.className = "bg-gradient-to-r from-[#1b4332] to-[#2d6a4f] rounded-2xl p-4 sm:p-5 text-white shadow-xs transition-colors";
+        banner.className = "bg-gradient-to-r from-[#1b4332] to-[#2d6a4f] rounded-2xl p-3.5 sm:p-4 text-white shadow-xs transition-colors";
         bannerTitle.innerHTML = "<span>🌿</span> 甘丹簡單 輕茶飲";
-        bannerSub.innerText = "選好規格、甜度、冰塊送出，即時同步至【甘丹茶飲】分頁";
-        badge.innerText = "#甘丹茶飲分頁";
+        bannerSub.innerText = "即時同步至試算表【甘丹茶飲】分頁";
+        badge.innerText = "甘丹茶飲";
       } else if (storeName === '50嵐') {
         products = raw50LanMenu.map((item, idx) => ({ id: '50_' + idx, ...item, basePrice: item.m || item.l }));
         orderedCategories = fiftyLanCategories;
         currentToppings = fiftyLanToppings;
 
         btn50.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-blue-600 text-white shadow-xs transition flex items-center gap-1.5";
-        banner.className = "bg-gradient-to-r from-blue-700 to-amber-500 rounded-2xl p-4 sm:p-5 text-white shadow-xs transition-colors";
+        banner.className = "bg-gradient-to-r from-blue-700 to-amber-500 rounded-2xl p-3.5 sm:p-4 text-white shadow-xs transition-colors";
         bannerTitle.innerHTML = "<span>🧋</span> 50嵐 好茶陪伴你的日常";
-        bannerSub.innerText = "選好規格、甜度、冰塊送出，即時同步至【50嵐】分頁";
-        badge.innerText = "#50嵐分頁";
+        bannerSub.innerText = "即時同步至試算表【50嵐】分頁";
+        badge.innerText = "50嵐";
       } else {
         products = rawPresoteaMenu.map((item, idx) => ({ id: 'pr_' + idx, ...item, basePrice: item.l || item.xl }));
         orderedCategories = presoteaCategories;
         currentToppings = presoteaToppings;
 
         btnPr.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-teal-700 text-white shadow-xs transition flex items-center gap-1.5";
-        banner.className = "bg-gradient-to-r from-teal-800 to-emerald-600 rounded-2xl p-4 sm:p-5 text-white shadow-xs transition-colors";
+        banner.className = "bg-gradient-to-r from-teal-800 to-emerald-600 rounded-2xl p-3.5 sm:p-4 text-white shadow-xs transition-colors";
         bannerTitle.innerHTML = "<span>🍃</span> 鮮茶道 PRESOTEA";
-        bannerSub.innerText = "現點現萃・新鮮好茶，即時同步至【鮮茶道】分頁";
-        badge.innerText = "#鮮茶道分頁";
+        bannerSub.innerText = "現點現萃・即時同步至【鮮茶道】分頁";
+        badge.innerText = "鮮茶道";
       }
 
       selectedCategory = '全部';
@@ -1218,7 +1224,7 @@
         btn.className = "px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition shadow-xs";
         btn.innerText = "點餐開放中 🟢";
       } else {
-        badge.className = "hidden sm:inline-block text-xs px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 font-bold whitespace-nowrap";
+        badge.className = "hidden sm:inline-block text-xs px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 font-medium whitespace-nowrap";
         badge.innerText = "已截止 🔴";
         btn.className = "px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-xs";
         btn.innerText = "已截止點餐 🔴";
