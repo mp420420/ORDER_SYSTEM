@@ -2,8 +2,8 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>簡單甘丹 輕茶飲 | 課內點餐系統</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>甘丹簡單 輕茶飲 | 課內點餐系統</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Font Awesome -->
@@ -30,79 +30,80 @@
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .tap-highlight-transparent { -webkit-tap-highlight-color: transparent; }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased pb-20 lg:pb-6">
 
-  <!-- 頂部導航 -->
+  <!-- 頂部導航 (手機端自適應緊湊排版) -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-[#1b4332] flex items-center justify-center text-white shadow-md font-bold text-lg">
+    <div class="max-w-6xl mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between gap-2">
+      <div class="flex items-center space-x-2 min-w-0">
+        <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-[#1b4332] flex-shrink-0 flex items-center justify-center text-white font-bold text-sm sm:text-base">
           甘
         </div>
-        <div>
-          <h1 class="font-bold text-lg text-slate-900 tracking-tight flex items-center gap-2">
-            甘丹簡單 輕茶飲
-            <span id="room-badge" class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-medium">點餐開放中 🟢</span>
-          </h1>
-          <p class="text-xs text-slate-500">雲端同步 Google 試算表 ｜ 簡單喝好茶</p>
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5">
+            <h1 class="font-bold text-sm sm:text-base text-slate-900 truncate">甘丹簡單</h1>
+            <span id="room-badge" class="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-medium whitespace-nowrap">點餐中 🟢</span>
+          </div>
+          <p class="text-[10px] text-slate-400 truncate">雲端同步 Google 試算表</p>
         </div>
       </div>
 
       <!-- 切換模式按鈕 -->
-      <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold">
-        <button onclick="switchView('user')" id="btn-tab-user" class="px-3 py-1.5 rounded-lg bg-white shadow-sm text-emerald-900 transition flex items-center gap-1.5">
-          <i class="fa-solid fa-mug-saucer"></i> 同事點餐
+      <div class="flex items-center bg-slate-100 p-0.5 sm:p-1 rounded-xl border border-slate-200 text-xs font-semibold flex-shrink-0">
+        <button onclick="switchView('user')" id="btn-tab-user" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white shadow-xs text-emerald-900 transition flex items-center gap-1">
+          <i class="fa-solid fa-mug-saucer text-xs"></i> <span>點餐</span>
         </button>
-        <button onclick="switchView('admin')" id="btn-tab-admin" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5">
-          <i class="fa-solid fa-chart-pie"></i> 主揪後台統計
+        <button onclick="switchView('admin')" id="btn-tab-admin" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1">
+          <i class="fa-solid fa-chart-pie text-xs"></i> <span>後台</span>
         </button>
       </div>
     </div>
   </header>
 
   <!-- 主內容容器 -->
-  <main class="max-w-6xl mx-auto px-4 py-6 flex-1 w-full">
+  <main class="max-w-6xl mx-auto px-3 sm:px-4 py-3 sm:py-6 flex-1 w-full">
 
     <!-- ==================== 1. 同事點餐介面 (前台) ==================== -->
     <section id="view-user" class="block">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
 
         <!-- 左側：分類標籤與商品列表 (8欄) -->
-        <div class="lg:col-span-8 space-y-5">
+        <div class="lg:col-span-8 space-y-3 sm:space-y-4">
           
-          <!-- 橫幅公告 -->
-          <div class="bg-gradient-to-r from-[#1b4332] to-[#2d6a4f] rounded-2xl p-5 text-white shadow-md">
-            <div class="flex justify-between items-start">
+          <!-- 橫幅公告 (手機端縮減內距與文字，不占空間) -->
+          <div class="bg-gradient-to-r from-[#1b4332] to-[#2d6a4f] rounded-xl sm:rounded-2xl p-3.5 sm:p-5 text-white shadow-xs">
+            <div class="flex justify-between items-center">
               <div>
-                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-white/20 backdrop-blur-sm text-emerald-100 uppercase tracking-wider">雲端即時連線中</span>
-                <h2 class="text-xl font-bold mt-2">🌿 甘丹喝好茶・簡單過生活</h2>
-                <p class="text-emerald-100 text-xs mt-1">選好甜度、冰塊與加料，送出後會自動寫入主揪的 Google 試算表！</p>
+                <h2 class="text-sm sm:text-lg font-bold flex items-center gap-1.5">
+                  <span>🌿</span> 甘丹喝好茶・簡單點
+                </h2>
+                <p class="text-emerald-100 text-[11px] sm:text-xs mt-0.5">選好規格送出，即時同步至試算表</p>
               </div>
-              <div class="text-right">
-                <span class="text-xs text-emerald-200">菜單版本</span>
-                <p class="font-mono font-bold text-sm bg-black/20 px-2.5 py-1 rounded-lg mt-0.5">#2026-CLOUD</p>
+              <div class="text-right pl-2">
+                <span class="font-mono font-bold text-[11px] sm:text-xs bg-black/20 px-2 py-0.5 rounded text-emerald-100">#2026-CLOUD</span>
               </div>
             </div>
           </div>
 
           <!-- 分類標籤切換 -->
-          <div id="category-tabs" class="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+          <div id="category-tabs" class="flex gap-1.5 sm:gap-2 overflow-x-auto pb-1 hide-scrollbar -mx-1 px-1">
             <!-- 動態生成分類按鈕 -->
           </div>
 
-          <!-- 商品卡片網格 -->
-          <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- 商品卡片列表 (手機端橫向精緻排版，電腦端網格) -->
+          <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4">
             <!-- 動態生成商品卡片 -->
           </div>
         </div>
 
-        <!-- 右側：購物車 (4欄) -->
-        <div class="lg:col-span-4">
-          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm sticky top-24 space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 class="font-bold text-slate-800 flex items-center gap-2">
+        <!-- 右側：購物車 (電腦版顯示在右，手機版也可直接看) -->
+        <div class="lg:col-span-4 mt-2 lg:mt-0" id="cart-section">
+          <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs sticky top-20 space-y-3 sm:space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <h3 class="font-bold text-sm sm:text-base text-slate-800 flex items-center gap-2">
                 <i class="fa-solid fa-basket-shopping text-amber-600"></i> 您的點餐清單
               </h3>
               <button onclick="clearCart()" class="text-xs text-slate-400 hover:text-red-500 transition">清空</button>
@@ -110,13 +111,13 @@
 
             <!-- 同事名字輸入 -->
             <div>
-              <label class="block text-xs font-medium text-slate-600 mb-1">點餐人姓名 / 分機 <span class="text-red-500">*</span></label>
-              <input type="text" id="user-name" placeholder="例如：陳大華 (#305)" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-700">
+              <label class="block text-xs font-medium text-slate-600 mb-1">姓名 / 分機 <span class="text-red-500">*</span></label>
+              <input type="text" id="user-name" placeholder="例如：陳大華 (#305)" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-700 bg-slate-50 focus:bg-white">
             </div>
 
             <!-- 購物車項目清單 -->
-            <div id="cart-items-list" class="divide-y divide-slate-100 max-h-64 overflow-y-auto pr-1">
-              <p class="text-slate-400 text-xs text-center py-8">購物車目前是空的，快去點杯茶吧！</p>
+            <div id="cart-items-list" class="divide-y divide-slate-100 max-h-56 overflow-y-auto pr-1">
+              <p class="text-slate-400 text-xs text-center py-6">購物車目前是空的，快去點杯茶吧！</p>
             </div>
 
             <!-- 金額小計與送出按鈕 -->
@@ -125,7 +126,7 @@
                 <span>合計金額</span>
                 <span id="cart-total-price" class="text-xl font-bold text-amber-600">$0</span>
               </div>
-              <button id="btn-submit-order" onclick="submitOrder()" class="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-md shadow-amber-100 transition flex items-center justify-center gap-2">
+              <button id="btn-submit-order" onclick="submitOrder()" class="w-full py-3 bg-amber-600 hover:bg-amber-700 active:scale-98 text-white font-bold text-sm rounded-xl shadow-sm transition flex items-center justify-center gap-2">
                 <i class="fa-regular fa-paper-plane"></i> 送出點餐 (即時同步)
               </button>
             </div>
@@ -136,40 +137,40 @@
     </section>
 
     <!-- ==================== 2. 主揪管理與統計介面 (後台) ==================== -->
-    <section id="view-admin" class="hidden space-y-6">
+    <section id="view-admin" class="hidden space-y-4 sm:space-y-6">
       
       <!-- 統計數據卡片 -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4">
+        <div class="bg-white p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
-            <p class="text-xs text-slate-500 font-medium">累積總金額</p>
-            <h3 id="stat-total-amount" class="text-2xl font-black text-slate-900 mt-1">$0</h3>
+            <p class="text-[11px] sm:text-xs text-slate-500 font-medium">累積總金額</p>
+            <h3 id="stat-total-amount" class="text-lg sm:text-2xl font-black text-slate-900 mt-0.5">$0</h3>
           </div>
-          <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+          <div class="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base sm:text-xl">
             <i class="fa-solid fa-coins"></i>
           </div>
         </div>
 
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div class="bg-white p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
-            <p class="text-xs text-slate-500 font-medium">已點餐人數 / 杯數</p>
-            <h3 id="stat-total-count" class="text-2xl font-black text-slate-900 mt-1">0 人 / 0 杯</h3>
+            <p class="text-[11px] sm:text-xs text-slate-500 font-medium">點餐人數 / 杯數</p>
+            <h3 id="stat-total-count" class="text-lg sm:text-2xl font-black text-slate-900 mt-0.5">0人/0杯</h3>
           </div>
-          <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-xl">
+          <div class="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-base sm:text-xl">
             <i class="fa-solid fa-users"></i>
           </div>
         </div>
 
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div class="col-span-2 sm:col-span-1 bg-white p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
-            <p class="text-xs text-slate-500 font-medium">點餐活動狀態</p>
+            <p class="text-[11px] sm:text-xs text-slate-500 font-medium">點餐狀態</p>
             <div class="flex items-center gap-2 mt-1">
-              <button onclick="toggleRoomStatus()" id="btn-toggle-room" class="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition">
+              <button onclick="toggleRoomStatus()" id="btn-toggle-room" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition">
                 點餐開放中
               </button>
             </div>
           </div>
-          <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-xl">
+          <div class="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-base sm:text-xl">
             <i class="fa-solid fa-clock"></i>
           </div>
         </div>
@@ -177,40 +178,40 @@
 
       <!-- 操作按鈕列 -->
       <div class="flex flex-wrap gap-2 justify-end">
-        <button onclick="fetchCloudOrders()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-sm transition">
-          <i class="fa-solid fa-rotate"></i> 刷新雲端訂單
+        <button onclick="fetchCloudOrders()" class="flex-1 sm:flex-none px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
+          <i class="fa-solid fa-rotate"></i> 重新整理
         </button>
-        <button onclick="copyStoreSummary()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-sm transition">
-          <i class="fa-regular fa-copy"></i> 複製叫餐清單 (給店家/LINE)
+        <button onclick="copyStoreSummary()" class="flex-1 sm:flex-none px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
+          <i class="fa-regular fa-copy"></i> 複製叫餐清單
         </button>
-        <button onclick="exportCSV()" class="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-sm transition">
+        <button onclick="exportCSV()" class="w-full sm:w-auto px-3 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
           <i class="fa-solid fa-file-excel"></i> 匯出 Excel (CSV)
         </button>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
         <!-- 店家品項加總清單 (5欄) -->
-        <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
-          <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-            <i class="fa-solid fa-store text-emerald-700"></i> 店家總計匯總 (打電話叫餐)
+        <div class="lg:col-span-5 bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-2 sm:space-y-3">
+          <h4 class="font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-2">
+            <i class="fa-solid fa-store text-emerald-700"></i> 店家叫餐加總
           </h4>
-          <div id="aggregated-summary-list" class="divide-y divide-slate-100 text-sm">
+          <div id="aggregated-summary-list" class="divide-y divide-slate-100 text-xs sm:text-sm max-h-72 overflow-y-auto pr-1">
             <!-- 動態生成統計清單 -->
           </div>
         </div>
 
         <!-- 個人明細清單 (7欄) -->
-        <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
-          <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-            <i class="fa-solid fa-receipt text-amber-600"></i> 各員點餐與收款明細 (雲端即時)
+        <div class="lg:col-span-7 bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-2 sm:space-y-3">
+          <h4 class="font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-2">
+            <i class="fa-solid fa-receipt text-amber-600"></i> 各員點餐與收款明細
           </h4>
-          <div class="overflow-x-auto">
+          <div class="overflow-x-auto max-h-72">
             <table class="w-full text-left text-xs border-collapse">
               <thead>
                 <tr class="bg-slate-50 text-slate-500 border-b border-slate-100">
-                  <th class="p-2.5">姓名</th>
-                  <th class="p-2.5">品項與規格</th>
-                  <th class="p-2.5 text-right">應收金額</th>
+                  <th class="p-2 whitespace-nowrap">姓名</th>
+                  <th class="p-2">品項與規格</th>
+                  <th class="p-2 text-right whitespace-nowrap">金額</th>
                 </tr>
               </thead>
               <tbody id="orders-table-body" class="divide-y divide-slate-100">
@@ -225,15 +226,31 @@
 
   </main>
 
+  <!-- 手機端底部浮動購物車欄 -->
+  <div id="mobile-cart-float" class="lg:hidden fixed bottom-3 left-3 right-3 z-40 hidden">
+    <button onclick="scrollToCart()" class="w-full bg-slate-900 text-white rounded-2xl p-3 shadow-xl flex items-center justify-between active:scale-98 transition border border-slate-700">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 bg-amber-600 rounded-xl flex items-center justify-center font-bold text-xs" id="mobile-cart-count">
+          0
+        </div>
+        <span class="text-xs font-bold">查看訂單 / 填寫姓名</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="mobile-cart-price" class="text-sm font-bold text-amber-400">$0</span>
+        <i class="fa-solid fa-chevron-up text-xs text-slate-400"></i>
+      </div>
+    </button>
+  </div>
+
   <!-- ==================== 規格選擇彈跳視窗 (Modal) ==================== -->
-  <div id="modal-option" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
-    <div class="bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh] animate-scale-up">
+  <div id="modal-option" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] sm:max-h-[90vh]">
       <!-- 視窗頭部 -->
-      <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-        <div class="flex items-center space-x-3">
-          <span id="modal-item-icon" class="text-3xl">🍵</span>
+      <div class="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 flex-shrink-0">
+        <div class="flex items-center space-x-2.5">
+          <span id="modal-item-icon" class="text-2xl sm:text-3xl">🍵</span>
           <div>
-            <h3 id="modal-item-name" class="font-bold text-base text-slate-900">飲品名稱</h3>
+            <h3 id="modal-item-name" class="font-bold text-sm sm:text-base text-slate-900">飲品名稱</h3>
             <p id="modal-item-baseprice" class="text-xs text-emerald-800 font-semibold">$35 起</p>
           </div>
         </div>
@@ -241,34 +258,27 @@
       </div>
 
       <!-- 視窗選項動態內容 -->
-      <div id="modal-options-body" class="p-5 overflow-y-auto space-y-5 flex-1">
+      <div id="modal-options-body" class="p-4 sm:p-5 overflow-y-auto space-y-4 sm:space-y-5 flex-1">
         <!-- 動態渲染容量、甜度、冰塊、加料、重乳升級 -->
       </div>
 
       <!-- 視窗底部加入購物車 -->
-      <div class="p-4 border-t border-slate-100 bg-white flex items-center justify-between">
+      <div class="p-3.5 sm:p-4 border-t border-slate-100 bg-white flex items-center justify-between flex-shrink-0">
         <div>
-          <span class="text-xs text-slate-400 block">當前小計</span>
-          <span id="modal-calculated-price" class="text-xl font-bold text-amber-600">$35</span>
+          <span class="text-[10px] sm:text-xs text-slate-400 block">小計</span>
+          <span id="modal-calculated-price" class="text-lg sm:text-xl font-bold text-amber-600">$35</span>
         </div>
-        <button onclick="confirmAddToCart()" class="px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-amber-100 transition flex items-center gap-2">
-          <i class="fa-solid fa-cart-plus"></i> 加入購物車
+        <button onclick="confirmAddToCart()" class="px-5 sm:px-6 py-2.5 sm:py-3 bg-amber-600 hover:bg-amber-700 active:scale-98 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition flex items-center gap-1.5">
+          <i class="fa-solid fa-cart-plus"></i> 加入購物清單
         </button>
       </div>
     </div>
   </div>
 
-  <!-- 底部版權 -->
-  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400 mt-auto">
-    甘丹簡單 輕茶飲 ｜ 雲端同步 Google 試算表
-  </footer>
-
   <!-- ==================== 核心邏輯 Javascript ==================== -->
   <script>
-    // 雲端 Google Apps Script API 網址 (已完成綁定)
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
-    // 1. 菜單標準規格定義
     const sweetnessOptions = [
       { name: '無糖', price: 0 },
       { name: '微糖 (2分糖)', price: 0 },
@@ -296,7 +306,6 @@
       { name: '布丁一顆', price: 10 }
     ];
 
-    // 2. 100% 精準對照甘丹菜單品項與價格
     const rawGandanMenu = [
       // 樂活純茶系列
       { cat: '樂活純茶系列', name: '不知四季春', l: 35, xl: 50, fixedSweet: false, icon: '🍵' },
@@ -409,15 +418,14 @@
       renderCategoryTabs();
       renderProductGrid();
       renderCart();
-      fetchCloudOrders(); // 頁面載入時自動抓取 Google 試算表最新訂單
+      fetchCloudOrders();
     });
 
-    // 分類標籤
     function renderCategoryTabs() {
       const categories = ['全部', ...new Set(products.map(p => p.cat))];
       const container = document.getElementById('category-tabs');
       container.innerHTML = categories.map(cat => `
-        <button onclick="selectCategory('${cat}')" class="px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition ${selectedCategory === cat ? 'bg-[#1b4332] text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'}">
+        <button onclick="selectCategory('${cat}')" class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition ${selectedCategory === cat ? 'bg-[#1b4332] text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'}">
           ${cat}
         </button>
       `).join('');
@@ -436,37 +444,38 @@
       grid.innerHTML = filtered.map(p => {
         let priceTag = '';
         if (p.l && p.xl) {
-          priceTag = `大杯 $${p.l} / 瓶裝 $${p.xl}`;
+          priceTag = `$${p.l} / 瓶$${p.xl}`;
         } else if (p.m) {
-          priceTag = `中杯 $${p.m}`;
+          priceTag = `$${p.m}`;
         } else {
-          priceTag = `大杯 $${p.l}`;
+          priceTag = `$${p.l}`;
         }
 
         return `
-          <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition flex flex-col justify-between">
-            <div>
-              <div class="w-full h-20 bg-emerald-50/50 rounded-xl flex items-center justify-center text-3xl mb-2.5">
+          <div class="bg-white rounded-xl border border-slate-200/90 p-3 shadow-xs hover:border-emerald-600 transition flex items-center justify-between gap-2.5">
+            <div class="flex items-center space-x-3 min-w-0">
+              <div class="w-11 h-11 bg-emerald-50/70 rounded-xl flex-shrink-0 flex items-center justify-center text-xl">
                 ${p.icon}
               </div>
-              <div class="flex justify-between items-start">
-                <h3 class="font-bold text-slate-900 text-sm">${p.name}</h3>
-                <span class="font-bold text-emerald-800 text-xs">${priceTag}</span>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <h3 class="font-bold text-slate-900 text-xs sm:text-sm truncate">${p.name}</h3>
+                  <span class="font-bold text-emerald-800 text-xs">${priceTag}</span>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-0.5 truncate">
+                  ${p.fixedSweet ? '🍯 固定甜度' : '可調甜冰'} ${p.note ? '・' + p.note : ''}
+                </p>
               </div>
-              <p class="text-[11px] text-slate-400 mt-1">${p.fixedSweet ? '🍯 甜度固定' : '✅ 甜度冰塊可調'} ${p.note ? '・' + p.note : ''}</p>
             </div>
-            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
-              <span class="text-[10px] bg-emerald-50 text-emerald-800 font-semibold px-2 py-0.5 rounded">${p.cat}</span>
-              <button onclick="openOptionModal('${p.id}')" class="px-3 py-1.5 bg-[#1b4332] hover:bg-[#2d6a4f] text-white rounded-lg text-xs font-bold transition flex items-center gap-1">
-                + 選規格
-              </button>
-            </div>
+            
+            <button onclick="openOptionModal('${p.id}')" class="flex-shrink-0 px-3 py-1.5 bg-[#1b4332] active:bg-[#081c15] text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-xs">
+              <span>+ 選</span>
+            </button>
           </div>
         `;
       }).join('');
     }
 
-    // 規格彈窗
     function openOptionModal(productId) {
       currentModalProduct = products.find(p => p.id === productId);
       if (!currentModalProduct) return;
@@ -476,7 +485,7 @@
       document.getElementById('modal-item-baseprice').innerText = `$${currentModalProduct.basePrice} 起`;
 
       currentModalSelections = {
-        size: currentModalProduct.l ? { name: '大杯 (L 700cc)', price: currentModalProduct.l } : { name: '中杯 (M 480cc)', price: currentModalProduct.m },
+        size: currentModalProduct.l ? { name: '大杯 (L)', price: currentModalProduct.l } : { name: '中杯 (M)', price: currentModalProduct.m },
         sweetness: currentModalProduct.fixedSweet ? fixedSweetnessOptions[0] : sweetnessOptions[0],
         ice: iceOptions[0],
         heavyMilk: null,
@@ -502,51 +511,51 @@
       if (p.m) sizeChoices.push({ name: '中杯 (M 480cc)', price: p.m });
 
       let html = `
-        <div class="space-y-2">
-          <h4 class="text-xs font-bold text-slate-700">容量大小</h4>
+        <div class="space-y-1.5">
+          <h4 class="text-xs font-bold text-slate-700">容量規格</h4>
           <div class="grid grid-cols-2 gap-2">
             ${sizeChoices.map(s => `
               <button type="button" onclick="selectModalSize('${s.name}', ${s.price})" 
                 class="px-3 py-2 rounded-xl text-xs font-medium border flex items-center justify-between transition ${
-                  currentModalSelections.size.name === s.name ? 'bg-[#1b4332] text-white border-[#1b4332]' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                  currentModalSelections.size.name === s.name ? 'bg-[#1b4332] text-white border-[#1b4332]' : 'bg-white text-slate-700 border-slate-200'
                 }">
                 <span>${s.name}</span>
                 <span class="${currentModalSelections.size.name === s.name ? 'text-emerald-100' : 'text-slate-500 font-bold'}">$${s.price}</span>
               </button>
-            `).join('')}
+            `).join('')}}
           </div>
         </div>
       `;
 
       const sweetList = p.fixedSweet ? fixedSweetnessOptions : sweetnessOptions;
       html += `
-        <div class="space-y-2">
+        <div class="space-y-1.5">
           <h4 class="text-xs font-bold text-slate-700">甜度</h4>
-          <div class="grid grid-cols-3 gap-2">
+          <div class="grid grid-cols-3 gap-1.5">
             ${sweetList.map(s => `
               <button type="button" onclick="selectModalSweetness('${s.name}')" 
-                class="px-3 py-2 rounded-xl text-xs font-medium border text-center transition ${
-                  currentModalSelections.sweetness.name === s.name ? 'bg-[#1b4332] text-white border-[#1b4332]' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                class="px-2 py-2 rounded-xl text-xs font-medium border text-center transition ${
+                  currentModalSelections.sweetness.name === s.name ? 'bg-[#1b4332] text-white border-[#1b4332]' : 'bg-white text-slate-700 border-slate-200'
                 }">
                 ${s.name}
               </button>
-            `).join('')}
+            `).join('')}}
           </div>
         </div>
       `;
 
       html += `
-        <div class="space-y-2">
+        <div class="space-y-1.5">
           <h4 class="text-xs font-bold text-slate-700">冰塊</h4>
-          <div class="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+          <div class="grid grid-cols-5 gap-1">
             ${iceOptions.map(i => `
               <button type="button" onclick="selectModalIce('${i.name}')" 
-                class="px-2 py-2 rounded-xl text-xs font-medium border text-center transition ${
-                  currentModalSelections.ice.name === i.name ? 'bg-[#1b4332] text-white border-[#1b4332]' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                class="px-1 py-2 rounded-xl text-xs font-medium border text-center transition ${
+                  currentModalSelections.ice.name === i.name ? 'bg-[#1b4332] text-white border-[#1b4332]' : 'bg-white text-slate-700 border-slate-200'
                 }">
                 ${i.name}
               </button>
-            `).join('')}
+            `).join('')}}
           </div>
         </div>
       `;
@@ -554,11 +563,11 @@
       if (p.heavyMilkOption) {
         const isHeavy = !!currentModalSelections.heavyMilk;
         html += `
-          <div class="space-y-2">
+          <div class="space-y-1.5">
             <h4 class="text-xs font-bold text-slate-700">奶香加倍</h4>
             <button type="button" onclick="toggleModalHeavyMilk()" 
               class="w-full px-3 py-2 rounded-xl text-xs font-medium border flex items-center justify-between transition ${
-                isHeavy ? 'bg-amber-600 text-white border-amber-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                isHeavy ? 'bg-amber-600 text-white border-amber-600' : 'bg-white text-slate-700 border-slate-200'
               }">
               <span>升級重乳 (+5元)</span>
               <span class="${isHeavy ? 'text-amber-100' : 'text-amber-600 font-bold'}">+5</span>
@@ -570,26 +579,26 @@
       const isXL = currentModalSelections.size.name.includes('XL');
       if (!isXL) {
         html += `
-          <div class="space-y-2">
+          <div class="space-y-1.5">
             <h4 class="text-xs font-bold text-slate-700">加料專區 (可複選)</h4>
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
               ${toppingOptions.map(t => {
                 const isSelected = currentModalSelections.toppings.some(item => item.name === t.name);
                 return `
                   <button type="button" onclick="toggleModalTopping('${t.name}', ${t.price})" 
-                    class="px-3 py-2 rounded-xl text-xs font-medium border flex items-center justify-between transition ${
-                      isSelected ? 'bg-[#1b4332] text-white border-[#1b4332]' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                    class="px-2.5 py-2 rounded-xl text-xs font-medium border flex items-center justify-between transition ${
+                      isSelected ? 'bg-[#1b4332] text-white border-[#1b4332]' : 'bg-white text-slate-700 border-slate-200'
                     }">
                     <span>${t.name}</span>
                     <span class="${isSelected ? 'text-emerald-100' : 'text-amber-600 font-bold'}">+${t.price}</span>
                   </button>
                 `;
-              }).join('')}
+              }).join('')}}
             </div>
           </div>
         `;
       } else {
-        html += `<p class="text-[11px] text-slate-400 bg-slate-50 p-2.5 rounded-xl">⚠️ 菜單規定：生活瓶 (XL) 不提供加料服務。</p>`;
+        html += `<p class="text-[11px] text-slate-400 bg-slate-50 p-2 rounded-lg">⚠️ 菜單規定：生活瓶 (XL) 不提供加料服務。</p>`;
       }
 
       container.innerHTML = html;
@@ -665,10 +674,14 @@
     function renderCart() {
       const container = document.getElementById('cart-items-list');
       const totalDisplay = document.getElementById('cart-total-price');
+      const floatBar = document.getElementById('mobile-cart-float');
+      const mobileCount = document.getElementById('mobile-cart-count');
+      const mobilePrice = document.getElementById('mobile-cart-price');
 
       if (cart.length === 0) {
-        container.innerHTML = `<p class="text-slate-400 text-xs text-center py-8">購物車目前是空的，快去點杯茶吧！</p>`;
+        container.innerHTML = `<p class="text-slate-400 text-xs text-center py-6">購物車目前是空的，快去點杯茶吧！</p>`;
         totalDisplay.innerText = '$0';
+        floatBar.classList.add('hidden');
         return;
       }
 
@@ -676,20 +689,24 @@
       container.innerHTML = cart.map((item, index) => {
         total += item.price;
         return `
-          <div class="py-2.5 flex justify-between items-start">
-            <div class="space-y-0.5">
-              <h4 class="text-xs font-bold text-slate-800">${item.name}</h4>
-              <p class="text-[11px] text-slate-500">${item.specs}</p>
+          <div class="py-2 flex justify-between items-start">
+            <div class="space-y-0.5 min-w-0 pr-2">
+              <h4 class="text-xs font-bold text-slate-800 truncate">${item.name}</h4>
+              <p class="text-[10px] text-slate-500">${item.specs}</p>
             </div>
-            <div class="text-right flex items-center space-x-2">
+            <div class="text-right flex items-center space-x-2 flex-shrink-0">
               <span class="text-xs font-bold text-slate-900">$${item.price}</span>
-              <button onclick="removeCartItem(${index})" class="text-slate-300 hover:text-red-500 text-xs">✕</button>
+              <button onclick="removeCartItem(${index})" class="text-slate-300 hover:text-red-500 text-xs p-1">✕</button>
             </div>
           </div>
         `;
       }).join('');
 
       totalDisplay.innerText = `$${total}`;
+      
+      mobileCount.innerText = cart.length;
+      mobilePrice.innerText = `$${total}`;
+      floatBar.classList.remove('hidden');
     }
 
     function removeCartItem(index) {
@@ -702,7 +719,12 @@
       renderCart();
     }
 
-    // 送出訂單至 Google Apps Script (同步寫入試算表)
+    function scrollToCart() {
+      const cartEl = document.getElementById('cart-section');
+      cartEl.scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('user-name').focus();
+    }
+
     async function submitOrder() {
       if (!isRoomOpen) {
         alert('抱歉，今日點餐已經截止！');
@@ -721,7 +743,7 @@
 
       const btn = document.getElementById('btn-submit-order');
       btn.disabled = true;
-      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 正在同步至 Google 試算表...`;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 正在同步至試算表...`;
 
       const now = new Date();
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -744,18 +766,17 @@
           body: JSON.stringify(payload)
         });
 
-        alert(`🎉 點餐成功！已為 ${userName} 送出 ${cart.length} 杯飲料，資料已成功寫入 Google 試算表！`);
+        alert(`🎉 點餐成功！已為 ${userName} 送出 ${cart.length} 杯飲料！`);
         clearCart();
         fetchCloudOrders();
       } catch (err) {
-        alert('連線發生錯誤，請重試或聯繫主揪！');
+        alert('連線發生錯誤，請重試！');
       } finally {
         btn.disabled = false;
         btn.innerHTML = `<i class="fa-regular fa-paper-plane"></i> 送出點餐 (即時同步)`;
       }
     }
 
-    // 從 Google Apps Script 抓取所有人的訂單
     async function fetchCloudOrders() {
       try {
         const res = await fetch(GAS_API_URL);
@@ -772,7 +793,7 @@
       const totalAmount = orders.reduce((sum, o) => sum + Number(o.price || 0), 0);
       const uniqueUsers = new Set(orders.map(o => o.user)).size;
       document.getElementById('stat-total-amount').innerText = `$${totalAmount}`;
-      document.getElementById('stat-total-count').innerText = `${uniqueUsers} 人 / ${orders.length} 杯`;
+      document.getElementById('stat-total-count').innerText = `${uniqueUsers}人 / ${orders.length}杯`;
     }
 
     function renderAdminOrders() {
@@ -788,9 +809,9 @@
         aggregatedContainer.innerHTML = `<p class="text-slate-400 text-xs py-4 text-center">尚無任何訂單紀錄</p>`;
       } else {
         aggregatedContainer.innerHTML = Object.entries(itemMap).map(([spec, count]) => `
-          <div class="py-2 flex justify-between items-center">
-            <span class="text-slate-700 font-medium">${spec}</span>
-            <span class="font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md">x ${count}</span>
+          <div class="py-1.5 flex justify-between items-center text-xs">
+            <span class="text-slate-700 pr-2">${spec}</span>
+            <span class="font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded">x ${count}</span>
           </div>
         `).join('');
       }
@@ -800,10 +821,10 @@
         tableBody.innerHTML = `<tr><td colspan="3" class="text-center py-6 text-slate-400">目前試算表中尚無訂單</td></tr>`;
       } else {
         tableBody.innerHTML = orders.map(o => `
-          <tr class="hover:bg-slate-50 transition">
-            <td class="p-2.5 font-bold text-slate-900">${o.user} <span class="text-[10px] font-normal text-slate-400">(${o.time})</span></td>
-            <td class="p-2.5 text-slate-600">${o.item} <span class="text-slate-400">(${o.specs})</span></td>
-            <td class="p-2.5 text-right font-bold text-amber-600">$${o.price}</td>
+          <tr class="hover:bg-slate-50 transition text-xs">
+            <td class="p-2 font-bold text-slate-900 whitespace-nowrap">${o.user} <span class="text-[9px] font-normal text-slate-400 block">${o.time}</span></td>
+            <td class="p-2 text-slate-600">${o.item} <span class="text-slate-400 text-[10px] block">${o.specs}</span></td>
+            <td class="p-2 text-right font-bold text-amber-600 whitespace-nowrap">$${o.price}</td>
           </tr>
         `).join('');
       }
@@ -822,7 +843,7 @@
       });
 
       navigator.clipboard.writeText(text).then(() => {
-        alert('✅ 已複製叫餐清單至剪貼簿！可直接貼至 LINE 給店家叫餐。');
+        alert('✅ 已複製叫餐清單至剪貼簿！');
       });
     }
 
@@ -848,14 +869,14 @@
       const btn = document.getElementById('btn-toggle-room');
 
       if (isRoomOpen) {
-        badge.className = "text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-medium";
-        badge.innerText = "點餐開放中 🟢";
-        btn.className = "px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition";
+        badge.className = "text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-medium whitespace-nowrap";
+        badge.innerText = "點餐中 🟢";
+        btn.className = "px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition";
         btn.innerText = "點餐開放中";
       } else {
-        badge.className = "text-xs px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 font-medium";
-        badge.innerText = "已截止點餐 🔴";
-        btn.className = "px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition";
+        badge.className = "text-[10px] px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 font-medium whitespace-nowrap";
+        badge.innerText = "已截止 🔴";
+        btn.className = "px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition";
         btn.innerText = "已截止點餐";
       }
     }
@@ -869,13 +890,13 @@
       if (view === 'user') {
         userView.classList.remove('hidden');
         adminView.classList.add('hidden');
-        btnUser.className = "px-3 py-1.5 rounded-lg bg-white shadow-sm text-emerald-900 transition flex items-center gap-1.5";
-        btnAdmin.className = "px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
+        btnUser.className = "px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white shadow-xs text-emerald-900 transition flex items-center gap-1";
+        btnAdmin.className = "px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1";
       } else {
         userView.classList.add('hidden');
         adminView.classList.remove('hidden');
-        btnAdmin.className = "px-3 py-1.5 rounded-lg bg-white shadow-sm text-emerald-900 transition flex items-center gap-1.5";
-        btnUser.className = "px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
+        btnAdmin.className = "px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white shadow-xs text-emerald-900 transition flex items-center gap-1";
+        btnUser.className = "px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-1";
         fetchCloudOrders();
       }
     }
