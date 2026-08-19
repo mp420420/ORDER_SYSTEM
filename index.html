@@ -1287,21 +1287,18 @@
       return map;
     }
 
-    // 【發放模式】依點餐人分組，每一單獨立一筆不合併，依第一次出現的順序排列
-    function buildUserGroups() {
-      const groups = [];
-      const index = {};
+    // 【發放模式】每一單獨立一筆不合併，只是把同一個人的排在一起方便發放
+    function buildOrderLines() {
+      const order = [];
+      const bucket = {};
       orders.forEach(o => {
         const who = String(o.user == null ? '' : o.user).trim() || '(未填姓名)';
-        if (index[who] === undefined) {
-          index[who] = groups.length;
-          groups.push({ user: who, items: [], total: 0 });
-        }
-        const g = groups[index[who]];
-        g.items.push(o);
-        g.total += Number(o.price || 0);
+        if (!bucket[who]) { bucket[who] = []; order.push(who); }
+        bucket[who].push({ user: who, item: o.item, specs: o.specs, price: o.price });
       });
-      return groups;
+      const lines = [];
+      order.forEach(who => bucket[who].forEach(x => lines.push(x)));
+      return lines;
     }
 
     function renderNamesToggle() {
@@ -1338,25 +1335,13 @@
       if (orders.length === 0) {
         aggregatedContainer.innerHTML = `<p class="text-slate-400 text-xs py-4 text-center">【${currentStore}】目前尚無訂單紀錄</p>`;
       } else if (showOrderNames) {
-        // ===== 發放模式：依人分組，每一單獨立一行 =====
-        aggregatedContainer.innerHTML = buildUserGroups().map(g => `
-          <div class="py-3">
-            <div class="flex justify-between items-center gap-2 mb-1.5">
-              <span class="font-black text-slate-900 text-sm truncate">
-                <i class="fa-solid fa-user text-indigo-600 mr-1.5"></i>${esc(g.user)}
-              </span>
-              <span class="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg flex-shrink-0 whitespace-nowrap">
-                ${g.items.length}杯 $${g.total}
-              </span>
-            </div>
-            ${g.items.map(o => `
-              <div class="flex justify-between items-start gap-2 pl-5 py-0.5">
-                <span class="text-slate-700 text-xs sm:text-sm min-w-0">
-                  ${esc(o.item)} <span class="text-slate-400">【${esc(o.specs)}】</span>
-                </span>
-                <span class="text-xs text-slate-500 flex-shrink-0 whitespace-nowrap">$${esc(o.price)}</span>
-              </div>
-            `).join('')}
+        // ===== 發放模式：一行一單，點餐人放在最後 =====
+        aggregatedContainer.innerHTML = buildOrderLines().map(o => `
+          <div class="py-2.5 flex justify-between items-start gap-2 text-sm">
+            <span class="text-slate-700 min-w-0">
+              ${esc(o.item)} (${esc(o.specs)}) <span class="text-slate-500">$${esc(o.price)}</span>
+            </span>
+            <span class="font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg flex-shrink-0 whitespace-nowrap">${esc(o.user)}</span>
           </div>
         `).join('');
       } else {
@@ -1395,13 +1380,9 @@
       let text = `📋 【${currentStore} - ${title}】\n總杯數：${orders.length} 杯 ｜ 總金額：$${totalAmount} 元\n-------------------------\n`;
 
       if (showOrderNames) {
-        // 依人分列，每一單獨立一行，方便發飲料與收錢
-        buildUserGroups().forEach(g => {
-          text += `👤 ${g.user}（${g.items.length}杯 $${g.total}）\n`;
-          g.items.forEach(o => {
-            text += `   • ${o.item} (${o.specs}) $${o.price}\n`;
-          });
-          text += `\n`;
+        // 一行一單，最後標上是誰點的，方便發飲料
+        buildOrderLines().forEach(o => {
+          text += `• ${o.item} (${o.specs}) $${o.price}  ${o.user}\n`;
         });
       } else {
         // 合併同品項，直接唸給店家聽
