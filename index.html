@@ -1458,6 +1458,47 @@
       return map;
     }
 
+    // 規格字串是「杯型, 甜度, 冰塊, 加料…, 需求:…」這個順序組出來的，
+    // 這裡把它拆開，好照「甜度/冰塊/杯型」重新排列
+    function splitSpecs(specs) {
+      const parts = String(specs == null ? '' : specs).split(',').map(x => x.trim()).filter(Boolean);
+      return { size: parts[0] || '', sweet: parts[1] || '', ice: parts[2] || '', extras: parts.slice(3) };
+    }
+
+    // 發放清單的一行：姓名/品項(需求)/甜度/冰塊/杯型/加料/$金額
+    // 回傳 [{t: 文字, k: 種類}]，種類用來決定畫面上的顏色
+    function orderLineSegments(o) {
+      const sp = splitSpecs(o.specs);
+
+      // 把「需求:xxx」從加料裡挑出來，其餘視為加料
+      let note = '';
+      const toppings = [];
+      sp.extras.forEach(x => {
+        const m = String(x).match(/^需求[:：]\s*(.+)$/);
+        if (m) { note = m[1].trim(); } else { toppings.push(x); }
+      });
+
+      const seg = [];
+      seg.push({ t: String(o.user == null ? '' : o.user).trim() || '(未填姓名)', k: 'user' });
+      seg.push({ t: String(o.item == null ? '' : o.item).trim(), k: 'item' });
+      if (note)     seg.push({ t: '(' + note + ')', k: 'note', glue: true });  // glue=接在前一段後面，不加斜線
+      if (sp.sweet) seg.push({ t: sp.sweet, k: 'spec' });
+      if (sp.ice)   seg.push({ t: sp.ice,   k: 'spec' });
+      if (sp.size)  seg.push({ t: sp.size,  k: 'spec' });
+      toppings.forEach(x => seg.push({ t: x, k: 'spec' }));
+      seg.push({ t: '$' + (o.price == null ? 0 : o.price), k: 'price' });
+      return seg;
+    }
+
+    // 組成純文字（複製用）
+    function orderLineText(o) {
+      let out = '';
+      orderLineSegments(o).forEach((sg, i) => {
+        out += (i === 0 || sg.glue) ? sg.t : '/' + sg.t;
+      });
+      return out;
+    }
+
     // 【發放模式】每一單獨立一筆不合併，同樣依相似度排序，同款飲料會連在一起
     function buildOrderLines() {
       return orders.map(o => ({
@@ -1509,14 +1550,21 @@
         aggregatedContainer.innerHTML = `<p class="text-slate-400 text-xs py-4 text-center">【${currentStore}】目前尚無訂單紀錄</p>`;
       } else if (showOrderNames) {
         // ===== 發放模式：一行一單，點餐人放在最後 =====
+        const segClass = {
+          user:  'font-black text-indigo-700',
+          item:  'text-slate-800 font-bold',
+          note:  'text-amber-700 font-black bg-amber-50 rounded px-1',
+          spec:  'text-slate-700',
+          price: 'text-slate-900 font-bold'
+        };
         aggregatedContainer.innerHTML = buildOrderLines().map(o => `
-          <div class="py-2.5 flex justify-between items-start gap-2 text-sm">
-            <span class="text-slate-700 min-w-0">
-              ${esc(o.item)} (${esc(o.specs)}) <span class="text-slate-500">$${esc(o.price)}</span>
-            </span>
-            <span class="font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg flex-shrink-0 whitespace-nowrap">${esc(o.user)}</span>
-          </div>
-        `).join('');
+            <div class="py-2.5 text-sm leading-relaxed break-all">
+              ${orderLineSegments(o).map((sg, i) =>
+                ((i === 0 || sg.glue) ? '' : '<span class="text-slate-300">/</span>') +
+                `<span class="${segClass[sg.k] || 'text-slate-700'}">${esc(sg.t)}</span>`
+              ).join('')}
+            </div>
+          `).join('');
       } else {
         // ===== 叫餐模式：合併相同品項與規格 =====
         const itemMap = buildItemMap(true);
@@ -1553,9 +1601,9 @@
       let text = `📋 【${currentStore} - ${title}】\n總杯數：${orders.length} 杯 ｜ 總金額：$${totalAmount} 元\n-------------------------\n`;
 
       if (showOrderNames) {
-        // 一行一單，最後標上是誰點的，方便發飲料
+        // 一行一單：姓名/品項(需求)/甜度/冰塊/杯型/$金額
         buildOrderLines().forEach(o => {
-          text += `• ${o.item} (${o.specs}) $${o.price}  ${o.user}\n`;
+          text += orderLineText(o) + `\n`;
         });
       } else {
         // 合併同品項，直接唸給店家聽
