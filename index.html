@@ -137,13 +137,13 @@
       </div>
     </section>
 
-    <!-- ==================== 2. 訂單清單介面 (訂單頁面) ==================== -->
+    <!-- ==================== 2. 訂單清單介面 (訂單明細頁面) ==================== -->
     <section id="view-orders" class="hidden space-y-4 sm:space-y-6">
       
       <!-- 統計快覽與操作列 -->
       <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <span class="text-xs text-slate-500 font-bold block" id="orders-store-badge">甘丹茶飲 即時訂單</span>
+          <span class="text-xs text-slate-500 font-bold block" id="orders-store-badge">甘丹茶飲 點餐名單</span>
           <div class="flex items-baseline gap-3 mt-1">
             <span class="text-2xl font-black text-amber-600" id="orders-total-amount">$0</span>
             <span class="text-sm font-bold text-slate-700" id="orders-total-count">0人 / 0杯</span>
@@ -153,44 +153,31 @@
           <button onclick="fetchCloudOrders()" class="flex-1 sm:flex-none px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
             <i class="fa-solid fa-rotate"></i> 重新整理
           </button>
-          <button onclick="copyStoreSummary()" class="flex-1 sm:flex-none px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
-            <i class="fa-regular fa-copy"></i> 複製叫餐清單
-          </button>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
-        <!-- 店家品項加總 -->
-        <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-3">
-          <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-            <i class="fa-solid fa-store text-emerald-700"></i> 店家叫餐加總 (<span id="summary-store-name">甘丹茶飲</span>)
-          </h4>
-          <div id="aggregated-summary-list" class="divide-y divide-slate-100 text-xs sm:text-sm max-h-96 overflow-y-auto pr-1"></div>
-        </div>
-
-        <!-- 各員點餐與收款明細 (支援單筆刪除) -->
-        <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-3">
-          <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-            <i class="fa-solid fa-receipt text-amber-600"></i> 各員點餐與收款明細
-          </h4>
-          <div class="overflow-x-auto max-h-96">
-            <table class="w-full text-left text-xs sm:text-sm border-collapse">
-              <thead>
-                <tr class="bg-slate-50 text-slate-500 border-b border-slate-100">
-                  <th class="p-2.5 whitespace-nowrap">姓名</th>
-                  <th class="p-2.5">品項與規格</th>
-                  <th class="p-2.5 text-right whitespace-nowrap">金額</th>
-                  <th class="p-2.5 text-center whitespace-nowrap">操作</th>
-                </tr>
-              </thead>
-              <tbody id="orders-table-body" class="divide-y divide-slate-100"></tbody>
-            </table>
-          </div>
+      <!-- 各員點餐與收款明細 (全寬版面，清楚呈現) -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-3">
+        <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+          <i class="fa-solid fa-receipt text-amber-600"></i> 各員點餐與收款明細
+        </h4>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs sm:text-sm border-collapse">
+            <thead>
+              <tr class="bg-slate-50 text-slate-500 border-b border-slate-100">
+                <th class="p-2.5 whitespace-nowrap">姓名</th>
+                <th class="p-2.5">品項與規格</th>
+                <th class="p-2.5 text-right whitespace-nowrap">金額</th>
+                <th class="p-2.5 text-center whitespace-nowrap">操作</th>
+              </tr>
+            </thead>
+            <tbody id="orders-table-body" class="divide-y divide-slate-100"></tbody>
+          </table>
         </div>
       </div>
     </section>
 
-    <!-- ==================== 3. 主揪管理介面 (後台) ==================== -->
+    <!-- ==================== 3. 主揪管理介面 (後台：放置店家叫餐加總與管理功能) ==================== -->
     <section id="view-admin" class="hidden space-y-4 sm:space-y-6">
       
       <!-- 統計數據卡片 -->
@@ -230,28 +217,25 @@
         </div>
       </div>
 
-      <!-- 後台核心功能操作 -->
-      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
-        <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-          <i class="fa-solid fa-sliders text-indigo-600"></i> 主揪團長專屬管理功能
-        </h4>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button onclick="exportCSV()" class="p-4 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-2xl flex items-center justify-between transition">
-            <div class="text-left">
-              <span class="block font-bold text-sm">匯出 Excel 報表 (CSV)</span>
-              <span class="text-xs text-emerald-600">下載當前店家完整點餐紀錄與密碼</span>
-            </div>
-            <i class="fa-solid fa-file-excel text-2xl text-emerald-700"></i>
-          </button>
+      <!-- 後台操作按鈕列 -->
+      <div class="flex flex-wrap gap-2 justify-end">
+        <button onclick="copyStoreSummary()" class="flex-1 sm:flex-none px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
+          <i class="fa-regular fa-copy"></i> 複製叫餐清單
+        </button>
+        <button onclick="exportCSV()" class="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
+          <i class="fa-solid fa-file-excel"></i> 匯出 Excel
+        </button>
+        <button onclick="clearCloudOrders()" class="w-full sm:w-auto px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
+          <i class="fa-solid fa-trash-can"></i> 清除此店家訂單 (開新團)
+        </button>
+      </div>
 
-          <button onclick="clearCloudOrders()" class="p-4 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-800 rounded-2xl flex items-center justify-between transition">
-            <div class="text-left">
-              <span class="block font-bold text-sm">清空此店家訂單 (開新團)</span>
-              <span class="text-xs text-rose-600">只清空當前店家分頁，不影響其他店</span>
-            </div>
-            <i class="fa-solid fa-trash-can text-2xl text-rose-600"></i>
-          </button>
-        </div>
+      <!-- 店家叫餐加總 (已移至後台專區) -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
+        <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+          <i class="fa-solid fa-store text-emerald-700"></i> 店家叫餐加總 (<span id="summary-store-name">甘丹茶飲</span>)
+        </h4>
+        <div id="aggregated-summary-list" class="divide-y divide-slate-100 text-xs sm:text-sm max-h-96 overflow-y-auto pr-1"></div>
       </div>
 
     </section>
@@ -419,7 +403,6 @@
       { cat: '找好茶', name: '8冰綠 / 情人茶', m: 40, l: 55, fixedSweet: false, icon: '🍹' },
       { cat: '找好茶', name: '多多綠 / 蜂蜜綠', m: 40, l: 55, fixedSweet: false, icon: '🥛' },
       { cat: '找好茶', name: '旺來紅 / 青', m: 40, l: 55, fixedSweet: false, icon: '🍍' },
-      { cat: '找好茶', name: '柚子紅 / 烏', m: 40, l: 55, fixedSweet: false, icon: '🍊' },
       { cat: '鮮柚綠', m: 50, l: 65, fixedSweet: false, note: '季節限定', icon: '🍊' },
 
       { cat: '找奶茶', name: '奶茶', m: 40, l: 55, fixedSweet: false, icon: '🧋' },
@@ -656,7 +639,7 @@
       renderProductGrid();
       
       document.getElementById('summary-store-name').innerText = currentStore;
-      document.getElementById('orders-store-badge').innerText = `${currentStore} 即時訂單`;
+      document.getElementById('orders-store-badge').innerText = `${currentStore} 點餐名單`;
       document.getElementById('stat-title-amount').innerText = `${currentStore} 總金額`;
     }
 
@@ -1227,9 +1210,9 @@
         aggregatedContainer.innerHTML = `<p class="text-slate-400 text-xs py-4 text-center">【${currentStore}】目前尚無訂單紀錄</p>`;
       } else {
         aggregatedContainer.innerHTML = Object.entries(itemMap).map(([spec, count]) => `
-          <div class="py-2 flex justify-between items-center text-sm">
+          <div class="py-2.5 flex justify-between items-center text-sm">
             <span class="text-slate-700 pr-2">${spec}</span>
-            <span class="font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md">x ${count}</span>
+            <span class="font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg">x ${count}</span>
           </div>
         `).join('');
       }
