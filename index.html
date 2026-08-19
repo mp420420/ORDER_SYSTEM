@@ -30,9 +30,11 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased pb-24 lg:pb-6">
 
-  <!-- 頂部導航 -->
+  <!-- 頂部導航 (三店家切換 + 點餐 / 訂單 / 後台 三分頁) -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
     <div class="max-w-6xl mx-auto px-3.5 sm:px-4 h-16 flex items-center justify-between gap-2">
+      
+      <!-- 店家快速切換 Tab -->
       <div class="flex items-center space-x-1 sm:space-x-1.5 bg-slate-100 p-1 rounded-2xl border border-slate-200 overflow-x-auto hide-scrollbar">
         <button onclick="switchStore('甘丹茶飲')" id="btn-store-gandan" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition flex items-center gap-1.5">
           <span class="w-2 h-2 rounded-full bg-emerald-400"></span> 甘丹茶飲
@@ -45,14 +47,18 @@
         </button>
       </div>
 
-      <div class="flex items-center gap-2">
-        <span id="room-badge" class="hidden sm:inline-block text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold whitespace-nowrap">點餐中 🟢</span>
+      <!-- 狀態顯示與【點餐 / 訂單 / 後台】三分頁切換 -->
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <span id="room-badge" class="hidden md:inline-block text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold whitespace-nowrap">點餐中 🟢</span>
         <div class="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold flex-shrink-0">
-          <button onclick="switchView('user')" id="btn-tab-user" class="px-3 py-1.5 rounded-xl bg-white shadow-xs text-slate-900 transition flex items-center gap-1">
+          <button onclick="switchView('user')" id="btn-tab-user" class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white shadow-xs text-slate-900 transition flex items-center gap-1">
             <i class="fa-solid fa-mug-saucer text-sm text-emerald-700"></i> <span>點餐</span>
           </button>
-          <button onclick="switchView('admin')" id="btn-tab-admin" class="px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center gap-1">
-            <i class="fa-solid fa-chart-pie text-sm text-amber-600"></i> <span>後台</span>
+          <button onclick="switchView('orders')" id="btn-tab-orders" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center gap-1">
+            <i class="fa-solid fa-list-check text-sm text-blue-600"></i> <span>訂單</span>
+          </button>
+          <button onclick="switchView('admin')" id="btn-tab-admin" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center gap-1">
+            <i class="fa-solid fa-gear text-sm text-amber-600"></i> <span>後台</span>
           </button>
         </div>
       </div>
@@ -91,7 +97,7 @@
           <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"></div>
         </div>
 
-        <!-- 購物車 (加入 4 位數密碼輸入欄) -->
+        <!-- 購物車 -->
         <div class="lg:col-span-4 mt-2 lg:mt-0" id="cart-section">
           <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs sticky top-20 space-y-4">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -131,9 +137,64 @@
       </div>
     </section>
 
-    <!-- ==================== 2. 主揪管理與統計介面 (後台) ==================== -->
+    <!-- ==================== 2. 訂單清單介面 (訂單頁面) ==================== -->
+    <section id="view-orders" class="hidden space-y-4 sm:space-y-6">
+      
+      <!-- 統計快覽與操作列 -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div>
+          <span class="text-xs text-slate-500 font-bold block" id="orders-store-badge">甘丹茶飲 即時訂單</span>
+          <div class="flex items-baseline gap-3 mt-1">
+            <span class="text-2xl font-black text-amber-600" id="orders-total-amount">$0</span>
+            <span class="text-sm font-bold text-slate-700" id="orders-total-count">0人 / 0杯</span>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+          <button onclick="fetchCloudOrders()" class="flex-1 sm:flex-none px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
+            <i class="fa-solid fa-rotate"></i> 重新整理
+          </button>
+          <button onclick="copyStoreSummary()" class="flex-1 sm:flex-none px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
+            <i class="fa-regular fa-copy"></i> 複製叫餐清單
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
+        <!-- 店家品項加總 -->
+        <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-3">
+          <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+            <i class="fa-solid fa-store text-emerald-700"></i> 店家叫餐加總 (<span id="summary-store-name">甘丹茶飲</span>)
+          </h4>
+          <div id="aggregated-summary-list" class="divide-y divide-slate-100 text-xs sm:text-sm max-h-96 overflow-y-auto pr-1"></div>
+        </div>
+
+        <!-- 各員點餐與收款明細 (支援單筆刪除) -->
+        <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-3">
+          <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+            <i class="fa-solid fa-receipt text-amber-600"></i> 各員點餐與收款明細
+          </h4>
+          <div class="overflow-x-auto max-h-96">
+            <table class="w-full text-left text-xs sm:text-sm border-collapse">
+              <thead>
+                <tr class="bg-slate-50 text-slate-500 border-b border-slate-100">
+                  <th class="p-2.5 whitespace-nowrap">姓名</th>
+                  <th class="p-2.5">品項與規格</th>
+                  <th class="p-2.5 text-right whitespace-nowrap">金額</th>
+                  <th class="p-2.5 text-center whitespace-nowrap">操作</th>
+                </tr>
+              </thead>
+              <tbody id="orders-table-body" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 3. 主揪管理介面 (後台) ==================== -->
     <section id="view-admin" class="hidden space-y-4 sm:space-y-6">
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+      
+      <!-- 統計數據卡片 -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
             <p class="text-xs text-slate-500 font-medium" id="stat-title-amount">甘丹茶飲 總金額</p>
@@ -169,49 +230,30 @@
         </div>
       </div>
 
-      <!-- 操作按鈕列 -->
-      <div class="flex flex-wrap gap-2 justify-end">
-        <button onclick="fetchCloudOrders()" class="flex-1 sm:flex-none px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
-          <i class="fa-solid fa-rotate"></i> 重新整理
-        </button>
-        <button onclick="copyStoreSummary()" class="flex-1 sm:flex-none px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
-          <i class="fa-regular fa-copy"></i> 複製叫餐清單
-        </button>
-        <button onclick="exportCSV()" class="flex-1 sm:flex-none px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
-          <i class="fa-solid fa-file-excel"></i> 匯出 Excel
-        </button>
-        <button onclick="clearCloudOrders()" class="w-full sm:w-auto px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
-          <i class="fa-solid fa-trash-can"></i> 清除此店家訂單 (開新團)
-        </button>
-      </div>
+      <!-- 後台核心功能操作 -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+        <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-indigo-600"></i> 主揪團長專屬管理功能
+        </h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button onclick="exportCSV()" class="p-4 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-2xl flex items-center justify-between transition">
+            <div class="text-left">
+              <span class="block font-bold text-sm">匯出 Excel 報表 (CSV)</span>
+              <span class="text-xs text-emerald-600">下載當前店家完整點餐紀錄與密碼</span>
+            </div>
+            <i class="fa-solid fa-file-excel text-2xl text-emerald-700"></i>
+          </button>
 
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
-        <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-3">
-          <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-            <i class="fa-solid fa-store text-emerald-700"></i> 店家叫餐加總 (<span id="summary-store-name">甘丹茶飲</span>)
-          </h4>
-          <div id="aggregated-summary-list" class="divide-y divide-slate-100 text-xs sm:text-sm max-h-72 overflow-y-auto pr-1"></div>
-        </div>
-
-        <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-3">
-          <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-            <i class="fa-solid fa-receipt text-amber-600"></i> 各員點餐與收款明細
-          </h4>
-          <div class="overflow-x-auto max-h-72">
-            <table class="w-full text-left text-xs sm:text-sm border-collapse">
-              <thead>
-                <tr class="bg-slate-50 text-slate-500 border-b border-slate-100">
-                  <th class="p-2.5 whitespace-nowrap">姓名</th>
-                  <th class="p-2.5">品項與規格</th>
-                  <th class="p-2.5 text-right whitespace-nowrap">金額</th>
-                  <th class="p-2.5 text-center whitespace-nowrap">操作</th>
-                </tr>
-              </thead>
-              <tbody id="orders-table-body" class="divide-y divide-slate-100"></tbody>
-            </table>
-          </div>
+          <button onclick="clearCloudOrders()" class="p-4 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-800 rounded-2xl flex items-center justify-between transition">
+            <div class="text-left">
+              <span class="block font-bold text-sm">清空此店家訂單 (開新團)</span>
+              <span class="text-xs text-rose-600">只清空當前店家分頁，不影響其他店</span>
+            </div>
+            <i class="fa-solid fa-trash-can text-2xl text-rose-600"></i>
+          </button>
         </div>
       </div>
+
     </section>
 
   </main>
@@ -298,7 +340,7 @@
       { cat: '甘丹特調系列', name: '鴉片檸檬氣泡飲', l: 70, xl: null, fixedSweet: true, icon: '🫧' },
       { cat: '甘丹特調系列', name: '夏日水果氣泡飲', l: 70, xl: null, fixedSweet: true, icon: '🫧' },
       { cat: '甘丹特調系列', name: '甘蔗香檸氣泡飲', l: 70, xl: null, fixedSweet: true, icon: '🫧' },
-      { cat: '甘丹特調系列', name: '草莓香檸氣泡飲', l: 65, xl: null, fixedSweet: true, icon: '🍓' },
+      { cat: '草莓香檸氣泡飲', l: 65, xl: null, fixedSweet: true, icon: '🍓' },
       { cat: '熟成冬梅氣泡飲', l: 60, xl: null, fixedSweet: true, icon: '🫧' },
       { cat: '甘丹特調系列', name: '輕檸檬氣泡飲', l: 50, xl: null, fixedSweet: true, icon: '🍋' },
       { cat: '甘丹特調系列', name: '老冬瓜檸檬', l: 45, xl: null, fixedSweet: false, icon: '🍈' },
@@ -378,7 +420,7 @@
       { cat: '找好茶', name: '多多綠 / 蜂蜜綠', m: 40, l: 55, fixedSweet: false, icon: '🥛' },
       { cat: '找好茶', name: '旺來紅 / 青', m: 40, l: 55, fixedSweet: false, icon: '🍍' },
       { cat: '找好茶', name: '柚子紅 / 烏', m: 40, l: 55, fixedSweet: false, icon: '🍊' },
-      { cat: '找好茶', name: '鮮柚綠', m: 50, l: 65, fixedSweet: false, note: '季節限定', icon: '🍊' },
+      { cat: '鮮柚綠', m: 50, l: 65, fixedSweet: false, note: '季節限定', icon: '🍊' },
 
       { cat: '找奶茶', name: '奶茶', m: 40, l: 55, fixedSweet: false, icon: '🧋' },
       { cat: '找奶茶', name: '奶綠', m: 40, l: 55, fixedSweet: false, icon: '🧋' },
@@ -612,7 +654,9 @@
       selectedCategory = '全部';
       renderCategoryTabs();
       renderProductGrid();
+      
       document.getElementById('summary-store-name').innerText = currentStore;
+      document.getElementById('orders-store-badge').innerText = `${currentStore} 即時訂單`;
       document.getElementById('stat-title-amount').innerText = `${currentStore} 總金額`;
     }
 
@@ -1104,7 +1148,7 @@
     // 刪除單筆訂單（跳出密碼輸入彈窗比對）
     async function deleteSingleOrder(rowIndex, userName, itemName) {
       const inputPin = prompt(`🔐 安全防護：欲刪除【${userName} - ${itemName}】\n\n請輸入點餐時設定的 4 位數密碼（主揪萬能密碼為 9999）：`);
-      if (inputPin === null) return; // 使用者按取消
+      if (inputPin === null) return;
 
       if (!inputPin.trim()) {
         alert('⚠️ 密碼不可為空！');
@@ -1127,7 +1171,6 @@
         alert(`✅ 驗證成功！已刪除【${userName} - ${itemName}】！`);
         fetchCloudOrders();
       } catch (err) {
-        // 部分環境 no-cors 或連線重整
         alert(`✅ 指令已送出！正在重新同步清單...`);
         fetchCloudOrders();
       }
@@ -1162,8 +1205,13 @@
     function renderAdminStats() {
       const totalAmount = orders.reduce((sum, o) => sum + Number(o.price || 0), 0);
       const uniqueUsers = new Set(orders.map(o => o.user)).size;
+      
+      // 同步更新「訂單頁」與「後台頁」的金額和杯數
       document.getElementById('stat-total-amount').innerText = `$${totalAmount}`;
       document.getElementById('stat-total-count').innerText = `${uniqueUsers}人 / ${orders.length}杯`;
+
+      document.getElementById('orders-total-amount').innerText = `$${totalAmount}`;
+      document.getElementById('orders-total-count').innerText = `${uniqueUsers}人 / ${orders.length}杯`;
     }
 
     function renderAdminOrders() {
@@ -1212,7 +1260,7 @@
         itemMap[key] = (itemMap[key] || 0) + 1;
       });
 
-      let text = `📋 【${currentStore} - 訂單統計】\n總杯數：${orders.length} 杯 ｜ 總金額：$${orders.reduce((s,o)=>s+Number(o.price||0),0)} 元\n-------------------------\\n`;
+      let text = `📋 【${currentStore} - 訂單統計】\n總杯數：${orders.length} 杯 ｜ 總金額：$${orders.reduce((s,o)=>s+Number(o.price||0),0)} 元\n-------------------------\n`;
       Object.entries(itemMap).forEach(([name, count]) => {
         text += `• ${name} x ${count}\n`;
       });
@@ -1244,34 +1292,48 @@
       const btn = document.getElementById('btn-toggle-room');
 
       if (isRoomOpen) {
-        badge.className = "hidden sm:inline-block text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold whitespace-nowrap";
+        badge.className = "hidden md:inline-block text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold whitespace-nowrap";
         badge.innerText = "點餐中 🟢";
         btn.className = "px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition shadow-xs";
         btn.innerText = "點餐開放中 🟢";
       } else {
-        badge.className = "hidden sm:inline-block text-xs px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 font-medium whitespace-nowrap";
+        badge.className = "hidden md:inline-block text-xs px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 font-medium whitespace-nowrap";
         badge.innerText = "已截止 🔴";
         btn.className = "px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-xs";
         btn.innerText = "已截止點餐 🔴";
       }
     }
 
+    // 三分頁切換邏輯 (點餐 / 訂單 / 後台)
     function switchView(view) {
       const userView = document.getElementById('view-user');
+      const ordersView = document.getElementById('view-orders');
       const adminView = document.getElementById('view-admin');
+      
       const btnUser = document.getElementById('btn-tab-user');
+      const btnOrders = document.getElementById('btn-tab-orders');
       const btnAdmin = document.getElementById('btn-tab-admin');
+
+      // 隱藏全部畫面
+      userView.classList.add('hidden');
+      ordersView.classList.add('hidden');
+      adminView.classList.add('hidden');
+
+      // 重置按鈕樣式
+      btnUser.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center gap-1";
+      btnOrders.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center gap-1";
+      btnAdmin.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center gap-1";
 
       if (view === 'user') {
         userView.classList.remove('hidden');
-        adminView.classList.add('hidden');
-        btnUser.className = "px-3 py-1.5 rounded-xl bg-white shadow-xs text-slate-900 transition flex items-center gap-1";
-        btnAdmin.className = "px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center gap-1";
-      } else {
-        userView.classList.add('hidden');
+        btnUser.className = "px-2.5 sm:px-3 py-1.5 rounded-xl bg-white shadow-xs text-slate-900 transition flex items-center gap-1";
+      } else if (view === 'orders') {
+        ordersView.classList.remove('hidden');
+        btnOrders.className = "px-2.5 sm:px-3 py-1.5 rounded-xl bg-white shadow-xs text-slate-900 transition flex items-center gap-1";
+        fetchCloudOrders();
+      } else if (view === 'admin') {
         adminView.classList.remove('hidden');
-        btnAdmin.className = "px-3 py-1.5 rounded-xl bg-white shadow-xs text-slate-900 transition flex items-center gap-1";
-        btnUser.className = "px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center gap-1";
+        btnAdmin.className = "px-2.5 sm:px-3 py-1.5 rounded-xl bg-white shadow-xs text-slate-900 transition flex items-center gap-1";
         fetchCloudOrders();
       }
     }
