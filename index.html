@@ -37,13 +37,13 @@
       <!-- 店家快速切換 Tab (極速切換模式) -->
       <div class="flex items-center space-x-1 sm:space-x-1.5 bg-slate-100 p-1 rounded-2xl border border-slate-200 overflow-x-auto hide-scrollbar">
         <button onclick="switchStore('甘丹茶飲')" id="btn-store-gandan" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition flex items-center gap-1.5">
-          <span class="w-2 h-2 rounded-full bg-emerald-400"></span> 甘丹茶飲
+          <span id="dot-store-gandan" class="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0"></span> <span id="name-store-gandan">甘丹茶飲</span>
         </button>
         <button onclick="switchStore('50嵐')" id="btn-store-50lan" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition flex items-center gap-1.5">
-          <span class="w-2 h-2 rounded-full bg-blue-500"></span> 50嵐
+          <span id="dot-store-50lan" class="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0"></span> <span id="name-store-50lan">50嵐</span>
         </button>
         <button onclick="switchStore('鮮茶道')" id="btn-store-preso" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition flex items-center gap-1.5">
-          <span class="w-2 h-2 rounded-full bg-teal-400"></span> 鮮茶道
+          <span id="dot-store-preso" class="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0"></span> <span id="name-store-preso">鮮茶道</span>
         </button>
       </div>
 
@@ -658,6 +658,12 @@
       '鮮茶道':   { items: rawPresoteaMenu, toppings: presoteaToppings }
     };
     const STORE_LIST = ['甘丹茶飲', '50嵐', '鮮茶道'];
+    // 店家頁籤上的圓點與店名元素，用來顯示各店是否開放點餐
+    const STORE_TAB_REF = {
+      '甘丹茶飲': { dot: 'dot-store-gandan', name: 'name-store-gandan', btn: 'btn-store-gandan' },
+      '50嵐':     { dot: 'dot-store-50lan',  name: 'name-store-50lan',  btn: 'btn-store-50lan'  },
+      '鮮茶道':   { dot: 'dot-store-preso',  name: 'name-store-preso',  btn: 'btn-store-preso'  }
+    };
 
     let menuData = null;        // 從試算表載入的菜單；null 代表目前用內建的
     let menuDraft = null;       // 編輯中的暫存（按取消就丟掉）
@@ -1715,8 +1721,26 @@
       renderRoomStatus();
     }
 
+    // 上方店家頁籤：綠點=開放、紅點+刪除線=已截止，不用點進去就看得出來
+    function renderStoreTabs() {
+      STORE_LIST.forEach(st => {
+        const ref = STORE_TAB_REF[st];
+        if (!ref) return;
+        const dot = document.getElementById(ref.dot);
+        const nameEl = document.getElementById(ref.name);
+        const btn = document.getElementById(ref.btn);
+        const isOpen = roomOpen[st] !== false;
+
+        if (dot) dot.className = 'w-2 h-2 rounded-full flex-shrink-0 ' +
+          (isOpen ? 'bg-emerald-400' : 'bg-rose-500');
+        if (nameEl) nameEl.className = isOpen ? '' : 'line-through decoration-rose-500 decoration-2';
+        if (btn) btn.title = `${st}：${isOpen ? '點餐開放中' : '已截止點餐'}`;
+      });
+    }
+
     // 依「目前這家店」的狀態更新頂部徽章、後台按鈕與送出鈕
     function renderRoomStatus() {
+      renderStoreTabs();
       const isOpen = roomOpen[currentStore] !== false;
       const badge = document.getElementById('room-badge');
       const btn = document.getElementById('btn-toggle-room');
