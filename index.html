@@ -1465,7 +1465,7 @@
       return { size: parts[0] || '', sweet: parts[1] || '', ice: parts[2] || '', extras: parts.slice(3) };
     }
 
-    // 發放清單的一行：姓名/品項(需求)/甜度/冰塊/杯型/加料/$金額
+    // 發放清單的一行：姓名/品項(需求)/加料/甜度/冰塊/杯型/$金額
     // 回傳 [{t: 文字, k: 種類}]，種類用來決定畫面上的顏色
     function orderLineSegments(o) {
       const sp = splitSpecs(o.specs);
@@ -1482,10 +1482,10 @@
       seg.push({ t: String(o.user == null ? '' : o.user).trim() || '(未填姓名)', k: 'user' });
       seg.push({ t: String(o.item == null ? '' : o.item).trim(), k: 'item' });
       if (note)     seg.push({ t: '(' + note + ')', k: 'note', glue: true });  // glue=接在前一段後面，不加斜線
+      toppings.forEach(x => seg.push({ t: x, k: 'topping' }));                  // 加料緊接在品項後面
       if (sp.sweet) seg.push({ t: sp.sweet, k: 'spec' });
       if (sp.ice)   seg.push({ t: sp.ice,   k: 'spec' });
       if (sp.size)  seg.push({ t: sp.size,  k: 'spec' });
-      toppings.forEach(x => seg.push({ t: x, k: 'spec' }));
       seg.push({ t: '$' + (o.price == null ? 0 : o.price), k: 'price' });
       return seg;
     }
@@ -1554,6 +1554,7 @@
           user:  'font-black text-indigo-700',
           item:  'text-slate-800 font-bold',
           note:  'text-amber-700 font-black bg-amber-50 rounded px-1',
+          topping: 'text-emerald-800 font-bold',
           spec:  'text-slate-700',
           price: 'text-slate-900 font-bold'
         };
@@ -1601,7 +1602,7 @@
       let text = `📋 【${currentStore} - ${title}】\n總杯數：${orders.length} 杯 ｜ 總金額：$${totalAmount} 元\n-------------------------\n`;
 
       if (showOrderNames) {
-        // 一行一單：姓名/品項(需求)/甜度/冰塊/杯型/$金額
+        // 一行一單：姓名/品項(需求)/加料/甜度/冰塊/杯型/$金額
         buildOrderLines().forEach(o => {
           text += orderLineText(o) + `\n`;
         });
