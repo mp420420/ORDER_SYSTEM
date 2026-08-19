@@ -648,7 +648,7 @@
 
     let orders = [];
     let cart = [];
-    let isRoomOpen = true;
+    let roomOpen = {};          // 每家店各自的點餐開放狀態，來自試算表
     let selectedCategory = '全部';
     let currentModalProduct = null;
     let currentModalSelections = {
@@ -664,6 +664,7 @@
       renderCart();
       renderNamesToggle();
       loadMenuFromCloud();
+      loadRoomStatus();
     });
 
     // 極速切換店家（切換菜單毫秒級反應，不卡網路連線）
@@ -724,6 +725,7 @@
       document.getElementById('orders-store-badge').innerText = `${currentStore} 點餐名單`;
       document.getElementById('stat-title-amount').innerText = `${currentStore} 總金額`;
       renderMenuCard();
+      renderRoomStatus();
 
       // 若當前在「訂單」或「後台」分頁，使用快取或更新
       if (currentViewMode !== 'user') {
@@ -1151,8 +1153,8 @@
 
     // 點餐送出
     async function submitOrder() {
-      if (!isRoomOpen) {
-        alert('抱歉，今日點餐已經截止！');
+      if (roomOpen[currentStore] === false) {
+        alert(`⚠️ 【${currentStore}】已經截止點餐了。\n\n可以切換到其他還開放的店家看看。`);
         return;
       }
       const userName = document.getElementById('user-name').value.trim();
@@ -1201,6 +1203,12 @@
       try {
         const result = await postToGas(payload);
 
+        if (result.status === 'closed') {
+          alert(`⚠️ ${result.message || '這家店已截止點餐'}\n\n您的清單還留著，可以切到其他店家送出。`);
+          roomOpen[currentStore] = false;
+          renderRoomStatus();
+          return;
+        }
         if (result.status !== 'success') {
           alert(`❌ 送出失敗：${result.message || result.status}\n\n請重試一次，若持續失敗請通知主揪。`);
           return;
@@ -1214,6 +1222,7 @@
       } finally {
         btn.disabled = false;
         btn.innerHTML = `<i class="fa-regular fa-paper-plane"></i> 送出點餐 (即時同步)`;
+        renderRoomStatus();   // 若這家店其實已截止，這裡會把送出鈕再鎖回去
       }
     }
 
@@ -1507,21 +1516,92 @@
       link.click();
     }
 
-    function toggleRoomStatus() {
-      isRoomOpen = !isRoomOpen;
+    // 讀取各店的點餐開放狀態（讀不到時一律當作開放，不影響點餐）
+    async function loadRoomStatus() {
+      try {
+        const res = await fetch(`${GAS_API_URL}?action=state`);
+        const data = await res.json();
+        if (data && data.status === 'ok' && data.open) roomOpen = data.open;
+      } catch (e) {
+        console.log('點餐狀態載入失敗，暫時全部視為開放');
+      }
+      renderRoomStatus();
+    }
+
+    // 依「目前這家店」的狀態更新頂部徽章、後台按鈕與送出鈕
+    function renderRoomStatus() {
+      const isOpen = roomOpen[currentStore] !== false;
       const badge = document.getElementById('room-badge');
       const btn = document.getElementById('btn-toggle-room');
+      const submit = document.getElementById('btn-submit-order');
 
-      if (isRoomOpen) {
-        badge.className = "hidden md:inline-block text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold whitespace-nowrap";
-        badge.innerText = "點餐中 🟢";
-        btn.className = "px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition shadow-xs";
-        btn.innerText = "點餐開放中 🟢";
-      } else {
-        badge.className = "hidden md:inline-block text-xs px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 font-medium whitespace-nowrap";
-        badge.innerText = "已截止 🔴";
-        btn.className = "px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-xs";
-        btn.innerText = "已截止點餐 🔴";
+      if (badge) {
+        if (isOpen) {
+          badge.className = "hidden md:inline-block text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold whitespace-nowrap";
+          badge.innerText = `${currentStore} 點餐中 🟢`;
+        } else {
+          badge.className = "hidden md:inline-block text-xs px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 font-bold whitespace-nowrap";
+          badge.innerText = `${currentStore} 已截止 🔴`;
+        }
+      }
+
+      if (btn) {
+        if (isOpen) {
+          btn.className = "px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition shadow-xs";
+          btn.innerText = `${currentStore} 點餐開放中 🟢`;
+        } else {
+          btn.className = "px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-xs";
+          btn.innerText = `${currentStore} 已截止點餐 🔴`;
+        }
+      }
+
+      if (submit) {
+        if (isOpen) {
+          submit.disabled = false;
+          submit.className = "w-full py-3.5 bg-amber-600 hover:bg-amber-700 active:scale-98 text-white font-bold text-base rounded-xl shadow-md transition flex items-center justify-center gap-2";
+          submit.innerHTML = `<i class="fa-regular fa-paper-plane"></i> 送出點餐 (即時同步)`;
+        } else {
+          submit.disabled = true;
+          submit.className = "w-full py-3.5 bg-slate-300 text-slate-600 font-bold text-base rounded-xl transition flex items-center justify-center gap-2 cursor-not-allowed";
+          submit.innerHTML = `<i class="fa-solid fa-lock"></i> ${currentStore} 已截止點餐`;
+        }
+      }
+    }
+
+    // 只切換「目前這家店」，其他店不受影響
+    async function toggleRoomStatus() {
+      const isOpen = roomOpen[currentStore] !== false;
+      const wantOpen = !isOpen;
+
+      const ok = confirm(wantOpen
+        ? `要重新開放【${currentStore}】點餐嗎？\n\n其他店家不受影響。`
+        : `要截止【${currentStore}】的點餐嗎？\n\n截止後同事就送不出這家店的訂單了（其他店家不受影響）。`);
+      if (!ok) return;
+
+      const pin = prompt('🔐 切換點餐狀態需要主揪密碼，請輸入：');
+      if (pin === null) return;
+
+      const btn = document.getElementById('btn-toggle-room');
+      const before = btn ? btn.innerText : '';
+      if (btn) { btn.disabled = true; btn.innerText = '處理中…'; }
+
+      try {
+        const result = await postToGas({
+          action: 'set_open', store: currentStore,
+          open: wantOpen, pin: String(pin).trim()
+        });
+        if (result.status === 'wrong_password') { alert('❌ 主揪密碼錯誤，狀態沒有變更。'); return; }
+        if (result.status !== 'ok') { alert(`❌ 變更失敗：${result.message || result.status}`); return; }
+
+        roomOpen[currentStore] = result.open;
+        alert(result.open
+          ? `✅ 【${currentStore}】已重新開放點餐！`
+          : `✅ 【${currentStore}】已截止點餐，同事將無法再送出這家店的訂單。`);
+      } catch (err) {
+        alert('⚠️ 連線失敗，狀態沒有變更。請重試。');
+      } finally {
+        if (btn) { btn.disabled = false; if (btn.innerText === '處理中…') btn.innerText = before; }
+        renderRoomStatus();
       }
     }
 
