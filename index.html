@@ -72,7 +72,7 @@
         <!-- 左側：分類標籤與商品列表 (8欄) -->
         <div class="lg:col-span-8 space-y-4">
           
-          <!-- 橫幅公告 (排版徹底優化：標籤不換行、文字自然對齊) -->
+          <!-- 橫幅公告 -->
           <div id="store-banner" class="rounded-2xl p-3.5 sm:p-4 text-white shadow-xs transition-colors">
             <div class="flex items-center justify-between gap-2">
               <div class="min-w-0 flex-1">
@@ -1068,8 +1068,14 @@
       btn.disabled = true;
       btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 正在同步至試算表...`;
 
+      // 產生標準台灣時間格式 (YYYY/MM/DD HH:mm)
       const now = new Date();
-      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const date = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const timeStr = `${year}/${month}/${date} ${hours}:${minutes}`;
 
       const payload = {
         store: currentStore,
