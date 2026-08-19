@@ -546,13 +546,13 @@
       { name: '布丁一顆', price: 15 }
     ];
 
-    // 通用規格選項
+    // 通用規格選項（已移除括號文字）
     const sweetnessOptions = [
-      { name: '無糖 (0分)', price: 0 },
-      { name: '微糖 (2分)', price: 0 },
-      { name: '半糖 (5分)', price: 0 },
-      { name: '少糖 (7分)', price: 0 },
-      { name: '全糖 (10分)', price: 0 }
+      { name: '無糖', price: 0 },
+      { name: '微糖', price: 0 },
+      { name: '半糖', price: 0 },
+      { name: '少糖', price: 0 },
+      { name: '全糖', price: 0 }
     ];
 
     const fixedSweetnessOptions = [
@@ -729,18 +729,19 @@
         toppings: []
       };
 
+      // 規格簡稱
       let sizeChoices = [];
       if (currentStore === '50嵐') {
-        if (currentModalProduct.m) sizeChoices.push({ name: '中杯 (M 500cc)', price: currentModalProduct.m });
-        if (currentModalProduct.l) sizeChoices.push({ name: '大杯 (L 700cc)', price: currentModalProduct.l });
+        if (currentModalProduct.m) sizeChoices.push({ name: '中杯', price: currentModalProduct.m });
+        if (currentModalProduct.l) sizeChoices.push({ name: '大杯', price: currentModalProduct.l });
       } else if (currentStore === '鮮茶道') {
-        if (currentModalProduct.l) sizeChoices.push({ name: '大杯 (L 700cc)', price: currentModalProduct.l });
-        if (currentModalProduct.xl) sizeChoices.push({ name: '瓶裝 (瓶)', price: currentModalProduct.xl });
-        if (currentModalProduct.m) sizeChoices.push({ name: '中杯 (M)', price: currentModalProduct.m });
+        if (currentModalProduct.l) sizeChoices.push({ name: '大杯', price: currentModalProduct.l });
+        if (currentModalProduct.xl) sizeChoices.push({ name: '瓶裝', price: currentModalProduct.xl });
+        if (currentModalProduct.m) sizeChoices.push({ name: '中杯', price: currentModalProduct.m });
       } else {
-        if (currentModalProduct.m) sizeChoices.push({ name: '中杯 (M 480cc)', price: currentModalProduct.m });
-        if (currentModalProduct.l) sizeChoices.push({ name: '大杯 (L 700cc)', price: currentModalProduct.l });
-        if (currentModalProduct.xl) sizeChoices.push({ name: '生活瓶 (XL 960cc)', price: currentModalProduct.xl });
+        if (currentModalProduct.m) sizeChoices.push({ name: '中杯', price: currentModalProduct.m });
+        if (currentModalProduct.l) sizeChoices.push({ name: '大杯', price: currentModalProduct.l });
+        if (currentModalProduct.xl) sizeChoices.push({ name: '生活瓶', price: currentModalProduct.xl });
       }
 
       if (sizeChoices.length === 1) {
@@ -766,16 +767,16 @@
 
       let sizeChoices = [];
       if (currentStore === '50嵐') {
-        if (p.m) sizeChoices.push({ name: '中杯 (M 500cc)', price: p.m });
-        if (p.l) sizeChoices.push({ name: '大杯 (L 700cc)', price: p.l });
+        if (p.m) sizeChoices.push({ name: '中杯', price: p.m });
+        if (p.l) sizeChoices.push({ name: '大杯', price: p.l });
       } else if (currentStore === '鮮茶道') {
-        if (p.l) sizeChoices.push({ name: '大杯 (L 700cc)', price: p.l });
-        if (p.xl) sizeChoices.push({ name: '瓶裝 (瓶)', price: p.xl });
-        if (p.m) sizeChoices.push({ name: '中杯 (M)', price: p.m });
+        if (p.l) sizeChoices.push({ name: '大杯', price: p.l });
+        if (p.xl) sizeChoices.push({ name: '瓶裝', price: p.xl });
+        if (p.m) sizeChoices.push({ name: '中杯', price: p.m });
       } else {
-        if (p.m) sizeChoices.push({ name: '中杯 (M 480cc)', price: p.m });
-        if (p.l) sizeChoices.push({ name: '大杯 (L 700cc)', price: p.l });
-        if (p.xl) sizeChoices.push({ name: '生活瓶 (XL 960cc)', price: p.xl });
+        if (p.m) sizeChoices.push({ name: '中杯', price: p.m });
+        if (p.l) sizeChoices.push({ name: '大杯', price: p.l });
+        if (p.xl) sizeChoices.push({ name: '生活瓶', price: p.xl });
       }
 
       let html = '';
@@ -809,7 +810,7 @@
       // 2. 甜度 (必選)
       const sweetList = p.fixedSweet ? fixedSweetnessOptions : sweetnessOptions;
       const sweetSelected = !!currentModalSelections.sweetness;
-      const sweetGridCols = p.fixedSweet ? 'grid-cols-1' : 'grid-cols-2 sm:grid-cols-5';
+      const sweetGridCols = p.fixedSweet ? 'grid-cols-1' : 'grid-cols-3 sm:grid-cols-5';
       html += `
         <div class="space-y-2">
           <div class="flex items-center justify-between">
@@ -876,7 +877,7 @@
       }
 
       // 5. 加料專區 (選填)
-      const isXL = currentModalSelections.size && (currentModalSelections.size.name.includes('XL') || currentModalSelections.size.name.includes('瓶'));
+      const isXL = currentModalSelections.size && (currentModalSelections.size.name.includes('生活瓶') || currentModalSelections.size.name.includes('瓶'));
       if (!isXL) {
         html += `
           <div class="space-y-2">
@@ -896,7 +897,7 @@
                     <span class="${isSelected ? 'text-white/90' : 'text-amber-600 font-black'}">${priceTag}</span>
                   </button>
                 `;
-              })}
+              }).join('')}
             </div>
           </div>
         `;
@@ -909,7 +910,7 @@
 
     function selectModalSize(name, price) {
       currentModalSelections.size = { name, price };
-      if (name.includes('XL') || name.includes('瓶')) currentModalSelections.toppings = [];
+      if (name.includes('生活瓶') || name.includes('瓶')) currentModalSelections.toppings = [];
       renderModalOptions();
       updateModalPrice();
     }
@@ -1193,7 +1194,7 @@
         itemMap[key] = (itemMap[key] || 0) + 1;
       });
 
-      let text = `📋 【${currentStore} - 訂單統計】\n總杯數：${orders.length} 杯 ｜ 總金額：$${orders.reduce((s,o)=>s+Number(o.price||0),0)} 元\n-------------------------\n`;
+      let text = `📋 【${currentStore} - 訂單統計】\n總杯數：${orders.length} 杯 ｜ 總金額：$${orders.reduce((s,o)=>s+Number(o.price||0),0)} 元\n-------------------------\\n`;
       Object.entries(itemMap).forEach(([name, count]) => {
         text += `• ${name} x ${count}\n`;
       });
