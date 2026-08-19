@@ -352,6 +352,8 @@
     // 叫餐加總是否顯示「誰點的」（發飲料時很好用），選擇會記在這台裝置上
     let showOrderNames = (localStorage.getItem('showOrderNames') === '1');
     const ordersCache = {}; // 快取各店訂單資料，避免切換重複等待
+    let ordersReqSeq = 0;   // 訂單請求序號，用來丟棄過期的回應
+    let ordersLoading = false;
 
     // 1. 甘丹茶飲 菜單
     const rawGandanMenu = [
@@ -727,12 +729,7 @@
 
       // 若當前在「訂單」或「後台」分頁，使用快取或更新
       if (currentViewMode !== 'user') {
-        if (ordersCache[currentStore]) {
-          orders = ordersCache[currentStore];
-          renderAdminStats();
-          renderAdminOrders();
-        }
-        fetchCloudOrders();
+        fetchCloudOrders();   // 內部會先用快取或清空，再抓最新的
       }
     }
 
@@ -1310,23 +1307,43 @@
 
     // 抓取雲端訂單 (支援背景更新與強制重整)
     async function fetchCloudOrders(forceRefresh = false) {
-      if (!forceRefresh && Array.isArray(ordersCache[currentStore])) {
-        orders = ordersCache[currentStore];
-        renderAdminStats();
-        renderAdminOrders();
+      // 把「這次請求是為哪家店發的」記下來。使用者可能在回應回來前就切走了，
+      // 沒有這道防護的話，A 店的資料會蓋到 B 店的畫面，甚至存進 B 店的快取。
+      const reqStore = currentStore;
+      const reqSeq = ++ordersReqSeq;
+
+      if (!forceRefresh && Array.isArray(ordersCache[reqStore])) {
+        orders = ordersCache[reqStore];
+        ordersLoading = false;
+      } else {
+        // 沒有快取就先清空，不要讓上一家店的訂單留在畫面上
+        orders = [];
+        ordersLoading = true;
       }
+      renderAdminStats();
+      renderAdminOrders();
 
       try {
-        const res = await fetch(`${GAS_API_URL}?store=${encodeURIComponent(currentStore)}`);
+        const res = await fetch(`${GAS_API_URL}?store=${encodeURIComponent(reqStore)}`);
         const data = await res.json();
         // 後端若回傳錯誤物件而非訂單陣列，就當作沒有資料，避免整個後台壞掉
         if (!Array.isArray(data)) { console.log('訂單格式非預期，忽略'); return; }
+
+        ordersCache[reqStore] = data;              // 一定存回它自己那家店
+
+        if (reqStore !== currentStore) return;     // 已經切到別家店了，不要動畫面
+        if (reqSeq !== ordersReqSeq) return;       // 有更新的請求在跑，這筆是過期回應
+
         orders = data;
-        ordersCache[currentStore] = data; // 存入本機快取
+        ordersLoading = false;
         renderAdminStats();
         renderAdminOrders();
       } catch (e) {
-        console.log('載入雲端訂單中');
+        console.log('載入雲端訂單失敗');
+        if (reqStore === currentStore && reqSeq === ordersReqSeq) {
+          ordersLoading = false;
+          renderAdminOrders();
+        }
       }
     }
 
@@ -1558,7 +1575,9 @@
       if (iconEl) iconEl.className = showOrderNames ? 'fa-solid fa-user-group text-indigo-600' : 'fa-solid fa-store text-emerald-700';
 
       if (orders.length === 0) {
-        aggregatedContainer.innerHTML = `<p class="text-slate-400 text-xs py-4 text-center">【${currentStore}】目前尚無訂單紀錄</p>`;
+        aggregatedContainer.innerHTML = ordersLoading
+          ? `<p class="text-slate-400 text-xs py-4 text-center"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>正在載入【${currentStore}】的訂單…</p>`
+          : `<p class="text-slate-400 text-xs py-4 text-center">【${currentStore}】目前尚無訂單紀錄</p>`;
       } else if (showOrderNames) {
         // ===== 發放模式：一行一單，點餐人放在最後 =====
         const segClass = {
@@ -1590,7 +1609,9 @@
 
       const tableBody = document.getElementById('orders-table-body');
       if (orders.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-slate-400">目前【${currentStore}】分頁中尚無訂單</td></tr>`;
+        tableBody.innerHTML = ordersLoading
+          ? `<tr><td colspan="4" class="text-center py-6 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>正在載入【${currentStore}】的訂單…</td></tr>`
+          : `<tr><td colspan="4" class="text-center py-6 text-slate-400">目前【${currentStore}】分頁中尚無訂單</td></tr>`;
       } else {
         tableBody.innerHTML = orders.map(o => `
           <tr class="hover:bg-slate-50 transition text-sm">
