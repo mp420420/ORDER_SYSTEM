@@ -156,7 +156,7 @@
         </div>
       </div>
 
-      <!-- 各員點餐與收款明細 -->
+      <!-- 各員點餐與收款明細 (全寬版面) -->
       <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-3">
         <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
           <i class="fa-solid fa-receipt text-amber-600"></i> 各員點餐與收款明細
@@ -230,7 +230,7 @@
         </button>
       </div>
 
-      <!-- 店家叫餐加總 (位於後台專區) -->
+      <!-- 店家叫餐加總 -->
       <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
         <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
           <i class="fa-solid fa-store text-emerald-700"></i> 店家叫餐加總 (<span id="summary-store-name">甘丹茶飲</span>)
@@ -824,7 +824,7 @@
           <div class="grid ${sweetGridCols} gap-2">
             ${sweetList.map(s => `
               <button type="button" onclick="selectModalSweetness('${s.name}')" 
-                class="px-3.5 py-2.5 rounded-2xl text-sm font-bold border text-center transition ${
+                class="px-3 py-2.5 rounded-2xl text-sm font-bold border text-center transition ${
                   currentModalSelections.sweetness && currentModalSelections.sweetness.name === s.name ? themeColor + ' text-white' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
                 }">
                 ${s.name}
@@ -876,7 +876,7 @@
         `;
       }
 
-      // 5. 加料專區 (修復逗號問題與排版)
+      // 5. 加料專區
       const isXL = currentModalSelections.size && (currentModalSelections.size.name.includes('生活瓶') || currentModalSelections.size.name.includes('瓶'));
       if (!isXL) {
         html += `
@@ -1129,7 +1129,7 @@
       }
     }
 
-    // 刪除單筆訂單（跳出密碼輸入彈窗比對）
+    // 刪除單筆訂單 (使用 GET 協議 100% 避開 CORS 阻擋)
     async function deleteSingleOrder(rowIndex, userName, itemName) {
       const inputPin = prompt(`🔐 安全防護：欲刪除【${userName} - ${itemName}】\n\n請輸入點餐時設定的 4 位數密碼（主揪萬能密碼為 9999）：`);
       if (inputPin === null) return;
@@ -1140,11 +1140,8 @@
       }
 
       try {
-        const res = await fetch(GAS_API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: "delete_single", store: currentStore, rowIndex: rowIndex, pin: inputPin.trim() })
-        });
+        const deleteUrl = `${GAS_API_URL}?action=delete_single&store=${encodeURIComponent(currentStore)}&rowIndex=${rowIndex}&pin=${encodeURIComponent(inputPin.trim())}`;
+        const res = await fetch(deleteUrl);
         const result = await res.json();
 
         if (result.status === "wrong_password") {
@@ -1152,10 +1149,10 @@
           return;
         }
 
-        alert(`✅ 驗證成功！已刪除【${userName} - ${itemName}】！`);
+        alert(`✅ 驗證成功！已成功刪除【${userName} - ${itemName}】！`);
         fetchCloudOrders();
       } catch (err) {
-        alert(`✅ 指令已送出！正在重新同步清單...`);
+        alert(`✅ 指令已送出！正在重新整理清單...`);
         fetchCloudOrders();
       }
     }
@@ -1170,13 +1167,7 @@
       if (!confirmClear) return;
 
       try {
-        await fetch(GAS_API_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: "clear", store: currentStore })
-        });
-
+        await fetch(`${GAS_API_URL}?action=clear&store=${encodeURIComponent(currentStore)}`);
         alert(`✅ 已成功清空【${currentStore}】分頁訂單！`);
         orders = [];
         renderAdminStats();
@@ -1190,7 +1181,6 @@
       const totalAmount = orders.reduce((sum, o) => sum + Number(o.price || 0), 0);
       const uniqueUsers = new Set(orders.map(o => o.user)).size;
       
-      // 同步更新「訂單頁」與「後台頁」的金額和杯數
       document.getElementById('stat-total-amount').innerText = `$${totalAmount}`;
       document.getElementById('stat-total-count').innerText = `${uniqueUsers}人 / ${orders.length}杯`;
 
@@ -1244,7 +1234,7 @@
         itemMap[key] = (itemMap[key] || 0) + 1;
       });
 
-      let text = `📋 【${currentStore} - 訂單統計】\n總杯數：${orders.length} 杯 ｜ 總金額：$${orders.reduce((s,o)=>s+Number(o.price||0),0)} 元\n-------------------------\n`;
+      let text = `📋 【${currentStore} - 訂單統計】\n總杯數：${orders.length} 杯 ｜ 總金額：$${orders.reduce((s,o)=>s+Number(o.price||0),0)} 元\n-------------------------\\n`;
       Object.entries(itemMap).forEach(([name, count]) => {
         text += `• ${name} x ${count}\n`;
       });
@@ -1298,12 +1288,10 @@
       const btnOrders = document.getElementById('btn-tab-orders');
       const btnAdmin = document.getElementById('btn-tab-admin');
 
-      // 隱藏全部畫面
       userView.classList.add('hidden');
       ordersView.classList.add('hidden');
       adminView.classList.add('hidden');
 
-      // 重置按鈕樣式
       btnUser.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center gap-1";
       btnOrders.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center gap-1";
       btnAdmin.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center gap-1";
