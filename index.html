@@ -1277,28 +1277,42 @@
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
-    // 【叫餐模式】把相同品項與規格合併，回傳 { 品項與規格: 杯數 }
+    const zhText = v => String(v == null ? '' : v);
+
+    // 相似度排序：先照品項名稱，再照規格，最後照姓名。
+    // 這樣同一種飲料一定連在一起，規格相近的（例如同為「大杯」開頭）也會相鄰。
+    function compareBySimilarity(a, b) {
+      const byItem = zhText(a.item).localeCompare(zhText(b.item), 'zh-Hant');
+      if (byItem !== 0) return byItem;
+      const bySpecs = zhText(a.specs).localeCompare(zhText(b.specs), 'zh-Hant');
+      if (bySpecs !== 0) return bySpecs;
+      return zhText(a.user).localeCompare(zhText(b.user), 'zh-Hant');
+    }
+
+    // 【叫餐模式】把相同品項與規格合併，並依相似度排序，回傳 { 品項與規格: 杯數 }
     function buildItemMap(withBracket) {
-      const map = {};
+      const rows = {};
       orders.forEach(o => {
-        const key = withBracket ? (o.item + ' 【' + o.specs + '】') : (o.item + ' (' + o.specs + ')');
-        map[key] = (map[key] || 0) + 1;
+        const k = zhText(o.item) + '\u0000' + zhText(o.specs);
+        if (!rows[k]) rows[k] = { item: o.item, specs: o.specs, count: 0 };
+        rows[k].count++;
+      });
+      const map = {};
+      Object.keys(rows).map(k => rows[k]).sort(compareBySimilarity).forEach(r => {
+        const key = withBracket ? (r.item + ' 【' + r.specs + '】') : (r.item + ' (' + r.specs + ')');
+        map[key] = r.count;
       });
       return map;
     }
 
-    // 【發放模式】每一單獨立一筆不合併，只是把同一個人的排在一起方便發放
+    // 【發放模式】每一單獨立一筆不合併，同樣依相似度排序，同款飲料會連在一起
     function buildOrderLines() {
-      const order = [];
-      const bucket = {};
-      orders.forEach(o => {
-        const who = String(o.user == null ? '' : o.user).trim() || '(未填姓名)';
-        if (!bucket[who]) { bucket[who] = []; order.push(who); }
-        bucket[who].push({ user: who, item: o.item, specs: o.specs, price: o.price });
-      });
-      const lines = [];
-      order.forEach(who => bucket[who].forEach(x => lines.push(x)));
-      return lines;
+      return orders.map(o => ({
+        user: zhText(o.user).trim() || '(未填姓名)',
+        item: o.item,
+        specs: o.specs,
+        price: o.price
+      })).sort(compareBySimilarity);
     }
 
     function renderNamesToggle() {
