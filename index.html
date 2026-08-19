@@ -242,6 +242,27 @@
         <div id="aggregated-summary-list" class="divide-y divide-slate-100 text-xs sm:text-sm max-h-96 overflow-y-auto pr-1"></div>
       </div>
 
+      <!-- 收款狀況 -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+            <i class="fa-solid fa-hand-holding-dollar text-emerald-700"></i> 收款狀況 (<span id="paid-store-label">甘丹茶飲</span>)
+          </h4>
+          <button onclick="unlockPaidMode()" id="btn-paid-mode"
+            class="px-3.5 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs transition bg-white hover:bg-slate-50 text-slate-700 border border-slate-300">
+            <i class="fa-solid fa-lock"></i> <span id="btn-paid-mode-text">開始收款</span>
+          </button>
+        </div>
+
+        <div class="flex flex-wrap gap-2 text-xs font-bold">
+          <span class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800">已收 <span id="paid-sum">$0</span></span>
+          <span class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700">未收 <span id="unpaid-sum">$0</span></span>
+          <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600"><span id="paid-progress">0 / 0 人</span></span>
+        </div>
+
+        <div id="paid-list" class="divide-y divide-slate-100 max-h-96 overflow-y-auto pr-1"></div>
+      </div>
+
       <!-- 菜單管理 -->
       <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -353,6 +374,8 @@
     let showOrderNames = (localStorage.getItem('showOrderNames') === '1');
     const ordersCache = {}; // 快取各店訂單資料，避免切換重複等待
     let ordersReqSeq = 0;   // 訂單請求序號，用來丟棄過期的回應
+    let paidData = {};      // 各店已付款的名單，來自試算表
+    let paidPin = '';       // 收款模式解鎖後暫存的主揪密碼（關頁面就沒了）
     let ordersLoading = false;
 
     // 1. 甘丹茶飲 菜單
@@ -665,6 +688,7 @@
       renderNamesToggle();
       loadMenuFromCloud();
       loadRoomStatus();
+      loadPaidStatus();
     });
 
     // 極速切換店家（切換菜單毫秒級反應，不卡網路連線）
@@ -726,6 +750,7 @@
       document.getElementById('stat-title-amount').innerText = `${currentStore} 總金額`;
       renderMenuCard();
       renderRoomStatus();
+      renderPaidPanel();
 
       // 若當前在「訂單」或「後台」分頁，使用快取或更新
       if (currentViewMode !== 'user') {
@@ -1422,6 +1447,7 @@
         alert(`✅ 已清空【${currentStore}】分頁，共移除 ${result.removed} 筆訂單。`);
         orders = [];
         ordersCache[currentStore] = [];
+        paidData[currentStore] = [];   // 開新團，收款紀錄一起重來
         renderAdminStats();
         renderAdminOrders();
       } catch (err) {
@@ -1566,6 +1592,7 @@
 
     function renderAdminOrders() {
       renderNamesToggle();
+      renderPaidPanel();
       const aggregatedContainer = document.getElementById('aggregated-summary-list');
 
       // 標題隨模式改變
@@ -2088,6 +2115,134 @@
       } finally {
         btn.disabled = false;
         btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> 儲存菜單`;
+      }
+    }
+
+
+    // ==================================================================
+    // 收款：以「人」為單位，勾了就存進試算表，換裝置或重整都還在
+    // ==================================================================
+
+    // 依點餐人加總杯數與金額，依第一次出現的順序排列
+    function buildPersonTotals() {
+      const list = [];
+      const idx = {};
+      orders.forEach(o => {
+        const who = String(o.user == null ? '' : o.user).trim() || '(未填姓名)';
+        if (idx[who] === undefined) { idx[who] = list.length; list.push({ user: who, cups: 0, total: 0 }); }
+        const g = list[idx[who]];
+        g.cups++;
+        g.total += Number(o.price) || 0;
+      });
+      return list;
+    }
+
+    function isPaid(who) {
+      const arr = paidData[currentStore] || [];
+      return arr.indexOf(who) > -1;
+    }
+
+    async function loadPaidStatus() {
+      try {
+        const res = await fetch(`${GAS_API_URL}?action=paid`);
+        const data = await res.json();
+        if (data && data.status === 'ok' && data.paid) paidData = data.paid;
+      } catch (e) {
+        console.log('收款狀態載入失敗');
+      }
+      renderPaidPanel();
+    }
+
+    function unlockPaidMode() {
+      if (paidPin) {   // 已解鎖 → 再按一次就上鎖
+        paidPin = '';
+        renderPaidPanel();
+        return;
+      }
+      const pin = prompt('🔐 收款登記需要主揪密碼，請輸入：');
+      if (pin === null) return;
+      if (String(pin).trim() !== '9999') { alert('❌ 主揪密碼錯誤。'); return; }
+      paidPin = String(pin).trim();
+      renderPaidPanel();
+    }
+
+    function renderPaidPanel() {
+      const box = document.getElementById('paid-list');
+      const label = document.getElementById('paid-store-label');
+      const btn = document.getElementById('btn-paid-mode');
+      const btnTxt = document.getElementById('btn-paid-mode-text');
+      if (!box || !label) return;
+
+      label.innerText = currentStore;
+
+      const unlocked = !!paidPin;
+      if (btn && btnTxt) {
+        btn.className = 'px-3.5 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs transition ' +
+          (unlocked ? 'bg-emerald-700 hover:bg-emerald-800 text-white'
+                    : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-300');
+        btn.querySelector('i').className = unlocked ? 'fa-solid fa-lock-open' : 'fa-solid fa-lock';
+        btnTxt.innerText = unlocked ? '收款中（按此鎖定）' : '開始收款';
+      }
+
+      const people = buildPersonTotals();
+      let paidSum = 0, unpaidSum = 0, paidCount = 0;
+      people.forEach(pp => {
+        if (isPaid(pp.user)) { paidSum += pp.total; paidCount++; }
+        else unpaidSum += pp.total;
+      });
+
+      document.getElementById('paid-sum').innerText = `$${paidSum}`;
+      document.getElementById('unpaid-sum').innerText = `$${unpaidSum}`;
+      document.getElementById('paid-progress').innerText = `${paidCount} / ${people.length} 人`;
+
+      if (people.length === 0) {
+        box.innerHTML = `<p class="text-slate-400 text-xs py-4 text-center">【${currentStore}】目前沒有訂單</p>`;
+        return;
+      }
+
+      box.innerHTML = people.map(pp => {
+        const done = isPaid(pp.user);
+        return `
+          <div class="py-2.5 flex items-center justify-between gap-2 ${done ? 'opacity-60' : ''}">
+            <label class="flex items-center gap-2.5 min-w-0 ${unlocked ? 'cursor-pointer' : 'cursor-not-allowed'}">
+              <input type="checkbox" ${done ? 'checked' : ''} ${unlocked ? '' : 'disabled'}
+                onchange="togglePaid(${JSON.stringify(pp.user).replace(/"/g, '&quot;')}, this.checked)"
+                class="w-5 h-5 accent-emerald-700 flex-shrink-0">
+              <span class="font-bold text-sm ${done ? 'text-slate-500 line-through' : 'text-slate-900'} truncate">${esc(pp.user)}</span>
+            </label>
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <span class="text-xs text-slate-500">${pp.cups}杯</span>
+              <span class="text-sm font-black ${done ? 'text-emerald-700' : 'text-amber-600'}">$${pp.total}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function togglePaid(who, wantPaid) {
+      if (!paidPin) { alert('⚠️ 請先按「開始收款」並輸入主揪密碼。'); renderPaidPanel(); return; }
+
+      // 先在畫面上反映，失敗再改回來
+      if (!paidData[currentStore]) paidData[currentStore] = [];
+      const arr = paidData[currentStore];
+      const before = arr.slice();
+      const i = arr.indexOf(who);
+      if (wantPaid && i === -1) arr.push(who);
+      if (!wantPaid && i > -1) arr.splice(i, 1);
+      renderPaidPanel();
+
+      try {
+        const result = await postToGas({ action: 'set_paid', store: currentStore, user: who, paid: wantPaid, pin: paidPin });
+        if (result.status !== 'ok') {
+          paidData[currentStore] = before;
+          alert(`❌ 登記失敗：${result.message || result.status}`);
+          if (result.status === 'wrong_password') paidPin = '';
+          renderPaidPanel();
+        }
+      } catch (err) {
+        paidData[currentStore] = before;
+        alert('⚠️ 連線失敗，收款狀態沒有存到。請重試。');
+        renderPaidPanel();
       }
     }
 
