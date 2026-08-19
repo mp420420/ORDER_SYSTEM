@@ -242,9 +242,63 @@
         <div id="aggregated-summary-list" class="divide-y divide-slate-100 text-xs sm:text-sm max-h-96 overflow-y-auto pr-1"></div>
       </div>
 
+      <!-- 菜單管理 -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+            <i class="fa-solid fa-book-open text-amber-600"></i> 菜單管理 (<span id="menu-store-label">甘丹茶飲</span>)
+          </h4>
+          <span id="menu-source-badge" class="text-xs px-2.5 py-1 rounded-full font-bold bg-slate-100 text-slate-600">載入中…</span>
+        </div>
+        <p class="text-xs text-slate-500" id="menu-summary-text">－</p>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="openMenuEditor()" class="flex-1 sm:flex-none px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
+            <i class="fa-solid fa-pen-to-square"></i> 編輯菜單 / 改價格
+          </button>
+          <button onclick="reloadMenu()" class="flex-1 sm:flex-none px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
+            <i class="fa-solid fa-rotate"></i> 重新載入菜單
+          </button>
+        </div>
+      </div>
+
     </section>
 
   </main>
+
+  <!-- 菜單編輯彈窗 -->
+  <div id="modal-menu" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white w-full max-w-5xl rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+      <div class="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 flex-shrink-0 gap-2">
+        <div class="min-w-0">
+          <h3 class="font-bold text-base sm:text-lg text-slate-900 truncate">
+            <i class="fa-solid fa-book-open text-amber-600 mr-1.5"></i> 編輯菜單－<span id="menu-editor-store">甘丹茶飲</span>
+          </h3>
+          <p class="text-xs text-slate-500 mt-0.5">價格留空＝沒有這個杯型。改完要按右下角「儲存」才會生效。</p>
+        </div>
+        <button onclick="closeMenuEditor()" class="w-9 h-9 rounded-full bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-600 font-bold text-base flex-shrink-0">✕</button>
+      </div>
+
+      <div class="px-4 sm:px-5 pt-3 flex flex-wrap gap-2 items-center border-b border-slate-100 pb-3 flex-shrink-0">
+        <input type="search" id="menu-filter" oninput="renderMenuEditor()" placeholder="搜尋品項或分類…" class="flex-1 min-w-[10rem] px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 focus:bg-white">
+        <button onclick="addMenuItem()" class="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-plus"></i> 新增品項
+        </button>
+        <span id="menu-editor-count" class="text-xs text-slate-500 font-bold"></span>
+      </div>
+
+      <div id="menu-editor-body" class="p-3 sm:p-5 overflow-y-auto space-y-3 flex-1 bg-slate-50"></div>
+
+      <div class="p-4 border-t border-slate-100 bg-white flex items-center justify-between gap-2 flex-shrink-0">
+        <span class="text-xs text-slate-500 hidden sm:block">修改會同步給所有同事</span>
+        <div class="flex gap-2 w-full sm:w-auto">
+          <button onclick="closeMenuEditor()" class="flex-1 sm:flex-none px-4 py-3 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-bold text-sm rounded-xl transition">取消</button>
+          <button onclick="saveMenuEditor()" id="btn-save-menu" class="flex-1 sm:flex-none px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-floppy-disk"></i> 儲存菜單
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- 手機端底部浮動購物車 -->
   <div id="mobile-cart-float" class="lg:hidden fixed bottom-4 left-4 right-4 z-40 hidden">
@@ -575,6 +629,19 @@
       { name: '溫/熱', price: 0 }
     ];
 
+    // 程式內建菜單：試算表讀不到時的備援，也是第一次匯入的來源
+    const BUILTIN_MENU = {
+      '甘丹茶飲': { items: rawGandanMenu,   toppings: gandanToppings },
+      '50嵐':     { items: raw50LanMenu,    toppings: fiftyLanToppings },
+      '鮮茶道':   { items: rawPresoteaMenu, toppings: presoteaToppings }
+    };
+    const STORE_LIST = ['甘丹茶飲', '50嵐', '鮮茶道'];
+
+    let menuData = null;        // 從試算表載入的菜單；null 代表目前用內建的
+    let menuDraft = null;       // 編輯中的暫存（按取消就丟掉）
+    let menuPin = '';           // 進入編輯時輸入的主揪密碼，關閉即清除
+    let menuToppingDraft = null;
+
     let products = [];
     let orderedCategories = [];
     let currentToppings = [];
@@ -596,6 +663,7 @@
       initStoreData('甘丹茶飲');
       renderCart();
       renderNamesToggle();
+      loadMenuFromCloud();
     });
 
     // 極速切換店家（切換菜單毫秒級反應，不卡網路連線）
@@ -613,10 +681,17 @@
       btn50.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
       btnPr.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
 
+      const menu = getStoreMenu(storeName);
+      // 停售的品項不出現在點餐畫面，但在菜單編輯裡還看得到
+      const onSale = menu.items.filter(it => !it.off);
+      currentToppings = menu.toppings;
+      // 分類直接從品項推導，新增分類不用另外維護清單
+      orderedCategories = ['全部'].concat(
+        onSale.map(it => it.cat || '未分類').filter((c, i, arr) => arr.indexOf(c) === i)
+      );
+
       if (storeName === '甘丹茶飲') {
-        products = rawGandanMenu.map((item, idx) => ({ id: 'gd_' + idx, ...item, basePrice: item.l || item.m }));
-        orderedCategories = gandanCategories;
-        currentToppings = gandanToppings;
+        products = onSale.map((item, idx) => ({ id: 'gd_' + idx, ...item, basePrice: item.l || item.m }));
         
         btnGd.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-[#1b4332] text-white shadow-xs transition flex items-center gap-1.5";
         banner.className = "bg-gradient-to-r from-[#1b4332] to-[#2d6a4f] rounded-2xl p-3.5 sm:p-4 text-white shadow-xs transition-colors";
@@ -624,9 +699,7 @@
         bannerSub.innerText = "即時同步至試算表【甘丹茶飲】分頁";
         badge.innerText = "甘丹茶飲";
       } else if (storeName === '50嵐') {
-        products = raw50LanMenu.map((item, idx) => ({ id: '50_' + idx, ...item, basePrice: item.m || item.l }));
-        orderedCategories = fiftyLanCategories;
-        currentToppings = fiftyLanToppings;
+        products = onSale.map((item, idx) => ({ id: '50_' + idx, ...item, basePrice: item.m || item.l }));
 
         btn50.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-blue-600 text-white shadow-xs transition flex items-center gap-1.5";
         banner.className = "bg-gradient-to-r from-blue-700 to-amber-500 rounded-2xl p-3.5 sm:p-4 text-white shadow-xs transition-colors";
@@ -634,9 +707,7 @@
         bannerSub.innerText = "即時同步至試算表【50嵐】分頁";
         badge.innerText = "50嵐";
       } else {
-        products = rawPresoteaMenu.map((item, idx) => ({ id: 'pr_' + idx, ...item, basePrice: item.l || item.xl }));
-        orderedCategories = presoteaCategories;
-        currentToppings = presoteaToppings;
+        products = onSale.map((item, idx) => ({ id: 'pr_' + idx, ...item, basePrice: item.l || item.xl }));
 
         btnPr.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-teal-700 text-white shadow-xs transition flex items-center gap-1.5";
         banner.className = "bg-gradient-to-r from-teal-800 to-emerald-600 rounded-2xl p-3.5 sm:p-4 text-white shadow-xs transition-colors";
@@ -652,6 +723,7 @@
       document.getElementById('summary-store-name').innerText = currentStore;
       document.getElementById('orders-store-badge').innerText = `${currentStore} 點餐名單`;
       document.getElementById('stat-title-amount').innerText = `${currentStore} 總金額`;
+      renderMenuCard();
 
       // 若當前在「訂單」或「後台」分頁，使用快取或更新
       if (currentViewMode !== 'user') {
@@ -1159,7 +1231,7 @@
 
     // 抓取雲端訂單 (支援背景更新與強制重整)
     async function fetchCloudOrders(forceRefresh = false) {
-      if (!forceRefresh && ordersCache[currentStore]) {
+      if (!forceRefresh && Array.isArray(ordersCache[currentStore])) {
         orders = ordersCache[currentStore];
         renderAdminStats();
         renderAdminOrders();
@@ -1168,6 +1240,8 @@
       try {
         const res = await fetch(`${GAS_API_URL}?store=${encodeURIComponent(currentStore)}`);
         const data = await res.json();
+        // 後端若回傳錯誤物件而非訂單陣列，就當作沒有資料，避免整個後台壞掉
+        if (!Array.isArray(data)) { console.log('訂單格式非預期，忽略'); return; }
         orders = data;
         ordersCache[currentStore] = data; // 存入本機快取
         renderAdminStats();
@@ -1483,6 +1557,300 @@
         fetchCloudOrders();
       }
     }
+
+    // ==================================================================
+    // 菜單管理：菜單存在試算表的「菜單」與「加料」分頁，改了大家一起生效
+    // ==================================================================
+
+    // 取得某店目前該用的菜單（雲端優先，讀不到就用程式內建的）
+    function getStoreMenu(storeName) {
+      if (menuData && menuData[storeName] && menuData[storeName].items.length) {
+        return menuData[storeName];
+      }
+      const b = BUILTIN_MENU[storeName] || { items: [], toppings: [] };
+      return { items: b.items, toppings: b.toppings };
+    }
+
+    function isCloudMenu() {
+      return !!(menuData && STORE_LIST.some(st => menuData[st] && menuData[st].items.length));
+    }
+
+    async function loadMenuFromCloud() {
+      try {
+        const res = await fetch(`${GAS_API_URL}?action=menu`);
+        const data = await res.json();
+        if (!data || data.status !== 'ok' || !data.items || !data.items.length) {
+          menuData = null;           // 試算表還沒有菜單，繼續用內建的
+        } else {
+          const grouped = {};
+          STORE_LIST.forEach(st => { grouped[st] = { items: [], toppings: [] }; });
+          data.items.forEach(it => {
+            if (grouped[it.store]) grouped[it.store].items.push(it);
+          });
+          (data.toppings || []).forEach(t => {
+            if (grouped[t.store]) grouped[t.store].toppings.push({ name: t.name, price: Number(t.price) || 0 });
+          });
+          // 某家店在試算表裡沒有資料時，該店仍用內建菜單，不會變成空白
+          STORE_LIST.forEach(st => {
+            if (!grouped[st].items.length) grouped[st] = null;
+          });
+          menuData = grouped;
+        }
+      } catch (e) {
+        menuData = null;
+        console.log('菜單載入失敗，改用程式內建菜單');
+      }
+      initStoreData(currentStore);   // 用新菜單重畫點餐畫面
+    }
+
+    async function reloadMenu() {
+      const badge = document.getElementById('menu-source-badge');
+      if (badge) { badge.innerText = '載入中…'; badge.className = 'text-xs px-2.5 py-1 rounded-full font-bold bg-slate-100 text-slate-600'; }
+      await loadMenuFromCloud();
+    }
+
+    function renderMenuCard() {
+      const label = document.getElementById('menu-store-label');
+      const badge = document.getElementById('menu-source-badge');
+      const text  = document.getElementById('menu-summary-text');
+      if (!label || !badge || !text) return;
+
+      label.innerText = currentStore;
+      const menu = getStoreMenu(currentStore);
+      const offCount = menu.items.filter(it => it.off).length;
+      const cats = menu.items.map(it => it.cat || '未分類').filter((c, i, a) => a.indexOf(c) === i).length;
+
+      if (isCloudMenu()) {
+        badge.innerText = '雲端菜單';
+        badge.className = 'text-xs px-2.5 py-1 rounded-full font-bold bg-emerald-100 text-emerald-800';
+        text.innerText = `${menu.items.length} 個品項・${cats} 個分類・${menu.toppings.length} 種加料` +
+                         (offCount ? `（其中 ${offCount} 個已停售）` : '');
+      } else {
+        badge.innerText = '程式內建菜單';
+        badge.className = 'text-xs px-2.5 py-1 rounded-full font-bold bg-amber-100 text-amber-800';
+        text.innerText = `${menu.items.length} 個品項・${cats} 個分類・${menu.toppings.length} 種加料。` +
+                         '目前還沒有存到試算表，第一次按「編輯菜單」存檔後就會改為雲端菜單。';
+      }
+    }
+
+    // -------- 開啟／關閉編輯器 --------
+    function openMenuEditor() {
+      const pin = prompt('🔐 修改菜單需要主揪密碼，請輸入：');
+      if (pin === null) return;
+      if (String(pin).trim() !== '9999') {
+        alert('❌ 主揪密碼錯誤，無法進入編輯。');
+        return;
+      }
+      menuPin = String(pin).trim();
+
+      // 把三家店的菜單都複製一份出來編輯，儲存時整份寫回
+      menuDraft = {};
+      menuToppingDraft = {};
+      STORE_LIST.forEach(st => {
+        const m = getStoreMenu(st);
+        menuDraft[st] = m.items.map(it => ({
+          cat: it.cat || '未分類', name: it.name || '',
+          m: (it.m === null || it.m === undefined || it.m === '') ? '' : it.m,
+          l: (it.l === null || it.l === undefined || it.l === '') ? '' : it.l,
+          xl: (it.xl === null || it.xl === undefined || it.xl === '') ? '' : it.xl,
+          fixedSweet: !!it.fixedSweet, heavyMilkOption: !!it.heavyMilkOption,
+          note: it.note || '', icon: it.icon || '🍵', off: !!it.off
+        }));
+        menuToppingDraft[st] = m.toppings.map(t => ({ name: t.name, price: Number(t.price) || 0 }));
+      });
+
+      document.getElementById('menu-editor-store').innerText = currentStore;
+      document.getElementById('menu-filter').value = '';
+      renderMenuEditor();
+      document.getElementById('modal-menu').classList.remove('hidden');
+    }
+
+    function closeMenuEditor() {
+      document.getElementById('modal-menu').classList.add('hidden');
+      menuDraft = null;
+      menuToppingDraft = null;
+      menuPin = '';
+    }
+
+    // -------- 畫出編輯器 --------
+    function renderMenuEditor() {
+      if (!menuDraft) return;
+      const body = document.getElementById('menu-editor-body');
+      const list = menuDraft[currentStore] || [];
+      const kw = (document.getElementById('menu-filter').value || '').trim().toLowerCase();
+
+      const shown = list.map((it, i) => ({ it, i }))
+        .filter(({ it }) => !kw ||
+          String(it.name).toLowerCase().includes(kw) ||
+          String(it.cat).toLowerCase().includes(kw));
+
+      document.getElementById('menu-editor-count').innerText =
+        kw ? `符合 ${shown.length} / 共 ${list.length} 項` : `共 ${list.length} 項`;
+
+      const itemsHtml = shown.length === 0
+        ? `<p class="text-center text-slate-400 text-sm py-8">找不到符合的品項</p>`
+        : shown.map(({ it, i }) => `
+          <div class="bg-white rounded-2xl border ${it.off ? 'border-rose-200 bg-rose-50/40' : 'border-slate-200'} p-3 space-y-2">
+            <div class="flex gap-2 items-center">
+              <input value="${esc(it.icon)}" oninput="editMenuField(${i},'icon',this.value)" maxlength="4"
+                class="w-12 text-center text-xl px-1 py-2 border border-slate-200 rounded-xl bg-slate-50">
+              <input value="${esc(it.name)}" oninput="editMenuField(${i},'name',this.value)" placeholder="品項名稱"
+                class="flex-1 min-w-0 px-3 py-2 text-sm font-bold border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
+              <button onclick="deleteMenuItem(${i})" title="刪除這個品項"
+                class="w-9 h-9 flex-shrink-0 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-sm font-bold">✕</button>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <input value="${esc(it.cat)}" oninput="editMenuField(${i},'cat',this.value)" placeholder="分類" list="menu-cat-list"
+                class="px-3 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50">
+              <input value="${esc(it.m)}" oninput="editMenuField(${i},'m',this.value)" placeholder="中杯 $" inputmode="numeric"
+                class="px-3 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50">
+              <input value="${esc(it.l)}" oninput="editMenuField(${i},'l',this.value)" placeholder="大杯 $" inputmode="numeric"
+                class="px-3 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50">
+              <input value="${esc(it.xl)}" oninput="editMenuField(${i},'xl',this.value)" placeholder="瓶裝 $" inputmode="numeric"
+                class="px-3 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50">
+            </div>
+
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+              <label class="flex items-center gap-1.5 text-xs text-slate-700 font-bold cursor-pointer">
+                <input type="checkbox" ${it.fixedSweet ? 'checked' : ''} onchange="editMenuField(${i},'fixedSweet',this.checked)" class="w-4 h-4 accent-amber-600"> 甜度固定
+              </label>
+              <label class="flex items-center gap-1.5 text-xs text-slate-700 font-bold cursor-pointer">
+                <input type="checkbox" ${it.heavyMilkOption ? 'checked' : ''} onchange="editMenuField(${i},'heavyMilkOption',this.checked)" class="w-4 h-4 accent-amber-600"> 可升級重乳
+              </label>
+              <label class="flex items-center gap-1.5 text-xs text-rose-700 font-bold cursor-pointer">
+                <input type="checkbox" ${it.off ? 'checked' : ''} onchange="editMenuField(${i},'off',this.checked)" class="w-4 h-4 accent-rose-600"> 停售
+              </label>
+              <input value="${esc(it.note)}" oninput="editMenuField(${i},'note',this.value)" placeholder="備註（例：5-9月限定）"
+                class="flex-1 min-w-[8rem] px-3 py-1.5 text-xs border border-slate-200 rounded-xl bg-slate-50">
+            </div>
+          </div>
+        `).join('');
+
+      const tops = menuToppingDraft[currentStore] || [];
+      const topHtml = `
+        <div class="bg-white rounded-2xl border border-slate-200 p-3 space-y-2 mt-4">
+          <div class="flex items-center justify-between">
+            <h5 class="text-sm font-bold text-slate-800">🧋 加料與加價</h5>
+            <button onclick="addTopping()" class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl">+ 新增加料</button>
+          </div>
+          ${tops.length === 0 ? `<p class="text-xs text-slate-400 py-2">這家店目前沒有加料選項</p>` : tops.map((t, i) => `
+            <div class="flex gap-2 items-center">
+              <input value="${esc(t.name)}" oninput="editTopping(${i},'name',this.value)" placeholder="加料名稱"
+                class="flex-1 min-w-0 px-3 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50">
+              <input value="${esc(t.price)}" oninput="editTopping(${i},'price',this.value)" placeholder="加價" inputmode="numeric"
+                class="w-24 px-3 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50">
+              <button onclick="deleteTopping(${i})" class="w-9 h-9 flex-shrink-0 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-sm font-bold">✕</button>
+            </div>
+          `).join('')}
+        </div>`;
+
+      const cats = list.map(it => it.cat).filter((c, i, a) => c && a.indexOf(c) === i);
+      const datalist = `<datalist id="menu-cat-list">${cats.map(c => `<option value="${esc(c)}"></option>`).join('')}</datalist>`;
+
+      body.innerHTML = datalist + itemsHtml + topHtml;
+    }
+
+    // -------- 編輯動作 --------
+    function editMenuField(idx, field, value) {
+      const list = menuDraft[currentStore];
+      if (!list || !list[idx]) return;
+      if (field === 'm' || field === 'l' || field === 'xl') {
+        const v = String(value).trim();
+        list[idx][field] = v === '' ? '' : (isNaN(Number(v)) ? '' : Number(v));
+      } else {
+        list[idx][field] = value;
+      }
+      // 只有停售會影響外觀，其他欄位不重畫，避免打字時游標跳掉
+      if (field === 'off') renderMenuEditor();
+    }
+
+    function addMenuItem() {
+      const list = menuDraft[currentStore];
+      const lastCat = list.length ? list[list.length - 1].cat : '未分類';
+      list.push({ cat: lastCat, name: '', m: '', l: '', xl: '', fixedSweet: false,
+                  heavyMilkOption: false, note: '', icon: '🍵', off: false });
+      document.getElementById('menu-filter').value = '';
+      renderMenuEditor();
+      const body = document.getElementById('menu-editor-body');
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function deleteMenuItem(idx) {
+      const list = menuDraft[currentStore];
+      if (!list || !list[idx]) return;
+      const nm = list[idx].name || '(未命名)';
+      if (!confirm(`確定要刪除「${nm}」嗎？\n\n如果只是暫時沒賣，建議改用「停售」就好。`)) return;
+      list.splice(idx, 1);
+      renderMenuEditor();
+    }
+
+    function addTopping() {
+      menuToppingDraft[currentStore].push({ name: '', price: 0 });
+      renderMenuEditor();
+    }
+
+    function editTopping(idx, field, value) {
+      const list = menuToppingDraft[currentStore];
+      if (!list || !list[idx]) return;
+      if (field === 'price') {
+        const v = String(value).trim();
+        list[idx].price = (v === '' || isNaN(Number(v))) ? 0 : Number(v);
+      } else {
+        list[idx].name = value;
+      }
+    }
+
+    function deleteTopping(idx) {
+      menuToppingDraft[currentStore].splice(idx, 1);
+      renderMenuEditor();
+    }
+
+    // -------- 儲存 --------
+    async function saveMenuEditor() {
+      const items = [];
+      const toppings = [];
+      for (const st of STORE_LIST) {
+        (menuDraft[st] || []).forEach(it => {
+          if (!String(it.name).trim()) return;          // 名稱空白就跳過
+          items.push({
+            store: st, cat: String(it.cat || '').trim() || '未分類', name: String(it.name).trim(),
+            m: it.m, l: it.l, xl: it.xl,
+            fixedSweet: !!it.fixedSweet, heavyMilkOption: !!it.heavyMilkOption,
+            note: String(it.note || '').trim(), icon: String(it.icon || '🍵').trim() || '🍵',
+            off: !!it.off
+          });
+        });
+        (menuToppingDraft[st] || []).forEach(t => {
+          if (String(t.name).trim()) toppings.push({ store: st, name: String(t.name).trim(), price: Number(t.price) || 0 });
+        });
+      }
+
+      // 先在前端檢查，避免白跑一趟伺服器
+      const bad = items.find(it => it.m === '' && it.l === '' && it.xl === '');
+      if (bad) { alert(`⚠️ 「${bad.name}」至少要填一個杯型的價格（中杯／大杯／瓶裝）。`); return; }
+      if (!items.length) { alert('⚠️ 菜單不可以是空的。'); return; }
+
+      const btn = document.getElementById('btn-save-menu');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 儲存中…`;
+
+      try {
+        const result = await postToGas({ action: 'save_menu', pin: menuPin, items: items, toppings: toppings });
+        if (result.status === 'wrong_password') { alert('❌ 主揪密碼錯誤，沒有存檔。'); return; }
+        if (result.status !== 'saved') { alert(`❌ 儲存失敗：${result.message || result.status}`); return; }
+
+        alert(`✅ 菜單已儲存！共 ${result.items} 個品項、${result.toppings} 種加料。\n\n所有同事重新整理後就會看到新價格。`);
+        closeMenuEditor();
+        await loadMenuFromCloud();
+      } catch (err) {
+        alert('⚠️ 連線失敗，菜單沒有存到。請重試。');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> 儲存菜單`;
+      }
+    }
+
   </script>
 </body>
 </html>
