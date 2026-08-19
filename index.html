@@ -221,7 +221,7 @@
       <!-- 後台操作按鈕列 -->
       <div class="flex flex-wrap gap-2 justify-end">
         <button onclick="toggleShowNames()" id="btn-toggle-names" class="flex-1 sm:flex-none px-4 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
-          <i class="fa-solid fa-user-tag"></i> <span id="btn-toggle-names-text">點餐人</span>
+          <i id="btn-toggle-names-icon" class="fa-solid fa-user-tag"></i> <span id="btn-toggle-names-text">人名顯示</span>
         </button>
         <button onclick="copyStoreSummary()" class="flex-1 sm:flex-none px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
           <i class="fa-regular fa-copy"></i> 複製叫餐清單
@@ -1304,14 +1304,20 @@
     function renderNamesToggle() {
       const btn = document.getElementById('btn-toggle-names');
       const txt = document.getElementById('btn-toggle-names-text');
+      const icon = document.getElementById('btn-toggle-names-icon');
       if (!btn || !txt) return;
       const base = 'flex-1 sm:flex-none px-4 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition ';
+      // 按鈕文字寫的是「按下去會切換成哪一種」
       if (showOrderNames) {
         btn.className = base + 'bg-indigo-600 hover:bg-indigo-700 text-white';
-        txt.innerText = '依點餐人分列';
+        txt.innerText = '點餐分類';
+        if (icon) icon.className = 'fa-solid fa-layer-group';
+        btn.title = '目前是「人名顯示」，按一下切換成「點餐分類」';
       } else {
         btn.className = base + 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-300';
-        txt.innerText = '合併同品項';
+        txt.innerText = '人名顯示';
+        if (icon) icon.className = 'fa-solid fa-user-tag';
+        btn.title = '目前是「點餐分類」，按一下切換成「人名顯示」';
       }
     }
 
@@ -1329,7 +1335,7 @@
       // 標題隨模式改變
       const titleEl = document.getElementById('summary-title');
       const iconEl = document.getElementById('summary-icon');
-      if (titleEl) titleEl.innerText = showOrderNames ? '依點餐人分列 (發飲料用)' : '店家叫餐加總 (叫餐用)';
+      if (titleEl) titleEl.innerText = showOrderNames ? '人名顯示 (發飲料用)' : '點餐分類 (叫餐用)';
       if (iconEl) iconEl.className = showOrderNames ? 'fa-solid fa-user-group text-indigo-600' : 'fa-solid fa-store text-emerald-700';
 
       if (orders.length === 0) {
