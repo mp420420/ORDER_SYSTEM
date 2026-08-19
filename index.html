@@ -326,8 +326,8 @@
       { cat: '甘丹特調系列', name: '鴉片檸檬氣泡飲', l: 70, xl: null, fixedSweet: true, icon: '🫧' },
       { cat: '甘丹特調系列', name: '夏日水果氣泡飲', l: 70, xl: null, fixedSweet: true, icon: '🫧' },
       { cat: '甘丹特調系列', name: '甘蔗香檸氣泡飲', l: 70, xl: null, fixedSweet: true, icon: '🫧' },
-      { cat: '草莓香檸氣泡飲', l: 65, xl: null, fixedSweet: true, icon: '🍓' },
-      { cat: '熟成冬梅氣泡飲', l: 60, xl: null, fixedSweet: true, icon: '🫧' },
+      { cat: '甘丹特調系列', name: '草莓香檸氣泡飲', l: 65, xl: null, fixedSweet: true, icon: '🍓' },
+      { cat: '甘丹特調系列', name: '熟成冬梅氣泡飲', l: 60, xl: null, fixedSweet: true, icon: '🫧' },
       { cat: '甘丹特調系列', name: '輕檸檬氣泡飲', l: 50, xl: null, fixedSweet: true, icon: '🍋' },
       { cat: '甘丹特調系列', name: '老冬瓜檸檬', l: 45, xl: null, fixedSweet: false, icon: '🍈' },
       { cat: '甘丹特調系列', name: '老冬瓜青茶', l: 35, xl: null, fixedSweet: false, icon: '🍈' },
@@ -406,7 +406,7 @@
       { cat: '找好茶', name: '多多綠 / 蜂蜜綠', m: 40, l: 55, fixedSweet: false, icon: '🥛' },
       { cat: '找好茶', name: '旺來紅 / 青', m: 40, l: 55, fixedSweet: false, icon: '🍍' },
       { cat: '找好茶', name: '柚子紅 / 烏', m: 40, l: 55, fixedSweet: false, icon: '🍊' },
-      { cat: '鮮柚綠', m: 50, l: 65, fixedSweet: false, note: '季節限定', icon: '🍊' },
+      { cat: '找好茶', name: '鮮柚綠', m: 50, l: 65, fixedSweet: false, note: '季節限定', icon: '🍊' },
 
       { cat: '找奶茶', name: '奶茶', m: 40, l: 55, fixedSweet: false, icon: '🧋' },
       { cat: '找奶茶', name: '奶綠', m: 40, l: 55, fixedSweet: false, icon: '🧋' },
@@ -440,7 +440,7 @@
       { cat: '找新鮮', name: '葡萄柚汁', m: 50, l: 65, fixedSweet: false, note: '季節限定', icon: '🍊' },
       { cat: '找新鮮', name: '金桔檸檬 / 檸檬梅汁', m: 50, l: 65, fixedSweet: false, icon: '🍋' },
       { cat: '找新鮮', name: '檸檬多多', m: 55, l: 75, fixedSweet: false, icon: '🥛' },
-      { cat: '葡萄柚多多', m: 55, l: 75, fixedSweet: false, note: '季節限定', icon: '🍊' },
+      { cat: '找新鮮', name: '葡萄柚多多', m: 55, l: 75, fixedSweet: false, note: '季節限定', icon: '🍊' },
 
       { cat: '找冰淇淋', name: '冰淇淋紅茶', m: 40, l: 55, fixedSweet: false, icon: '🍨' },
       { cat: '找冰淇淋', name: '芒果青', m: 40, l: 55, fixedSweet: false, icon: '🥭' },
@@ -658,6 +658,15 @@
 
     function switchStore(storeName) {
       if (currentStore === storeName) return;
+
+      // 購物車不可跨店：切換前先確認，避免 A 店的飲料被記到 B 店分頁
+      if (cart.length > 0) {
+        const ok = confirm(`⚠️ 您的購物車裡還有 ${cart.length} 杯【${currentStore}】的飲料。\n\n購物車無法跨店送出，切換到【${storeName}】會清空目前的清單。\n\n確定要切換嗎？`);
+        if (!ok) return;
+        cart = [];
+        renderCart();
+      }
+
       initStoreData(storeName);
     }
 
@@ -1110,22 +1119,34 @@
       };
 
       try {
-        await fetch(GAS_API_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+        const result = await postToGas(payload);
 
-        alert(`🎉 點餐成功！已為 ${userName} 送出 ${cart.length} 杯飲料至【${currentStore}】分頁！\n\n📌 您的刪除密碼為：${userPin}（請牢記）`);
+        if (result.status !== 'success') {
+          alert(`❌ 送出失敗：${result.message || result.status}\n\n請重試一次，若持續失敗請通知主揪。`);
+          return;
+        }
+
+        alert(`🎉 點餐成功！已為 ${userName} 送出 ${result.added} 杯飲料至【${currentStore}】。\n\n📌 您的刪除密碼為：${userPin}（請牢記）`);
         clearCart();
         delete ordersCache[currentStore]; // 清除快取，下次查看自動抓最新
       } catch (err) {
-        alert('連線發生錯誤，請重試！');
+        alert(`⚠️ 連線失敗，訂單「沒有」送出。\n\n請檢查網路後再試一次。`);
       } finally {
         btn.disabled = false;
         btn.innerHTML = `<i class="fa-regular fa-paper-plane"></i> 送出點餐 (即時同步)`;
       }
+    }
+
+    // 統一的 POST 送出：用 text/plain 避開瀏覽器 preflight，
+    // 這樣 GAS 才回得了內容，前端也才能真正判斷成功或失敗。
+    async function postToGas(payload) {
+      const res = await fetch(GAS_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return await res.json();
     }
 
     // 抓取雲端訂單 (支援背景更新與強制重整)
@@ -1159,19 +1180,35 @@
       }
 
       try {
-        const deleteUrl = `${GAS_API_URL}?action=delete_single&store=${encodeURIComponent(currentStore)}&rowIndex=${rowIndex}&pin=${encodeURIComponent(inputPin.trim())}`;
-        const res = await fetch(deleteUrl);
-        const result = await res.json();
+        // 一併送出姓名與品項，讓後端比對，避免清單變動後刪到別人的飲料
+        const result = await postToGas({
+          action: 'delete_single',
+          store: currentStore,
+          rowIndex: rowIndex,
+          user: userName,
+          item: itemName,
+          pin: inputPin.trim()
+        });
 
-        if (result.status === "wrong_password") {
+        if (result.status === 'wrong_password') {
           alert('❌ 密碼錯誤！無法刪除該筆訂單。');
           return;
         }
+        if (result.status === 'stale') {
+          alert(`⚠️ ${result.message || '清單已變動'}\n\n已為您重新整理，請再試一次。`);
+          fetchCloudOrders(true);
+          return;
+        }
+        if (result.status !== 'deleted') {
+          alert(`❌ 刪除失敗：${result.message || result.status}`);
+          fetchCloudOrders(true);
+          return;
+        }
 
-        alert(`✅ 驗證成功！已成功刪除【${userName} - ${itemName}】！`);
+        alert(`✅ 已刪除【${userName} - ${itemName}】！`);
         fetchCloudOrders(true);
       } catch (err) {
-        alert(`✅ 指令已送出！正在重新整理清單...`);
+        alert(`⚠️ 連線失敗，未能刪除。\n\n已重新整理清單，請確認後再試一次。`);
         fetchCloudOrders(true);
       }
     }
@@ -1182,18 +1219,35 @@
         return;
       }
       
-      const confirmClear = confirm(`⚠️ 確定要清除【${currentStore}】的所有訂單嗎？\n\n此動作只會清空試算表中【${currentStore}】分頁的紀錄，其他店家的資料不會受到影響！`);
+      const confirmClear = confirm(`⚠️ 確定要清除【${currentStore}】的全部 ${orders.length} 筆訂單嗎？\n\n此動作只會清空試算表中【${currentStore}】分頁的紀錄，其他店家不受影響。\n\n‼️ 清除後無法復原。`);
       if (!confirmClear) return;
 
+      const masterPin = prompt('🔐 清空全店訂單需要主揪密碼，請輸入：');
+      if (masterPin === null) return;
+
       try {
-        await fetch(`${GAS_API_URL}?action=clear&store=${encodeURIComponent(currentStore)}`);
-        alert(`✅ 已成功清空【${currentStore}】分頁訂單！`);
+        const result = await postToGas({
+          action: 'clear',
+          store: currentStore,
+          pin: String(masterPin).trim()
+        });
+
+        if (result.status === 'wrong_password') {
+          alert('❌ 主揪密碼錯誤，未清除任何資料。');
+          return;
+        }
+        if (result.status !== 'cleared') {
+          alert(`❌ 清除失敗：${result.message || result.status}`);
+          return;
+        }
+
+        alert(`✅ 已清空【${currentStore}】分頁，共移除 ${result.removed} 筆訂單。`);
         orders = [];
         ordersCache[currentStore] = [];
         renderAdminStats();
         renderAdminOrders();
       } catch (err) {
-        alert('清除失敗，請重試！');
+        alert(`⚠️ 連線失敗，未能清除。請重試。`);
       }
     }
 
