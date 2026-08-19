@@ -441,7 +441,6 @@
       { cat: '冬季限定系列', name: '黑糖薑母奶茶', m: 55, l: null, fixedSweet: true, icon: '🫖' }
     ];
 
-    const gandanCategories = ['全部', '樂活純茶系列', '自然經典系列', '甘丹特調系列', '濃醇鮮奶系列', '醇品奶香系列', '海鹽雲朵奶霜', '自然純蜜系列', '冬季限定系列'];
     const gandanToppings = [
       { name: '珍珠', price: 5 },
       { name: '冬瓜琥珀凍', price: 10 },
@@ -511,7 +510,6 @@
       { cat: '找冰淇淋', name: '冰淇淋麵茶紅茶拿鐵', m: 60, l: 80, fixedSweet: false, icon: '🍨' }
     ];
 
-    const fiftyLanCategories = ['全部', '找好茶', '找奶茶', '找拿鐵', '找新鮮', '找冰淇淋'];
     const fiftyLanToppings = [
       { name: '波霸', price: 0 },
       { name: '珍珠', price: 0 },
@@ -599,7 +597,6 @@
       { cat: '季節限定', name: '桂圓紅棗茶', l: 55, xl: null, fixedSweet: false, note: '11-2月限定', icon: '🫖' }
     ];
 
-    const presoteaCategories = ['全部', '鮮萃茶', '奶茶繽紛樂', '鮮奶系列', '奶霜系列', '特等茶&雨林認證', '無咖啡因', '果然續滋味', '季節限定'];
     const presoteaToppings = [
       { name: '珍珠', price: 10 },
       { name: '黑糖珍珠', price: 15 },
@@ -656,7 +653,8 @@
       sweetness: null,
       ice: null,
       heavyMilk: null,
-      toppings: []
+      toppings: [],
+      note: ''            // 客人自由填寫的需求，例如「加酸」「不要吸管」
     };
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -743,7 +741,7 @@
 
       // 購物車不可跨店：切換前先確認，避免 A 店的飲料被記到 B 店分頁
       if (cart.length > 0) {
-        const ok = confirm(`⚠️ 您的購物車裡還有 ${cart.length} 杯【${currentStore}】的飲料。\n\n購物車無法跨店送出，切換到【${storeName}】會清空目前的清單。\n\n確定要切換嗎？`);
+        const ok = confirm(`⚠️ 您的購物車裡還有 ${cartCups()} 杯【${currentStore}】的飲料。\n\n購物車無法跨店送出，切換到【${storeName}】會清空目前的清單。\n\n確定要切換嗎？`);
         if (!ok) return;
         cart = [];
         renderCart();
@@ -829,7 +827,8 @@
         sweetness: currentModalProduct.fixedSweet ? fixedSweetnessOptions[0] : null,
         ice: null,
         heavyMilk: null,
-        toppings: []
+        toppings: [],
+        note: ''
       };
 
       let sizeChoices = [];
@@ -1007,7 +1006,24 @@
         html += `<p class="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-xl">⚠️ 菜單規定：瓶裝規格不提供加料服務。</p>`;
       }
 
+      // 5. 客人需求（自由填寫）
+      html += `
+        <div class="space-y-2">
+          <h4 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+            <span>5. 客人需求 (選填)</span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-normal">會一起送給店家</span>
+          </h4>
+          <input id="modal-note" value="${esc(currentModalSelections.note)}" maxlength="30"
+            oninput="setModalNote(this.value)" placeholder="例如：加酸、多冰塊、不要吸管…"
+            class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+        </div>
+      `;
+
       container.innerHTML = html;
+    }
+
+    function setModalNote(v) {
+      currentModalSelections.note = String(v || '').slice(0, 30);
     }
 
     function selectModalSize(name, price) {
@@ -1081,18 +1097,33 @@
       currentModalSelections.toppings.forEach(t => {
         specs.push(t.price > 0 ? `${t.name}(+${t.price})` : t.name);
       });
+      const note = String(currentModalSelections.note || '').trim();
+      if (note) specs.push(`需求:${note}`);
 
       let total = currentModalSelections.size.price;
       if (currentModalSelections.heavyMilk) total += currentModalSelections.heavyMilk.price;
       currentModalSelections.toppings.forEach(t => total += t.price);
 
-      cart.push({
-        store: currentStore,
-        name: `【${currentStore}】` + currentModalProduct.name,
-        rawName: currentModalProduct.name,
-        specs: specs.join(', '),
-        price: total
-      });
+      const specsText = specs.join(', ');
+      // 同店、同品項、同規格、同價格 → 直接加數量，不另開一行
+      const same = cart.find(c =>
+        c.store === currentStore &&
+        c.rawName === currentModalProduct.name &&
+        c.specs === specsText &&
+        c.price === total);
+
+      if (same) {
+        same.qty = (same.qty || 1) + 1;
+      } else {
+        cart.push({
+          store: currentStore,
+          name: `【${currentStore}】` + currentModalProduct.name,
+          rawName: currentModalProduct.name,
+          specs: specsText,
+          price: total,
+          qty: 1
+        });
+      }
 
       renderCart();
       closeOptionModal();
@@ -1113,24 +1144,38 @@
       }
 
       let total = 0;
+      let cups = 0;
       container.innerHTML = cart.map((item, index) => {
-        total += item.price;
+        const qty = item.qty || 1;
+        total += item.price * qty;
+        cups += qty;
         return `
-          <div class="py-2.5 flex justify-between items-start">
-            <div class="space-y-0.5 min-w-0 pr-2">
-              <h4 class="text-sm font-bold text-slate-800 truncate">${item.name}</h4>
-              <p class="text-xs text-slate-500">${item.specs}</p>
+          <div class="py-2.5 space-y-1.5">
+            <div class="flex justify-between items-start gap-2">
+              <div class="space-y-0.5 min-w-0">
+                <h4 class="text-sm font-bold text-slate-800 truncate">${esc(item.name)}</h4>
+                <p class="text-xs text-slate-500">${esc(item.specs)}</p>
+              </div>
+              <button onclick="removeCartItem(${index})" title="移除這項"
+                class="text-slate-300 hover:text-red-500 text-sm p-1 flex-shrink-0">✕</button>
             </div>
-            <div class="text-right flex items-center space-x-2 flex-shrink-0">
-              <span class="text-sm font-black text-slate-900">$${item.price}</span>
-              <button onclick="removeCartItem(${index})" class="text-slate-300 hover:text-red-500 text-sm p-1">✕</button>
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <button onclick="changeCartQty(${index}, -1)" aria-label="減少一杯"
+                  class="w-7 h-7 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-bold leading-none flex items-center justify-center">−</button>
+                <span class="w-6 text-center text-sm font-black text-slate-900">${qty}</span>
+                <button onclick="changeCartQty(${index}, 1)" aria-label="增加一杯"
+                  class="w-7 h-7 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-bold leading-none flex items-center justify-center">＋</button>
+                <span class="text-xs text-slate-400">× $${item.price}</span>
+              </div>
+              <span class="text-sm font-black text-slate-900">$${item.price * qty}</span>
             </div>
           </div>
         `;
       }).join('');
 
       totalDisplay.innerText = `$${total}`;
-      mobileCount.innerText = cart.length;
+      mobileCount.innerText = cups;
       mobilePrice.innerText = `$${total}`;
       floatBar.classList.remove('hidden');
     }
@@ -1138,6 +1183,27 @@
     function removeCartItem(index) {
       cart.splice(index, 1);
       renderCart();
+    }
+
+    // 數量減到 0 就把整項移除
+    function changeCartQty(index, delta) {
+      const item = cart[index];
+      if (!item) return;
+      const next = (item.qty || 1) + delta;
+      if (next <= 0) {
+        cart.splice(index, 1);
+      } else if (next > 20) {
+        alert('單一品項最多 20 杯，超過請分開送出。');
+        return;
+      } else {
+        item.qty = next;
+      }
+      renderCart();
+    }
+
+    // 購物車總杯數（送出、提示訊息都用這個）
+    function cartCups() {
+      return cart.reduce((sum, c) => sum + (c.qty || 1), 0);
     }
 
     function clearCart() {
@@ -1188,16 +1254,20 @@
       const minutes = String(now.getMinutes()).padStart(2, '0');
       const timeStr = `${year}/${month}/${date} ${hours}:${minutes}`;
 
+      // 一杯一列寫進試算表，發放清單才看得到每一杯
+      const expanded = [];
+      cart.forEach(item => {
+        const qty = item.qty || 1;
+        for (let k = 0; k < qty; k++) {
+          expanded.push({ name: item.rawName, specs: item.specs, price: item.price, time: timeStr });
+        }
+      });
+
       const payload = {
         store: currentStore,
         user: userName,
         pin: userPin,
-        items: cart.map(item => ({
-          name: item.rawName,
-          specs: item.specs,
-          price: item.price,
-          time: timeStr
-        }))
+        items: expanded
       };
 
       try {
@@ -1262,7 +1332,7 @@
 
     // 刪除單筆訂單
     async function deleteSingleOrder(rowIndex, userName, itemName) {
-      const inputPin = prompt(`🔐 安全防護：欲刪除【${userName} - ${itemName}】\n\n請輸入點餐時設定的 4 位數密碼（主揪萬能密碼為 9999）：`);
+      const inputPin = prompt(`🔐 安全防護：欲刪除【${userName} - ${itemName}】\n\n請輸入您點餐時設定的 4 位數密碼：\n（忘記的話請找主揪幫忙刪）`);
       if (inputPin === null) return;
 
       if (!inputPin.trim()) {
@@ -1500,14 +1570,23 @@
       });
     }
 
+    // CSV 欄位：跳脫雙引號，並讓 = + - @ 開頭的內容不會被 Excel 當公式執行
+    function csvCell(v) {
+      let t = String(v == null ? '' : v);
+      if (/^[=+\-@]/.test(t)) t = "'" + t;
+      return '"' + t.replace(/"/g, '""') + '"';
+    }
+
     function exportCSV() {
       if (orders.length === 0) {
         alert('目前無訂單可匯出！');
         return;
       }
-      let csv = "\uFEFF姓名,餐點,規格,金額,時間,密碼\n";
+      // 刻意不匯出密碼欄，避免報表外流時同事的刪除密碼一起外流
+      let csv = "\uFEFF姓名,餐點,規格與需求,金額,時間\n";
       orders.forEach(o => {
-        csv += `"${o.user}","${o.item}","${o.specs}",${o.price},"${o.time}","${o.pin}"\n`;
+        csv += [csvCell(o.user), csvCell(o.item), csvCell(o.specs),
+                Number(o.price) || 0, csvCell(o.time)].join(',') + "\n";
       });
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
