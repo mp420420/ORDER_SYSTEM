@@ -156,7 +156,7 @@
         </div>
       </div>
 
-      <!-- 各員點餐與收款明細 (全寬版面，清楚呈現) -->
+      <!-- 各員點餐與收款明細 -->
       <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-3">
         <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
           <i class="fa-solid fa-receipt text-amber-600"></i> 各員點餐與收款明細
@@ -177,7 +177,7 @@
       </div>
     </section>
 
-    <!-- ==================== 3. 主揪管理介面 (後台：放置店家叫餐加總與管理功能) ==================== -->
+    <!-- ==================== 3. 主揪管理介面 (後台：店家叫餐加總與管理功能) ==================== -->
     <section id="view-admin" class="hidden space-y-4 sm:space-y-6">
       
       <!-- 統計數據卡片 -->
@@ -230,7 +230,7 @@
         </button>
       </div>
 
-      <!-- 店家叫餐加總 (已移至後台專區) -->
+      <!-- 店家叫餐加總 (位於後台專區) -->
       <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
         <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
           <i class="fa-solid fa-store text-emerald-700"></i> 店家叫餐加總 (<span id="summary-store-name">甘丹茶飲</span>)
@@ -403,6 +403,7 @@
       { cat: '找好茶', name: '8冰綠 / 情人茶', m: 40, l: 55, fixedSweet: false, icon: '🍹' },
       { cat: '找好茶', name: '多多綠 / 蜂蜜綠', m: 40, l: 55, fixedSweet: false, icon: '🥛' },
       { cat: '找好茶', name: '旺來紅 / 青', m: 40, l: 55, fixedSweet: false, icon: '🍍' },
+      { cat: '找好茶', name: '柚子紅 / 烏', m: 40, l: 55, fixedSweet: false, icon: '🍊' },
       { cat: '鮮柚綠', m: 50, l: 65, fixedSweet: false, note: '季節限定', icon: '🍊' },
 
       { cat: '找奶茶', name: '奶茶', m: 40, l: 55, fixedSweet: false, icon: '🧋' },
@@ -437,7 +438,7 @@
       { cat: '找新鮮', name: '葡萄柚汁', m: 50, l: 65, fixedSweet: false, note: '季節限定', icon: '🍊' },
       { cat: '找新鮮', name: '金桔檸檬 / 檸檬梅汁', m: 50, l: 65, fixedSweet: false, icon: '🍋' },
       { cat: '找新鮮', name: '檸檬多多', m: 55, l: 75, fixedSweet: false, icon: '🥛' },
-      { cat: '找新鮮', name: '葡萄柚多多', m: 55, l: 75, fixedSweet: false, note: '季節限定', icon: '🍊' },
+      { cat: '葡萄柚多多', m: 55, l: 75, fixedSweet: false, note: '季節限定', icon: '🍊' },
 
       { cat: '找冰淇淋', name: '冰淇淋紅茶', m: 40, l: 55, fixedSweet: false, icon: '🍨' },
       { cat: '找冰淇淋', name: '芒果青', m: 40, l: 55, fixedSweet: false, icon: '🥭' },
@@ -823,7 +824,7 @@
           <div class="grid ${sweetGridCols} gap-2">
             ${sweetList.map(s => `
               <button type="button" onclick="selectModalSweetness('${s.name}')" 
-                class="px-3 py-2.5 rounded-2xl text-sm font-bold border text-center transition ${
+                class="px-3.5 py-2.5 rounded-2xl text-sm font-bold border text-center transition ${
                   currentModalSelections.sweetness && currentModalSelections.sweetness.name === s.name ? themeColor + ' text-white' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
                 }">
                 ${s.name}
@@ -875,7 +876,7 @@
         `;
       }
 
-      // 5. 加料專區
+      // 5. 加料專區 (修復逗號問題與排版)
       const isXL = currentModalSelections.size && (currentModalSelections.size.name.includes('生活瓶') || currentModalSelections.size.name.includes('瓶'));
       if (!isXL) {
         html += `
@@ -896,7 +897,7 @@
                     <span class="${isSelected ? 'text-white/90' : 'text-amber-600 font-black'}">${priceTag}</span>
                   </button>
                 `;
-              })}
+              }).join('')}
             </div>
           </div>
         `;
