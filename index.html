@@ -220,6 +220,9 @@
 
       <!-- 後台操作按鈕列 -->
       <div class="flex flex-wrap gap-2 justify-end">
+        <button onclick="toggleShowNames()" id="btn-toggle-names" class="flex-1 sm:flex-none px-4 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
+          <i class="fa-solid fa-user-tag"></i> <span id="btn-toggle-names-text">點餐人</span>
+        </button>
         <button onclick="copyStoreSummary()" class="flex-1 sm:flex-none px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
           <i class="fa-regular fa-copy"></i> 複製叫餐清單
         </button>
@@ -234,7 +237,7 @@
       <!-- 店家叫餐加總 -->
       <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
         <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-          <i class="fa-solid fa-store text-emerald-700"></i> 店家叫餐加總 (<span id="summary-store-name">甘丹茶飲</span>)
+          <i id="summary-icon" class="fa-solid fa-store text-emerald-700"></i> <span id="summary-title">店家叫餐加總</span> (<span id="summary-store-name">甘丹茶飲</span>)
         </h4>
         <div id="aggregated-summary-list" class="divide-y divide-slate-100 text-xs sm:text-sm max-h-96 overflow-y-auto pr-1"></div>
       </div>
@@ -291,6 +294,9 @@
 
     let currentStore = '甘丹茶飲';
     let currentViewMode = 'user'; // 'user' | 'orders' | 'admin'
+
+    // 叫餐加總是否顯示「誰點的」（發飲料時很好用），選擇會記在這台裝置上
+    let showOrderNames = (localStorage.getItem('showOrderNames') === '1');
     const ordersCache = {}; // 快取各店訂單資料，避免切換重複等待
 
     // 1. 甘丹茶飲 菜單
@@ -589,6 +595,7 @@
     window.addEventListener('DOMContentLoaded', () => {
       initStoreData('甘丹茶飲');
       renderCart();
+      renderNamesToggle();
     });
 
     // 極速切換店家（切換菜單毫秒級反應，不卡網路連線）
@@ -1263,22 +1270,102 @@
       document.getElementById('orders-total-count').innerText = `${uniqueUsers}人 / ${orders.length}杯`;
     }
 
-    function renderAdminOrders() {
-      const aggregatedContainer = document.getElementById('aggregated-summary-list');
-      const itemMap = {};
+    // 把使用者輸入安全地放進 HTML，避免姓名含特殊符號時排版壞掉
+    function esc(v) {
+      return String(v == null ? '' : v)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
 
+    // 【叫餐模式】把相同品項與規格合併，回傳 { 品項與規格: 杯數 }
+    function buildItemMap(withBracket) {
+      const map = {};
       orders.forEach(o => {
-        const key = `${o.item} 【${o.specs}】`;
-        itemMap[key] = (itemMap[key] || 0) + 1;
+        const key = withBracket ? (o.item + ' 【' + o.specs + '】') : (o.item + ' (' + o.specs + ')');
+        map[key] = (map[key] || 0) + 1;
       });
+      return map;
+    }
 
-      if (Object.keys(itemMap).length === 0) {
-        aggregatedContainer.innerHTML = `<p class="text-slate-400 text-xs py-4 text-center">【${currentStore}】目前尚無訂單紀錄</p>`;
+    // 【發放模式】依點餐人分組，每一單獨立一筆不合併，依第一次出現的順序排列
+    function buildUserGroups() {
+      const groups = [];
+      const index = {};
+      orders.forEach(o => {
+        const who = String(o.user == null ? '' : o.user).trim() || '(未填姓名)';
+        if (index[who] === undefined) {
+          index[who] = groups.length;
+          groups.push({ user: who, items: [], total: 0 });
+        }
+        const g = groups[index[who]];
+        g.items.push(o);
+        g.total += Number(o.price || 0);
+      });
+      return groups;
+    }
+
+    function renderNamesToggle() {
+      const btn = document.getElementById('btn-toggle-names');
+      const txt = document.getElementById('btn-toggle-names-text');
+      if (!btn || !txt) return;
+      const base = 'flex-1 sm:flex-none px-4 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition ';
+      if (showOrderNames) {
+        btn.className = base + 'bg-indigo-600 hover:bg-indigo-700 text-white';
+        txt.innerText = '依點餐人分列';
       } else {
+        btn.className = base + 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-300';
+        txt.innerText = '合併同品項';
+      }
+    }
+
+    function toggleShowNames() {
+      showOrderNames = !showOrderNames;
+      localStorage.setItem('showOrderNames', showOrderNames ? '1' : '0');
+      renderNamesToggle();
+      renderAdminOrders();
+    }
+
+    function renderAdminOrders() {
+      renderNamesToggle();
+      const aggregatedContainer = document.getElementById('aggregated-summary-list');
+
+      // 標題隨模式改變
+      const titleEl = document.getElementById('summary-title');
+      const iconEl = document.getElementById('summary-icon');
+      if (titleEl) titleEl.innerText = showOrderNames ? '依點餐人分列 (發飲料用)' : '店家叫餐加總 (叫餐用)';
+      if (iconEl) iconEl.className = showOrderNames ? 'fa-solid fa-user-group text-indigo-600' : 'fa-solid fa-store text-emerald-700';
+
+      if (orders.length === 0) {
+        aggregatedContainer.innerHTML = `<p class="text-slate-400 text-xs py-4 text-center">【${currentStore}】目前尚無訂單紀錄</p>`;
+      } else if (showOrderNames) {
+        // ===== 發放模式：依人分組，每一單獨立一行 =====
+        aggregatedContainer.innerHTML = buildUserGroups().map(g => `
+          <div class="py-3">
+            <div class="flex justify-between items-center gap-2 mb-1.5">
+              <span class="font-black text-slate-900 text-sm truncate">
+                <i class="fa-solid fa-user text-indigo-600 mr-1.5"></i>${esc(g.user)}
+              </span>
+              <span class="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg flex-shrink-0 whitespace-nowrap">
+                ${g.items.length}杯 $${g.total}
+              </span>
+            </div>
+            ${g.items.map(o => `
+              <div class="flex justify-between items-start gap-2 pl-5 py-0.5">
+                <span class="text-slate-700 text-xs sm:text-sm min-w-0">
+                  ${esc(o.item)} <span class="text-slate-400">【${esc(o.specs)}】</span>
+                </span>
+                <span class="text-xs text-slate-500 flex-shrink-0 whitespace-nowrap">$${esc(o.price)}</span>
+              </div>
+            `).join('')}
+          </div>
+        `).join('');
+      } else {
+        // ===== 叫餐模式：合併相同品項與規格 =====
+        const itemMap = buildItemMap(true);
         aggregatedContainer.innerHTML = Object.entries(itemMap).map(([spec, count]) => `
-          <div class="py-2.5 flex justify-between items-center text-sm">
-            <span class="text-slate-700 pr-2">${spec}</span>
-            <span class="font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg">x ${count}</span>
+          <div class="py-2.5 flex justify-between items-start gap-2 text-sm">
+            <span class="text-slate-700 min-w-0">${esc(spec)}</span>
+            <span class="font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg flex-shrink-0">x ${count}</span>
           </div>
         `).join('');
       }
@@ -1289,11 +1376,11 @@
       } else {
         tableBody.innerHTML = orders.map(o => `
           <tr class="hover:bg-slate-50 transition text-sm">
-            <td class="p-2.5 font-bold text-slate-900 whitespace-nowrap">${o.user} <span class="text-xs font-normal text-slate-400 block">${o.time}</span></td>
-            <td class="p-2.5 text-slate-700">${o.item} <span class="text-slate-400 text-xs block">${o.specs}</span></td>
-            <td class="p-2.5 text-right font-bold text-amber-600 whitespace-nowrap">$${o.price}</td>
+            <td class="p-2.5 font-bold text-slate-900 whitespace-nowrap">${esc(o.user)} <span class="text-xs font-normal text-slate-400 block">${esc(o.time)}</span></td>
+            <td class="p-2.5 text-slate-700">${esc(o.item)} <span class="text-slate-400 text-xs block">${esc(o.specs)}</span></td>
+            <td class="p-2.5 text-right font-bold text-amber-600 whitespace-nowrap">$${esc(o.price)}</td>
             <td class="p-2.5 text-center whitespace-nowrap">
-              <button onclick="deleteSingleOrder(${o.rowIndex}, '${o.user}', '${o.item}')" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-bold transition">
+              <button onclick="deleteSingleOrder(${o.rowIndex}, ${esc(JSON.stringify(o.user))}, ${esc(JSON.stringify(o.item))})" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-bold transition">
                 刪除 ✕
               </button>
             </td>
@@ -1303,19 +1390,29 @@
     }
 
     function copyStoreSummary() {
-      const itemMap = {};
-      orders.forEach(o => {
-        const key = `${o.item} (${o.specs})`;
-        itemMap[key] = (itemMap[key] || 0) + 1;
-      });
+      const totalAmount = orders.reduce((s, o) => s + Number(o.price || 0), 0);
+      const title = showOrderNames ? '發放清單' : '叫餐清單';
+      let text = `📋 【${currentStore} - ${title}】\n總杯數：${orders.length} 杯 ｜ 總金額：$${totalAmount} 元\n-------------------------\n`;
 
-      let text = `📋 【${currentStore} - 訂單統計】\n總杯數：${orders.length} 杯 ｜ 總金額：$${orders.reduce((s,o)=>s+Number(o.price||0),0)} 元\n-------------------------\n`;
-      Object.entries(itemMap).forEach(([name, count]) => {
-        text += `• ${name} x ${count}\n`;
-      });
+      if (showOrderNames) {
+        // 依人分列，每一單獨立一行，方便發飲料與收錢
+        buildUserGroups().forEach(g => {
+          text += `👤 ${g.user}（${g.items.length}杯 $${g.total}）\n`;
+          g.items.forEach(o => {
+            text += `   • ${o.item} (${o.specs}) $${o.price}\n`;
+          });
+          text += `\n`;
+        });
+      } else {
+        // 合併同品項，直接唸給店家聽
+        const itemMap = buildItemMap(false);
+        Object.entries(itemMap).forEach(([name, count]) => {
+          text += `• ${name} x ${count}\n`;
+        });
+      }
 
       navigator.clipboard.writeText(text).then(() => {
-        alert(`✅ 已複製【${currentStore}】叫餐清單至剪貼簿！`);
+        alert(`✅ 已複製【${currentStore}】${showOrderNames ? '發放清單（依點餐人分列）' : '叫餐清單（合併同品項）'}至剪貼簿！`);
       });
     }
 
