@@ -30,11 +30,9 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased pb-24 lg:pb-6">
 
-  <!-- 頂部導航 (三店家切換 + 點餐/後台) -->
+  <!-- 頂部導航 -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
     <div class="max-w-6xl mx-auto px-3.5 sm:px-4 h-16 flex items-center justify-between gap-2">
-      
-      <!-- 店家快速切換 Tab -->
       <div class="flex items-center space-x-1 sm:space-x-1.5 bg-slate-100 p-1 rounded-2xl border border-slate-200 overflow-x-auto hide-scrollbar">
         <button onclick="switchStore('甘丹茶飲')" id="btn-store-gandan" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition flex items-center gap-1.5">
           <span class="w-2 h-2 rounded-full bg-emerald-400"></span> 甘丹茶飲
@@ -47,7 +45,6 @@
         </button>
       </div>
 
-      <!-- 狀態顯示與切換 點餐 / 後台 模式 -->
       <div class="flex items-center gap-2">
         <span id="room-badge" class="hidden sm:inline-block text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold whitespace-nowrap">點餐中 🟢</span>
         <div class="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold flex-shrink-0">
@@ -68,19 +65,13 @@
     <!-- ==================== 1. 同事點餐介面 (前台) ==================== -->
     <section id="view-user" class="block">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
-
-        <!-- 左側：分類標籤與商品列表 (8欄) -->
         <div class="lg:col-span-8 space-y-4">
-          
-          <!-- 橫幅公告 -->
           <div id="store-banner" class="rounded-2xl p-3.5 sm:p-4 text-white shadow-xs transition-colors">
             <div class="flex items-center justify-between gap-2">
               <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2">
-                  <h2 id="store-banner-title" class="text-base sm:text-lg font-black truncate flex items-center gap-1.5">
-                    <span>🌿</span> 甘丹簡單 輕茶飲
-                  </h2>
-                </div>
+                <h2 id="store-banner-title" class="text-base sm:text-lg font-black truncate flex items-center gap-1.5">
+                  <span>🌿</span> 甘丹簡單 輕茶飲
+                </h2>
                 <p id="store-banner-sub" class="text-white/85 text-xs sm:text-sm mt-0.5 truncate">
                   即時同步至試算表【甘丹茶飲】分頁
                 </p>
@@ -93,20 +84,14 @@
             </div>
           </div>
 
-          <!-- 分類標籤切換 -->
           <div class="relative">
-            <div id="category-tabs" class="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-              <!-- 動態生成分類按鈕 -->
-            </div>
+            <div id="category-tabs" class="flex gap-2 overflow-x-auto pb-1 hide-scrollbar"></div>
           </div>
 
-          <!-- 商品卡片列表 -->
-          <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <!-- 動態生成商品卡片 -->
-          </div>
+          <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"></div>
         </div>
 
-        <!-- 右側：購物車 -->
+        <!-- 購物車 (加入 4 位數密碼輸入欄) -->
         <div class="lg:col-span-4 mt-2 lg:mt-0" id="cart-section">
           <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs sticky top-20 space-y-4">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -116,18 +101,22 @@
               <button onclick="clearCart()" class="text-xs text-slate-400 hover:text-red-500 transition">清空</button>
             </div>
 
-            <!-- 同事名字輸入 -->
+            <!-- 姓名/分機 -->
             <div>
               <label class="block text-xs font-bold text-slate-700 mb-1.5">姓名 / 分機 <span class="text-red-500">*</span></label>
               <input type="text" id="user-name" placeholder="例如：陳大華 (#305)" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-700 bg-slate-50 focus:bg-white">
             </div>
 
-            <!-- 購物車項目清單 -->
-            <div id="cart-items-list" class="divide-y divide-slate-100 max-h-56 overflow-y-auto pr-1">
+            <!-- 4位數點餐密碼 -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1.5">防誤刪密碼 (自訂4個數字) <span class="text-red-500">*</span></label>
+              <input type="tel" id="user-pin" maxlength="4" placeholder="例如：1234 (刪除時需輸入)" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-700 bg-slate-50 focus:bg-white tracking-widest font-mono">
+            </div>
+
+            <div id="cart-items-list" class="divide-y divide-slate-100 max-h-48 overflow-y-auto pr-1">
               <p class="text-slate-400 text-xs text-center py-6">購物車目前是空的，快去點杯茶吧！</p>
             </div>
 
-            <!-- 金額小計與送出按鈕 -->
             <div class="border-t border-slate-100 pt-3 space-y-2.5">
               <div class="flex justify-between items-center text-base font-bold text-slate-900">
                 <span>合計金額</span>
@@ -139,14 +128,11 @@
             </div>
           </div>
         </div>
-
       </div>
     </section>
 
     <!-- ==================== 2. 主揪管理與統計介面 (後台) ==================== -->
     <section id="view-admin" class="hidden space-y-4 sm:space-y-6">
-      
-      <!-- 統計數據卡片 -->
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
@@ -200,17 +186,13 @@
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
-        <!-- 店家品項加總清單 (5欄) -->
         <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-3">
           <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
             <i class="fa-solid fa-store text-emerald-700"></i> 店家叫餐加總 (<span id="summary-store-name">甘丹茶飲</span>)
           </h4>
-          <div id="aggregated-summary-list" class="divide-y divide-slate-100 text-xs sm:text-sm max-h-72 overflow-y-auto pr-1">
-            <!-- 動態生成統計清單 -->
-          </div>
+          <div id="aggregated-summary-list" class="divide-y divide-slate-100 text-xs sm:text-sm max-h-72 overflow-y-auto pr-1"></div>
         </div>
 
-        <!-- 個人明細清單 (7欄) -->
         <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-3">
           <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
             <i class="fa-solid fa-receipt text-amber-600"></i> 各員點餐與收款明細
@@ -222,27 +204,23 @@
                   <th class="p-2.5 whitespace-nowrap">姓名</th>
                   <th class="p-2.5">品項與規格</th>
                   <th class="p-2.5 text-right whitespace-nowrap">金額</th>
+                  <th class="p-2.5 text-center whitespace-nowrap">操作</th>
                 </tr>
               </thead>
-              <tbody id="orders-table-body" class="divide-y divide-slate-100">
-                <!-- 動態生成訂單明細 -->
-              </tbody>
+              <tbody id="orders-table-body" class="divide-y divide-slate-100"></tbody>
             </table>
           </div>
         </div>
       </div>
-
     </section>
 
   </main>
 
-  <!-- 手機端底部浮動購物車欄 -->
+  <!-- 手機端底部浮動購物車 -->
   <div id="mobile-cart-float" class="lg:hidden fixed bottom-4 left-4 right-4 z-40 hidden">
     <button onclick="scrollToCart()" class="w-full bg-slate-900 text-white rounded-2xl p-3.5 shadow-2xl flex items-center justify-between active:scale-98 transition border border-slate-700">
       <div class="flex items-center gap-3">
-        <div class="w-8 h-8 bg-amber-600 rounded-xl flex items-center justify-center font-bold text-sm" id="mobile-cart-count">
-          0
-        </div>
+        <div class="w-8 h-8 bg-amber-600 rounded-xl flex items-center justify-center font-bold text-sm" id="mobile-cart-count">0</div>
         <span class="text-sm font-bold">查看訂單 / 填寫姓名</span>
       </div>
       <div class="flex items-center gap-2">
@@ -252,10 +230,9 @@
     </button>
   </div>
 
-  <!-- ==================== 規格選擇彈跳視窗 (Modal) ==================== -->
+  <!-- 規格選擇彈跳視窗 -->
   <div id="modal-option" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
     <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] sm:max-h-[90vh]">
-      <!-- 視窗頭部 -->
       <div class="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 flex-shrink-0">
         <div class="flex items-center space-x-3">
           <span id="modal-item-icon" class="text-3xl">🍵</span>
@@ -267,12 +244,8 @@
         <button onclick="closeOptionModal()" class="w-9 h-9 rounded-full bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-600 font-bold text-base">✕</button>
       </div>
 
-      <!-- 視窗選項動態內容 -->
-      <div id="modal-options-body" class="p-4 sm:p-5 overflow-y-auto space-y-5 flex-1">
-        <!-- 動態渲染容量、甜度、冰塊、加料、重乳升級 -->
-      </div>
+      <div id="modal-options-body" class="p-4 sm:p-5 overflow-y-auto space-y-5 flex-1"></div>
 
-      <!-- 視窗底部加入購物車 -->
       <div class="p-4 border-t border-slate-100 bg-white flex items-center justify-between flex-shrink-0">
         <div>
           <span class="text-xs text-slate-400 block font-medium">小計金額</span>
@@ -285,7 +258,7 @@
     </div>
   </div>
 
-  <!-- ==================== 核心邏輯 Javascript ==================== -->
+  <!-- 核心 Javascript -->
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -546,7 +519,7 @@
       { name: '布丁一顆', price: 15 }
     ];
 
-    // 通用規格選項（已移除括號文字）
+    // 通用規格選項
     const sweetnessOptions = [
       { name: '無糖', price: 0 },
       { name: '微糖', price: 0 },
@@ -729,7 +702,6 @@
         toppings: []
       };
 
-      // 規格簡稱
       let sizeChoices = [];
       if (currentStore === '50嵐') {
         if (currentModalProduct.m) sizeChoices.push({ name: '中杯', price: currentModalProduct.m });
@@ -781,7 +753,7 @@
 
       let html = '';
 
-      // 1. 容量規格 (必選)
+      // 1. 容量規格
       const sizeSelected = !!currentModalSelections.size;
       html += `
         <div class="space-y-2">
@@ -807,7 +779,7 @@
         </div>
       `;
 
-      // 2. 甜度 (必選)
+      // 2. 甜度
       const sweetList = p.fixedSweet ? fixedSweetnessOptions : sweetnessOptions;
       const sweetSelected = !!currentModalSelections.sweetness;
       const sweetGridCols = p.fixedSweet ? 'grid-cols-1' : 'grid-cols-3 sm:grid-cols-5';
@@ -834,7 +806,7 @@
         </div>
       `;
 
-      // 3. 冰塊 (必選)
+      // 3. 冰塊
       const iceSelected = !!currentModalSelections.ice;
       html += `
         <div class="space-y-2">
@@ -859,7 +831,7 @@
         </div>
       `;
 
-      // 4. 重乳升級 (甘丹特有)
+      // 4. 重乳升級
       if (p.heavyMilkOption) {
         const isHeavy = !!currentModalSelections.heavyMilk;
         html += `
@@ -876,7 +848,7 @@
         `;
       }
 
-      // 5. 加料專區 (選填)
+      // 5. 加料專區
       const isXL = currentModalSelections.size && (currentModalSelections.size.name.includes('生活瓶') || currentModalSelections.size.name.includes('瓶'));
       if (!isXL) {
         html += `
@@ -897,7 +869,7 @@
                     <span class="${isSelected ? 'text-white/90' : 'text-amber-600 font-black'}">${priceTag}</span>
                   </button>
                 `;
-              }).join('')}
+              })}
             </div>
           </div>
         `;
@@ -1049,6 +1021,7 @@
       document.getElementById('user-name').focus();
     }
 
+    // 點餐送出（強制檢查 4 位數密碼）
     async function submitOrder() {
       if (!isRoomOpen) {
         alert('抱歉，今日點餐已經截止！');
@@ -1060,6 +1033,14 @@
         document.getElementById('user-name').focus();
         return;
       }
+
+      const userPin = document.getElementById('user-pin').value.trim();
+      if (!userPin || userPin.length !== 4 || isNaN(userPin)) {
+        alert('⚠️ 請輸入 4 位純數字作為防誤刪密碼！(例如：1234)');
+        document.getElementById('user-pin').focus();
+        return;
+      }
+
       if (cart.length === 0) {
         alert('購物車目前是空的，請先挑選飲料！');
         return;
@@ -1069,7 +1050,6 @@
       btn.disabled = true;
       btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 正在同步至試算表...`;
 
-      // 產生標準台灣時間格式 (YYYY/MM/DD HH:mm)
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -1081,6 +1061,7 @@
       const payload = {
         store: currentStore,
         user: userName,
+        pin: userPin,
         items: cart.map(item => ({
           name: item.rawName,
           specs: item.specs,
@@ -1097,7 +1078,7 @@
           body: JSON.stringify(payload)
         });
 
-        alert(`🎉 點餐成功！已為 ${userName} 送出 ${cart.length} 杯飲料至【${currentStore}】分頁！`);
+        alert(`🎉 點餐成功！已為 ${userName} 送出 ${cart.length} 杯飲料至【${currentStore}】分頁！\n\n📌 您的刪除密碼為：${userPin}（請牢記）`);
         clearCart();
         fetchCloudOrders();
       } catch (err) {
@@ -1117,6 +1098,38 @@
         renderAdminOrders();
       } catch (e) {
         console.log('載入雲端訂單中或無資料');
+      }
+    }
+
+    // 刪除單筆訂單（跳出密碼輸入彈窗比對）
+    async function deleteSingleOrder(rowIndex, userName, itemName) {
+      const inputPin = prompt(`🔐 安全防護：欲刪除【${userName} - ${itemName}】\n\n請輸入點餐時設定的 4 位數密碼（主揪萬能密碼為 9999）：`);
+      if (inputPin === null) return; // 使用者按取消
+
+      if (!inputPin.trim()) {
+        alert('⚠️ 密碼不可為空！');
+        return;
+      }
+
+      try {
+        const res = await fetch(GAS_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: "delete_single", store: currentStore, rowIndex: rowIndex, pin: inputPin.trim() })
+        });
+        const result = await res.json();
+
+        if (result.status === "wrong_password") {
+          alert('❌ 密碼錯誤！無法刪除該筆訂單。');
+          return;
+        }
+
+        alert(`✅ 驗證成功！已刪除【${userName} - ${itemName}】！`);
+        fetchCloudOrders();
+      } catch (err) {
+        // 部分環境 no-cors 或連線重整
+        alert(`✅ 指令已送出！正在重新同步清單...`);
+        fetchCloudOrders();
       }
     }
 
@@ -1175,13 +1188,18 @@
 
       const tableBody = document.getElementById('orders-table-body');
       if (orders.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="3" class="text-center py-6 text-slate-400">目前【${currentStore}】分頁中尚無訂單</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-slate-400">目前【${currentStore}】分頁中尚無訂單</td></tr>`;
       } else {
         tableBody.innerHTML = orders.map(o => `
           <tr class="hover:bg-slate-50 transition text-sm">
             <td class="p-2.5 font-bold text-slate-900 whitespace-nowrap">${o.user} <span class="text-xs font-normal text-slate-400 block">${o.time}</span></td>
             <td class="p-2.5 text-slate-700">${o.item} <span class="text-slate-400 text-xs block">${o.specs}</span></td>
             <td class="p-2.5 text-right font-bold text-amber-600 whitespace-nowrap">$${o.price}</td>
+            <td class="p-2.5 text-center whitespace-nowrap">
+              <button onclick="deleteSingleOrder(${o.rowIndex}, '${o.user}', '${o.item}')" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-bold transition">
+                刪除 ✕
+              </button>
+            </td>
           </tr>
         `).join('');
       }
@@ -1209,9 +1227,9 @@
         alert('目前無訂單可匯出！');
         return;
       }
-      let csv = "\uFEFF姓名,餐點,規格,金額,時間\n";
+      let csv = "\uFEFF姓名,餐點,規格,金額,時間,密碼\n";
       orders.forEach(o => {
-        csv += `"${o.user}","${o.item}","${o.specs}",${o.price},"${o.time}"\n`;
+        csv += `"${o.user}","${o.item}","${o.specs}",${o.price},"${o.time}","${o.pin}"\n`;
       });
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
