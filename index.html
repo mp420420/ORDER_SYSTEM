@@ -1465,7 +1465,14 @@
       return { size: parts[0] || '', sweet: parts[1] || '', ice: parts[2] || '', extras: parts.slice(3) };
     }
 
-    // 發放清單的一行：姓名/品項(需求)/加料/甜度/冰塊/杯型/$金額
+    // 加料顯示成口語的「加珍珠」，並去掉 (+10) 這種加價標示（總金額已在行尾）
+    function cleanTopping(x) {
+      const t = String(x == null ? '' : x).replace(/\s*\(\+\d+\)\s*$/, '').trim();
+      if (/^(加|升級)/.test(t)) return t;   // 「升級重乳」不用再加「加」
+      return '加' + t;
+    }
+
+    // 發放清單的一行：姓名/品項(加料、需求)/甜度/冰塊/杯型/$金額
     // 回傳 [{t: 文字, k: 種類}]，種類用來決定畫面上的顏色
     function orderLineSegments(o) {
       const sp = splitSpecs(o.specs);
@@ -1481,8 +1488,12 @@
       const seg = [];
       seg.push({ t: String(o.user == null ? '' : o.user).trim() || '(未填姓名)', k: 'user' });
       seg.push({ t: String(o.item == null ? '' : o.item).trim(), k: 'item' });
-      if (note)     seg.push({ t: '(' + note + ')', k: 'note', glue: true });  // glue=接在前一段後面，不加斜線
-      toppings.forEach(x => seg.push({ t: x, k: 'topping' }));                  // 加料緊接在品項後面
+      // 加料與需求一起放進品項後面的括號：不知四季春(加冬瓜琥珀凍)
+      const inner = toppings.map(cleanTopping);
+      if (note) inner.push(note);
+      if (inner.length) {
+        seg.push({ t: '(' + inner.join('、') + ')', k: note ? 'note' : 'addon', glue: true });
+      }
       if (sp.sweet) seg.push({ t: sp.sweet, k: 'spec' });
       if (sp.ice)   seg.push({ t: sp.ice,   k: 'spec' });
       if (sp.size)  seg.push({ t: sp.size,  k: 'spec' });
@@ -1554,7 +1565,7 @@
           user:  'font-black text-indigo-700',
           item:  'text-slate-800 font-bold',
           note:  'text-amber-700 font-black bg-amber-50 rounded px-1',
-          topping: 'text-emerald-800 font-bold',
+          addon: 'text-emerald-800 font-bold',
           spec:  'text-slate-700',
           price: 'text-slate-900 font-bold'
         };
@@ -1602,7 +1613,7 @@
       let text = `📋 【${currentStore} - ${title}】\n總杯數：${orders.length} 杯 ｜ 總金額：$${totalAmount} 元\n-------------------------\n`;
 
       if (showOrderNames) {
-        // 一行一單：姓名/品項(需求)/加料/甜度/冰塊/杯型/$金額
+        // 一行一單：姓名/品項(加料、需求)/甜度/冰塊/杯型/$金額
         buildOrderLines().forEach(o => {
           text += orderLineText(o) + `\n`;
         });
