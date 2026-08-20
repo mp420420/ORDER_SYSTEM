@@ -81,15 +81,26 @@
                 <h2 id="store-banner-title" class="text-base sm:text-lg font-black truncate flex items-center gap-1.5">
                   <span>🌿</span> 甘丹簡單 輕茶飲
                 </h2>
-                <div class="mt-1.5 flex items-center gap-1.5 text-xs">
+                <div class="mt-1 flex items-center gap-2 text-xs sm:text-sm">
                   <span class="text-white/80 font-bold whitespace-nowrap">結團時間</span>
-                  <input type="time" id="round-end" onchange="onRoundInput()"
+                  <span id="round-display" class="font-black text-white whitespace-nowrap">未設定</span>
+                  <button onclick="openRoundEdit()" id="btn-round-edit" title="修改結團時間"
+                    class="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 transition"
+                    style="background-color:rgba(255,255,255,0.25);color:#ffffff;">
+                    <i class="fa-solid fa-pen text-[10px]"></i>
+                  </button>
+                </div>
+                <div id="round-edit" class="mt-1.5 hidden flex-wrap items-center gap-1.5 text-xs">
+                  <input type="datetime-local" id="round-end" onchange="onRoundInput()"
                     class="px-2 py-1 rounded-lg bg-white/95 text-slate-800 text-xs font-bold border-0 focus:outline-none focus:ring-2 focus:ring-white">
                   <button onclick="saveRound()" id="btn-save-round"
                     class="px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition flex-shrink-0"
                     style="background-color:rgba(255,255,255,0.9);color:#334155;">
                     <i class="fa-solid fa-floppy-disk"></i> <span id="btn-save-round-text">儲存</span>
                   </button>
+                  <button onclick="closeRoundEdit()"
+                    class="px-2.5 py-1 rounded-lg text-xs font-bold flex-shrink-0 transition"
+                    style="background-color:rgba(255,255,255,0.25);color:#ffffff;">取消</button>
                 </div>
               </div>
               <div class="flex-shrink-0">
@@ -389,7 +400,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260820-194258';
+    const APP_VERSION = '20260820-195615';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -780,7 +791,7 @@
       renderRoomStatus();
       renderPaidPanel();
       renderCollector();
-      renderRound();
+      closeRoundEdit();
 
       // 若當前在「訂單」或「後台」分頁，使用快取或更新
       if (currentViewMode !== 'user') {
@@ -1772,13 +1783,44 @@
       txt.innerText = st.text;
     }
 
+    // 把 2026-08-18T21:00 顯示成 8/18 21:00（不顯示年份）
+    function formatRoundText(v) {
+      const raw = String(v == null ? '' : v).trim();
+      if (!raw) return '未設定';
+      let m = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+      if (m) return Number(m[2]) + '/' + Number(m[3]) + ' ' + m[4] + ':' + m[5];
+      if (/^\d{1,2}:\d{2}$/.test(raw)) return raw;   // 舊資料只有時間
+      return raw;
+    }
+
     function renderRound() {
+      const disp = document.getElementById('round-display');
       const b = document.getElementById('round-end');
-      if (!b) return;
-      if (document.activeElement === b) return;
+      if (!disp || !b) return;
       const r = roundData[currentStore] || { end: '' };
-      b.value = r.end || '';
+      disp.innerText = formatRoundText(r.end);
+      if (document.activeElement !== b) b.value = /^\d{4}-/.test(r.end || '') ? r.end : '';
       setRoundBtn('idle');
+    }
+
+    function openRoundEdit() {
+      const box = document.getElementById('round-edit');
+      if (!box) return;
+      box.classList.remove('hidden');
+      box.classList.add('flex');
+      const b = document.getElementById('round-end');
+      const r = roundData[currentStore] || { end: '' };
+      b.value = /^\d{4}-/.test(r.end || '') ? r.end : '';
+      setRoundBtn('idle');
+      b.focus();
+    }
+
+    function closeRoundEdit() {
+      const box = document.getElementById('round-edit');
+      if (!box) return;
+      box.classList.add('hidden');
+      box.classList.remove('flex');
+      renderRound();
     }
 
     function onRoundInput() {
@@ -1810,7 +1852,7 @@
         }
         roundData[store] = { end: end };
         setRoundBtn('saved');
-        setTimeout(() => { if (currentStore === store) setRoundBtn('idle'); }, 1500);
+        setTimeout(() => { if (currentStore === store) closeRoundEdit(); }, 900);
       } catch (err) {
         alert('⚠️ 連線失敗，結團時間沒有存到。請再按一次儲存。');
         renderRound();
