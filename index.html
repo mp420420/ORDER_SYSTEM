@@ -400,7 +400,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260820-202247';
+    const APP_VERSION = '20260820-205936';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -527,10 +527,10 @@
       { cat: '找好茶', name: '檸檬綠', m: 40, l: 55, fixedSweet: false, icon: '🍋' },
       { cat: '找好茶', name: '梅の綠', m: 40, l: 55, fixedSweet: false, icon: '🫐' },
       { cat: '找好茶', name: '8冰綠 / 情人茶', m: 40, l: 55, fixedSweet: false, icon: '🍹' },
-      { cat: '找好茶', name: '多多綠 / 蜂蜜綠', m: 40, l: 55, fixedSweet: false, icon: '🥛' },
+      { cat: '找好茶', name: '多多綠 / 蜂蜜綠', m: 40, l: 55, fixedSweet: false, note: '不供熱飲', icon: '🥛' },
       { cat: '找好茶', name: '旺來紅 / 青', m: 40, l: 55, fixedSweet: false, icon: '🍍' },
       { cat: '找好茶', name: '柚子紅 / 烏', m: 40, l: 55, fixedSweet: false, icon: '🍊' },
-      { cat: '找好茶', name: '鮮柚綠', m: 50, l: 65, fixedSweet: false, note: '季節限定', icon: '🍊' },
+      { cat: '找好茶', name: '鮮柚綠', m: 50, l: 65, fixedSweet: false, note: '季節限定・不供熱飲', icon: '🍊' },
 
       { cat: '找奶茶', name: '奶茶', m: 40, l: 55, fixedSweet: false, icon: '🧋' },
       { cat: '找奶茶', name: '奶綠', m: 40, l: 55, fixedSweet: false, icon: '🧋' },
@@ -539,7 +539,7 @@
       { cat: '找奶茶', name: '珍珠奶茶', m: 40, l: 55, fixedSweet: false, icon: '🧋' },
       { cat: '找奶茶', name: '波霸奶茶', m: 40, l: 55, fixedSweet: false, icon: '🧋' },
       { cat: '找奶茶', name: '燕麥奶茶', m: 40, l: 55, fixedSweet: false, icon: '🌾' },
-      { cat: '找奶茶', name: '蜂蜜奶茶', m: 50, l: 65, fixedSweet: false, icon: '🍯' },
+      { cat: '找奶茶', name: '蜂蜜奶茶', m: 50, l: 65, fixedSweet: false, note: '不供熱飲', icon: '🍯' },
       { cat: '找奶茶', name: '布丁奶茶', m: 50, l: 65, fixedSweet: false, icon: '🍮' },
       { cat: '找奶茶', name: '紅茶瑪奇朵', m: 40, l: 55, fixedSweet: false, icon: '☁️' },
       { cat: '找奶茶', name: '青茶瑪奇朵', m: 40, l: 55, fixedSweet: false, icon: '☁️' },
@@ -547,40 +547,39 @@
 
       { cat: '找拿鐵', name: '紅茶拿鐵', m: 50, l: 65, fixedSweet: false, icon: '🥛' },
       { cat: '找拿鐵', name: '綠茶拿鐵', m: 50, l: 65, fixedSweet: false, icon: '🥛' },
-      { cat: '找拿鐵', name: '重培烏龍拿鐵', m: 50, l: 65, fixedSweet: false, icon: '🥛' },
+      { cat: '找拿鐵', name: '重焙烏龍拿鐵', m: 50, l: 65, fixedSweet: false, icon: '🥛' },
       { cat: '找拿鐵', name: '珍珠紅茶拿鐵', m: 50, l: 65, fixedSweet: false, icon: '🧋' },
       { cat: '找拿鐵', name: '波霸紅茶拿鐵', m: 50, l: 65, fixedSweet: false, icon: '🧋' },
       { cat: '找拿鐵', name: '燕麥紅茶拿鐵', m: 50, l: 65, fixedSweet: false, icon: '🌾' },
       { cat: '找拿鐵', name: '波霸綠茶拿鐵', m: 50, l: 65, fixedSweet: false, icon: '🧋' },
-      { cat: '找拿鐵', name: '燕麥重培烏龍拿鐵', m: 50, l: 65, fixedSweet: false, icon: '🌾' },
+      { cat: '找拿鐵', name: '燕麥重焙烏龍拿鐵', m: 50, l: 65, fixedSweet: false, icon: '🌾' },
       { cat: '找拿鐵', name: '布丁紅茶拿鐵', m: 55, l: 75, fixedSweet: false, icon: '🍮' },
       { cat: '找拿鐵', name: '阿華田拿鐵', m: 50, l: 65, fixedSweet: false, icon: '🍫' },
       { cat: '找拿鐵', name: '燕麥阿華田拿鐵', m: 50, l: 65, fixedSweet: false, icon: '🍫' },
       { cat: '找拿鐵', name: '麵茶紅茶拿鐵', m: 55, l: 75, fixedSweet: false, icon: '🌾' },
 
-      { cat: '找新鮮', name: '蜜茶', m: 40, l: 55, fixedSweet: false, icon: '🍯' },
+      { cat: '找新鮮', name: '蜜茶', m: 40, l: 55, fixedSweet: false, note: '不供熱飲', icon: '🍯' },
       { cat: '找新鮮', name: '8冰茶 / 柚子茶', m: 40, l: 55, fixedSweet: false, icon: '🍹' },
       { cat: '找新鮮', name: '檸檬汁', m: 50, l: 65, fixedSweet: false, icon: '🍋' },
-      { cat: '找新鮮', name: '葡萄柚汁', m: 50, l: 65, fixedSweet: false, note: '季節限定', icon: '🍊' },
+      { cat: '找新鮮', name: '葡萄柚汁', m: 50, l: 65, fixedSweet: false, note: '季節限定・不供熱飲', icon: '🍊' },
       { cat: '找新鮮', name: '金桔檸檬 / 檸檬梅汁', m: 50, l: 65, fixedSweet: false, icon: '🍋' },
-      { cat: '找新鮮', name: '檸檬多多', m: 55, l: 75, fixedSweet: false, icon: '🥛' },
-      { cat: '找新鮮', name: '葡萄柚多多', m: 55, l: 75, fixedSweet: false, note: '季節限定', icon: '🍊' },
+      { cat: '找新鮮', name: '檸檬多多', m: 55, l: 75, fixedSweet: false, note: '不供熱飲', icon: '🥛' },
+      { cat: '找新鮮', name: '葡萄柚多多', m: 55, l: 75, fixedSweet: false, note: '季節限定・不供熱飲', icon: '🍊' },
 
-      { cat: '找冰淇淋', name: '冰淇淋紅茶', m: 40, l: 55, fixedSweet: false, icon: '🍨' },
-      { cat: '找冰淇淋', name: '芒果青', m: 40, l: 55, fixedSweet: false, icon: '🥭' },
-      { cat: '找冰淇淋', name: '荔枝烏龍', m: 40, l: 55, fixedSweet: false, icon: '🧊' },
-      { cat: '找冰淇淋', name: '冰淇淋奶茶', m: 50, l: 65, fixedSweet: false, icon: '🍨' },
-      { cat: '找冰淇淋', name: '冰淇淋紅茶拿鐵', m: 55, l: 75, fixedSweet: false, icon: '🍨' },
-      { cat: '找冰淇淋', name: '冰淇淋麵茶紅茶拿鐵', m: 60, l: 80, fixedSweet: false, icon: '🍨' }
+      { cat: '找冰淇淋', name: '冰淇淋紅茶', m: 40, l: 55, fixedSweet: false, note: '香草・不供熱飲', icon: '🍨' },
+      { cat: '找冰淇淋', name: '芒果青', m: 40, l: 55, fixedSweet: false, note: '不供熱飲', icon: '🥭' },
+      { cat: '找冰淇淋', name: '荔枝烏龍', m: 40, l: 55, fixedSweet: false, note: '不供熱飲', icon: '🧊' },
+      { cat: '找冰淇淋', name: '冰淇淋奶茶', m: 50, l: 65, fixedSweet: false, note: '香草・不供熱飲', icon: '🍨' },
+      { cat: '找冰淇淋', name: '冰淇淋紅茶拿鐵', m: 55, l: 75, fixedSweet: false, note: '香草・不供熱飲', icon: '🍨' },
+      { cat: '找冰淇淋', name: '冰淇淋麵茶紅茶拿鐵', m: 60, l: 80, fixedSweet: false, note: '香草・不供熱飲', icon: '🍨' }
     ];
 
+    // 菜單底部圖示只列出這四種加料，未標示加價
     const fiftyLanToppings = [
       { name: '波霸', price: 0 },
       { name: '珍珠', price: 0 },
       { name: '燕麥', price: 0 },
-      { name: '椰果', price: 0 },
-      { name: '布丁一顆', price: 10 },
-      { name: '冰淇淋一球', price: 10 }
+      { name: '椰果', price: 0 }
     ];
 
     // 3. 鮮茶道 PRESOTEA 菜單
