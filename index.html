@@ -1722,7 +1722,18 @@
     }
 
     // 上方店家頁籤：綠點=開放、紅點+刪除線=已截止，不用點進去就看得出來
+    // 各店選中時的品牌底色。這裡用色碼直接設 inline style，
+    // 不用 Tailwind 的 class：class 是 CDN 掃描 DOM 後才即時產生的，
+    // 動態組字串時會跟產生時機打架，導致顏色有時候不出現。
+    const STORE_ACTIVE_BG = {
+      '甘丹茶飲': '#1b4332',
+      '50嵐':     '#2563eb',
+      '鮮茶道':   '#0f766e'
+    };
+
     function renderStoreTabs() {
+      const base = 'px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition flex items-center gap-1.5 ';
+
       STORE_LIST.forEach(st => {
         const ref = STORE_TAB_REF[st];
         if (!ref) return;
@@ -1730,11 +1741,26 @@
         const nameEl = document.getElementById(ref.name);
         const btn = document.getElementById(ref.btn);
         const isOpen = roomOpen[st] !== false;
+        const isActive = (st === currentStore);
 
         if (dot) dot.className = 'w-2 h-2 rounded-full flex-shrink-0 ' +
           (isOpen ? 'bg-emerald-400' : 'bg-rose-500');
         if (nameEl) nameEl.className = isOpen ? '' : 'line-through decoration-rose-500 decoration-2';
-        if (btn) btn.title = `${st}：${isOpen ? '點餐開放中' : '已截止點餐'}`;
+        if (!btn) return;
+
+        btn.title = `${st}：${isOpen ? '點餐開放中' : '已截止點餐'}`;
+
+        // 品牌底色只留給「選中而且開放」的店，已截止就不上色，避免看起來像開著
+        if (isActive && isOpen) {
+          btn.className = base + 'text-white shadow-xs';
+          btn.style.backgroundColor = STORE_ACTIVE_BG[st] || '#334155';
+        } else if (isActive) {
+          btn.className = base + 'text-slate-500 border border-slate-300 shadow-xs';
+          btn.style.backgroundColor = '#ffffff';
+        } else {
+          btn.className = base + 'text-slate-600 hover:text-slate-900';
+          btn.style.backgroundColor = '';
+        }
       });
     }
 
