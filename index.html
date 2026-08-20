@@ -728,7 +728,6 @@
         banner.className = "bg-gradient-to-r from-[#1b4332] to-[#2d6a4f] rounded-2xl p-3.5 sm:p-4 text-white shadow-xs transition-colors";
         bannerTitle.innerHTML = "<span>🌿</span> 甘丹簡單 輕茶飲";
         bannerSub.innerText = "即時同步至試算表【甘丹茶飲】分頁";
-        badge.innerText = "甘丹茶飲";
       } else if (storeName === '50嵐') {
         products = onSale.map((item, idx) => ({ id: '50_' + idx, ...item, basePrice: item.m || item.l }));
 
@@ -736,7 +735,6 @@
         banner.className = "bg-gradient-to-r from-blue-700 to-amber-500 rounded-2xl p-3.5 sm:p-4 text-white shadow-xs transition-colors";
         bannerTitle.innerHTML = "<span>🧋</span> 50嵐 好茶陪伴你的日常";
         bannerSub.innerText = "即時同步至試算表【50嵐】分頁";
-        badge.innerText = "50嵐";
       } else {
         products = onSale.map((item, idx) => ({ id: 'pr_' + idx, ...item, basePrice: item.l || item.xl }));
 
@@ -744,7 +742,6 @@
         banner.className = "bg-gradient-to-r from-teal-800 to-emerald-600 rounded-2xl p-3.5 sm:p-4 text-white shadow-xs transition-colors";
         bannerTitle.innerHTML = "<span>🍃</span> 鮮茶道 PRESOTEA";
         bannerSub.innerText = "現點現萃・即時同步至【鮮茶道】分頁";
-        badge.innerText = "鮮茶道";
       }
 
       selectedCategory = '全部';
@@ -1789,6 +1786,19 @@
         } else {
           btn.className = "px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-xs";
           btn.innerText = `${currentStore} 已截止點餐 🔴`;
+        }
+      }
+
+      // 橫幅右上角的徽章：直接顯示這家店的點餐開關
+      const storeBadge = document.getElementById('store-badge');
+      if (storeBadge) {
+        const badgeBase = 'font-bold text-xs px-2.5 py-1 rounded-xl whitespace-nowrap shadow-xs inline-block ';
+        if (isOpen) {
+          storeBadge.className = badgeBase + 'bg-emerald-500 text-white';
+          storeBadge.innerText = '點餐開放 🟢';
+        } else {
+          storeBadge.className = badgeBase + 'bg-rose-600 text-white';
+          storeBadge.innerText = '點餐關閉 🔴';
         }
       }
 
