@@ -153,7 +153,14 @@
             <span class="text-sm font-bold text-slate-700" id="orders-total-count">0人 / 0杯</span>
           </div>
         </div>
-        <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+        <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <div class="flex items-center gap-1.5 flex-1 sm:flex-none">
+            <i class="fa-solid fa-hand-holding-dollar text-emerald-700 text-sm flex-shrink-0"></i>
+            <input type="text" id="collector-input" maxlength="30"
+              onchange="saveCollector()" onblur="saveCollector()"
+              placeholder="收款人員"
+              class="w-full sm:w-36 px-3 py-2 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700">
+          </div>
           <button onclick="fetchCloudOrders(true)" class="flex-1 sm:flex-none px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
             <i class="fa-solid fa-rotate"></i> 重新整理
           </button>
@@ -369,7 +376,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260820-185807';
+    const APP_VERSION = '20260820-191006';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -381,6 +388,7 @@
     const ordersCache = {}; // 快取各店訂單資料，避免切換重複等待
     let ordersReqSeq = 0;   // 訂單請求序號，用來丟棄過期的回應
     let paidData = {};      // 各店已付款的名單，來自試算表
+    let collectorData = {}; // 各店這一團的收款人員
     let paidPin = '';       // 收款模式解鎖後暫存的主揪密碼（關頁面就沒了）
     let ordersLoading = false;
 
@@ -761,6 +769,7 @@
       renderMenuCard();
       renderRoomStatus();
       renderPaidPanel();
+      renderCollector();
 
       // 若當前在「訂單」或「後台」分頁，使用快取或更新
       if (currentViewMode !== 'user') {
@@ -1458,6 +1467,8 @@
         orders = [];
         ordersCache[currentStore] = [];
         paidData[currentStore] = [];   // 開新團，收款紀錄一起重來
+        collectorData[currentStore] = '';
+        renderCollector();
         renderAdminStats();
         renderAdminOrders();
       } catch (err) {
@@ -1719,10 +1730,43 @@
         const res = await fetch(`${GAS_API_URL}?action=state`);
         const data = await res.json();
         if (data && data.status === 'ok' && data.open) roomOpen = data.open;
+        if (data && data.collector) collectorData = data.collector;
+        renderCollector();
       } catch (e) {
         console.log('點餐狀態載入失敗，暫時全部視為開放');
       }
       renderRoomStatus();
+    }
+
+    // 收款人員：這一團的錢交給誰，存在試算表所以同事也看得到
+    function renderCollector() {
+      const el = document.getElementById('collector-input');
+      if (!el) return;
+      if (document.activeElement === el) return;   // 正在輸入時不要覆蓋
+      el.value = collectorData[currentStore] || '';
+    }
+
+    async function saveCollector() {
+      const el = document.getElementById('collector-input');
+      if (!el) return;
+      const who = el.value.trim();
+      const store = currentStore;
+      if ((collectorData[store] || '') === who) return;   // 沒改就不送
+
+      const before = collectorData[store] || '';
+      collectorData[store] = who;
+      try {
+        const result = await postToGas({ action: 'set_collector', store: store, collector: who });
+        if (result.status !== 'ok') {
+          collectorData[store] = before;
+          alert(`❌ 收款人員存檔失敗：${result.message || result.status}`);
+          renderCollector();
+        }
+      } catch (err) {
+        collectorData[store] = before;
+        alert('⚠️ 連線失敗，收款人員沒有存到。');
+        renderCollector();
+      }
     }
 
     // 上方店家頁籤：綠點=開放、紅點+刪除線=已截止，不用點進去就看得出來
