@@ -400,7 +400,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260820-195615';
+    const APP_VERSION = '20260820-202247';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -820,8 +820,8 @@
       if (currentStore === '鮮茶道') activeColorClass = 'bg-teal-700 text-white shadow-xs';
       
       container.innerHTML = orderedCategories.map(cat => `
-        <button onclick="selectCategory('${cat}')" class="px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition flex-shrink-0 ${selectedCategory === cat ? activeColorClass : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'}">
-          ${cat}
+        <button onclick="selectCategory(${esc(JSON.stringify(cat))})" class="px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition flex-shrink-0 ${selectedCategory === cat ? activeColorClass : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'}">
+          ${esc(cat)}
         </button>
       `).join('');
     }
@@ -856,15 +856,15 @@
           <div class="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-xs hover:border-emerald-600 transition flex items-center justify-between gap-3">
             <div class="flex items-center space-x-3.5 min-w-0">
               <div class="w-12 h-12 bg-slate-100 rounded-2xl flex-shrink-0 flex items-center justify-center text-2xl">
-                ${p.icon}
+                ${esc(p.icon)}
               </div>
               <div class="min-w-0">
                 <div class="flex items-baseline gap-2 flex-wrap">
-                  <h3 class="font-bold text-slate-900 text-base truncate">${p.name}</h3>
+                  <h3 class="font-bold text-slate-900 text-base truncate">${esc(p.name)}</h3>
                   <span class="font-black text-emerald-800 text-sm">${priceTag}</span>
                 </div>
                 <p class="text-xs text-slate-500 mt-0.5 truncate">
-                  ${p.fixedSweet ? '🍯 固定甜度' : '可調甜冰'} ${p.note ? '・' + p.note : ''}
+                  ${p.fixedSweet ? '🍯 固定甜度' : '可調甜冰'} ${p.note ? '・' + esc(p.note) : ''}
                 </p>
               </div>
             </div>
@@ -959,11 +959,11 @@
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-${sizeChoices.length} gap-2.5">
             ${sizeChoices.map(s => `
-              <button type="button" onclick="selectModalSize('${s.name}', ${s.price})" 
+              <button type="button" onclick="selectModalSize(${esc(JSON.stringify(s.name))}, ${s.price})" 
                 class="px-3.5 py-3 rounded-2xl text-sm font-bold border flex items-center justify-between transition ${
                   currentModalSelections.size && currentModalSelections.size.name === s.name ? themeColor + ' text-white' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
                 }">
-                <span>${s.name}</span>
+                <span>${esc(s.name)}</span>
                 <span class="${currentModalSelections.size && currentModalSelections.size.name === s.name ? 'text-white/90' : 'text-slate-600'} font-black">$${s.price}</span>
               </button>
             `).join('')}
@@ -987,11 +987,11 @@
           </div>
           <div class="grid ${sweetGridCols} gap-2">
             ${sweetList.map(s => `
-              <button type="button" onclick="selectModalSweetness('${s.name}')" 
+              <button type="button" onclick="selectModalSweetness(${esc(JSON.stringify(s.name))})" 
                 class="px-3 py-2.5 rounded-2xl text-sm font-bold border text-center transition ${
                   currentModalSelections.sweetness && currentModalSelections.sweetness.name === s.name ? themeColor + ' text-white' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
                 }">
-                ${s.name}
+                ${esc(s.name)}
               </button>
             `).join('')}
           </div>
@@ -1012,11 +1012,11 @@
           </div>
           <div class="grid grid-cols-3 sm:grid-cols-5 gap-2">
             ${iceOptions.map(i => `
-              <button type="button" onclick="selectModalIce('${i.name}')" 
+              <button type="button" onclick="selectModalIce(${esc(JSON.stringify(i.name))})" 
                 class="px-2 py-2.5 rounded-2xl text-sm font-bold border text-center transition ${
                   currentModalSelections.ice && currentModalSelections.ice.name === i.name ? themeColor + ' text-white' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
                 }">
-                ${i.name}
+                ${esc(i.name)}
               </button>
             `).join('')}
           </div>
@@ -1053,11 +1053,11 @@
                 const isSelected = currentModalSelections.toppings.some(item => item.name === t.name);
                 const priceTag = t.price > 0 ? `+$${t.price}` : '免費';
                 return `
-                  <button type="button" onclick="toggleModalTopping('${t.name}', ${t.price})" 
+                  <button type="button" onclick="toggleModalTopping(${esc(JSON.stringify(t.name))}, ${t.price})" 
                     class="px-3 py-2.5 rounded-2xl text-sm font-bold border flex items-center justify-between transition ${
                       isSelected ? themeColor + ' text-white' : 'bg-white text-slate-700 border-slate-200'
                     }">
-                    <span>${t.name}</span>
+                    <span>${esc(t.name)}</span>
                     <span class="${isSelected ? 'text-white/90' : 'text-amber-600 font-black'}">${priceTag}</span>
                   </button>
                 `;
