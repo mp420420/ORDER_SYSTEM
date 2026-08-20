@@ -35,10 +35,10 @@
 
   <!-- 頂部導航 (三店家切換 + 點餐 / 訂單 / 後台 三分頁) -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-    <div class="max-w-6xl mx-auto px-3.5 sm:px-4 h-16 flex items-center justify-between gap-2">
+    <div class="max-w-6xl mx-auto px-3.5 sm:px-4 py-2 sm:py-0 sm:h-16 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
       
       <!-- 店家快速切換 Tab (極速切換模式) -->
-      <div class="flex items-center space-x-1 sm:space-x-1.5 bg-slate-100 p-1 rounded-2xl border border-slate-200 overflow-x-auto hide-scrollbar">
+      <div class="flex items-center justify-center sm:justify-start space-x-1 sm:space-x-1.5 bg-slate-100 p-1 rounded-2xl border border-slate-200 overflow-x-auto hide-scrollbar w-full sm:w-auto">
         <button onclick="switchStore('甘丹茶飲')" id="btn-store-gandan" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition flex items-center gap-1.5">
           <span id="dot-store-gandan" class="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0"></span> <span id="name-store-gandan">甘丹茶飲</span>
         </button>
@@ -51,16 +51,16 @@
       </div>
 
       <!-- 狀態顯示與【點餐 / 訂單 / 後台】三分頁切換 -->
-      <div class="flex items-center gap-1.5 sm:gap-2">
+      <div class="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
         <span id="room-badge" class="hidden md:inline-block text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold whitespace-nowrap">點餐中 🟢</span>
-        <div class="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold flex-shrink-0">
-          <button onclick="switchView('user')" id="btn-tab-user" class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white shadow-xs text-slate-900 transition flex items-center gap-1">
+        <div class="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold flex-shrink-0 w-full sm:w-auto">
+          <button onclick="switchView('user')" id="btn-tab-user" class="flex-1 sm:flex-none justify-center px-2.5 sm:px-3 py-1.5 rounded-xl bg-white shadow-xs text-slate-900 transition flex items-center gap-1">
             <i class="fa-solid fa-mug-saucer text-sm text-emerald-700"></i> <span>點餐</span>
           </button>
-          <button onclick="switchView('orders')" id="btn-tab-orders" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center gap-1">
+          <button onclick="switchView('orders')" id="btn-tab-orders" class="flex-1 sm:flex-none justify-center px-2.5 sm:px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center gap-1">
             <i class="fa-solid fa-list-check text-sm text-blue-600"></i> <span>訂單</span>
           </button>
-          <button onclick="switchView('admin')" id="btn-tab-admin" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center gap-1">
+          <button onclick="switchView('admin')" id="btn-tab-admin" class="flex-1 sm:flex-none justify-center px-2.5 sm:px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center gap-1">
             <i class="fa-solid fa-gear text-sm text-amber-600"></i> <span>後台</span>
           </button>
         </div>
@@ -369,7 +369,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260820-182313';
+    const APP_VERSION = '20260820-185807';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -1874,20 +1874,22 @@
       ordersView.classList.add('hidden');
       adminView.classList.add('hidden');
 
-      btnUser.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center gap-1";
-      btnOrders.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center gap-1";
-      btnAdmin.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center gap-1";
+      const tabIdle = "flex-1 sm:flex-none justify-center px-2.5 sm:px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center gap-1";
+      const tabActive = "flex-1 sm:flex-none justify-center px-2.5 sm:px-3 py-1.5 rounded-xl bg-white shadow-xs text-slate-900 transition flex items-center gap-1";
+      btnUser.className = tabIdle;
+      btnOrders.className = tabIdle;
+      btnAdmin.className = tabIdle;
 
       if (view === 'user') {
         userView.classList.remove('hidden');
-        btnUser.className = "px-2.5 sm:px-3 py-1.5 rounded-xl bg-white shadow-xs text-slate-900 transition flex items-center gap-1";
+        btnUser.className = tabActive;
       } else if (view === 'orders') {
         ordersView.classList.remove('hidden');
-        btnOrders.className = "px-2.5 sm:px-3 py-1.5 rounded-xl bg-white shadow-xs text-slate-900 transition flex items-center gap-1";
+        btnOrders.className = tabActive;
         fetchCloudOrders();
       } else if (view === 'admin') {
         adminView.classList.remove('hidden');
-        btnAdmin.className = "px-2.5 sm:px-3 py-1.5 rounded-xl bg-white shadow-xs text-slate-900 transition flex items-center gap-1";
+        btnAdmin.className = tabActive;
         fetchCloudOrders();
       }
     }
