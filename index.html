@@ -81,12 +81,9 @@
                 <h2 id="store-banner-title" class="text-base sm:text-lg font-black truncate flex items-center gap-1.5">
                   <span>🌿</span> 甘丹簡單 輕茶飲
                 </h2>
-                <div class="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
-                  <span class="text-white/80 font-bold whitespace-nowrap">開團</span>
-                  <input type="datetime-local" id="round-start" onchange="onRoundInput()"
-                    class="px-2 py-1 rounded-lg bg-white/95 text-slate-800 text-xs font-bold border-0 focus:outline-none focus:ring-2 focus:ring-white">
-                  <span class="text-white/80 font-bold">～</span>
-                  <input type="datetime-local" id="round-end" onchange="onRoundInput()"
+                <div class="mt-1.5 flex items-center gap-1.5 text-xs">
+                  <span class="text-white/80 font-bold whitespace-nowrap">結團時間</span>
+                  <input type="time" id="round-end" onchange="onRoundInput()"
                     class="px-2 py-1 rounded-lg bg-white/95 text-slate-800 text-xs font-bold border-0 focus:outline-none focus:ring-2 focus:ring-white">
                   <button onclick="saveRound()" id="btn-save-round"
                     class="px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition flex-shrink-0"
@@ -392,7 +389,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260820-193641';
+    const APP_VERSION = '20260820-194258';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -1482,7 +1479,7 @@
         ordersCache[currentStore] = [];
         paidData[currentStore] = [];   // 開新團，收款紀錄一起重來
         collectorData[currentStore] = '';
-        roundData[currentStore] = { start: '', end: '' };
+        roundData[currentStore] = { end: '' };
         renderCollector();
         renderRound();
         renderAdminStats();
@@ -1756,7 +1753,7 @@
       renderRoomStatus();
     }
 
-    // 開團起訖時間：顯示在橫幅上，讓同事知道這一團什麼時候截止
+    // 結團時間：顯示在橫幅上，讓同事知道這一團什麼時候截止
     const ROUND_BTN_STYLE = {
       idle:   { bg: 'rgba(255,255,255,0.9)', fg: '#334155', icon: 'fa-solid fa-floppy-disk', text: '儲存' },
       dirty:  { bg: '#d97706', fg: '#ffffff', icon: 'fa-solid fa-floppy-disk', text: '儲存' },
@@ -1776,54 +1773,46 @@
     }
 
     function renderRound() {
-      const a = document.getElementById('round-start');
       const b = document.getElementById('round-end');
-      if (!a || !b) return;
-      if (document.activeElement === a || document.activeElement === b) return;
-      const r = roundData[currentStore] || { start: '', end: '' };
-      a.value = r.start || '';
+      if (!b) return;
+      if (document.activeElement === b) return;
+      const r = roundData[currentStore] || { end: '' };
       b.value = r.end || '';
       setRoundBtn('idle');
     }
 
     function onRoundInput() {
-      const a = document.getElementById('round-start');
       const b = document.getElementById('round-end');
-      const r = roundData[currentStore] || { start: '', end: '' };
-      setRoundBtn((a.value === (r.start || '') && b.value === (r.end || '')) ? 'idle' : 'dirty');
+      const r = roundData[currentStore] || { end: '' };
+      setRoundBtn(b.value === (r.end || '') ? 'idle' : 'dirty');
     }
 
     async function saveRound() {
-      const a = document.getElementById('round-start');
       const b = document.getElementById('round-end');
-      if (!a || !b) return;
+      if (!b) return;
       const store = currentStore;
-      const start = a.value, end = b.value;
-      const prev = roundData[store] || { start: '', end: '' };
+      const end = b.value;
+      const prev = roundData[store] || { end: '' };
 
-      if (start === (prev.start || '') && end === (prev.end || '')) {
+      if (end === (prev.end || '')) {
         setRoundBtn('saved');
         setTimeout(() => { if (currentStore === store) setRoundBtn('idle'); }, 1500);
-        return;
-      }
-      if (start && end && start > end) {
-        alert('⚠️ 截止時間不能早於開始時間。');
         return;
       }
 
       setRoundBtn('saving');
       try {
-        const result = await postToGas({ action: 'set_round', store: store, start: start, end: end });
+        const result = await postToGas({ action: 'set_round', store: store, start: '', end: end });
         if (result.status !== 'ok') {
-          alert(`❌ 開團時間存檔失敗：${result.message || result.status}`);
+          alert(`❌ 結團時間存檔失敗：${result.message || result.status}`);
           renderRound();
           return;
         }
-        roundData[store] = { start: start, end: end };
+        roundData[store] = { end: end };
         setRoundBtn('saved');
         setTimeout(() => { if (currentStore === store) setRoundBtn('idle'); }, 1500);
       } catch (err) {
-        alert('⚠️ 連線失敗，開團時間沒有存到。請再按一次儲存。');
+        alert('⚠️ 連線失敗，結團時間沒有存到。請再按一次儲存。');
         renderRound();
       }
     }
