@@ -81,9 +81,19 @@
                 <h2 id="store-banner-title" class="text-base sm:text-lg font-black truncate flex items-center gap-1.5">
                   <span>🌿</span> 甘丹簡單 輕茶飲
                 </h2>
-                <p id="store-banner-sub" class="text-white/85 text-xs sm:text-sm mt-0.5 truncate">
-                  即時同步至試算表【甘丹茶飲】分頁
-                </p>
+                <div class="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+                  <span class="text-white/80 font-bold whitespace-nowrap">開團</span>
+                  <input type="datetime-local" id="round-start" onchange="onRoundInput()"
+                    class="px-2 py-1 rounded-lg bg-white/95 text-slate-800 text-xs font-bold border-0 focus:outline-none focus:ring-2 focus:ring-white">
+                  <span class="text-white/80 font-bold">～</span>
+                  <input type="datetime-local" id="round-end" onchange="onRoundInput()"
+                    class="px-2 py-1 rounded-lg bg-white/95 text-slate-800 text-xs font-bold border-0 focus:outline-none focus:ring-2 focus:ring-white">
+                  <button onclick="saveRound()" id="btn-save-round"
+                    class="px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition flex-shrink-0"
+                    style="background-color:rgba(255,255,255,0.9);color:#334155;">
+                    <i class="fa-solid fa-floppy-disk"></i> <span id="btn-save-round-text">儲存</span>
+                  </button>
+                </div>
               </div>
               <div class="flex-shrink-0">
                 <span id="store-badge" class="font-bold text-xs bg-black/25 px-2.5 py-1 rounded-xl text-white/95 whitespace-nowrap shadow-xs inline-block">
@@ -382,7 +392,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260820-192546';
+    const APP_VERSION = '20260820-193641';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -395,6 +405,7 @@
     let ordersReqSeq = 0;   // 訂單請求序號，用來丟棄過期的回應
     let paidData = {};      // 各店已付款的名單，來自試算表
     let collectorData = {}; // 各店這一團的收款人員
+    let roundData = {};     // 各店開團的起訖時間
     let paidPin = '';       // 收款模式解鎖後暫存的主揪密碼（關頁面就沒了）
     let ordersLoading = false;
 
@@ -726,7 +737,6 @@
       const btnPr = document.getElementById('btn-store-preso');
       const banner = document.getElementById('store-banner');
       const bannerTitle = document.getElementById('store-banner-title');
-      const bannerSub = document.getElementById('store-banner-sub');
       const badge = document.getElementById('store-badge');
 
       btnGd.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
@@ -748,21 +758,18 @@
         btnGd.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-[#1b4332] text-white shadow-xs transition flex items-center gap-1.5";
         banner.className = "bg-gradient-to-r from-[#1b4332] to-[#2d6a4f] rounded-2xl p-3.5 sm:p-4 text-white shadow-xs transition-colors";
         bannerTitle.innerHTML = "<span>🌿</span> 甘丹簡單 輕茶飲";
-        bannerSub.innerText = "即時同步至試算表【甘丹茶飲】分頁";
       } else if (storeName === '50嵐') {
         products = onSale.map((item, idx) => ({ id: '50_' + idx, ...item, basePrice: item.m || item.l }));
 
         btn50.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-blue-600 text-white shadow-xs transition flex items-center gap-1.5";
         banner.className = "bg-gradient-to-r from-blue-700 to-amber-500 rounded-2xl p-3.5 sm:p-4 text-white shadow-xs transition-colors";
         bannerTitle.innerHTML = "<span>🧋</span> 50嵐 好茶陪伴你的日常";
-        bannerSub.innerText = "即時同步至試算表【50嵐】分頁";
       } else {
         products = onSale.map((item, idx) => ({ id: 'pr_' + idx, ...item, basePrice: item.l || item.xl }));
 
         btnPr.className = "px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-teal-700 text-white shadow-xs transition flex items-center gap-1.5";
         banner.className = "bg-gradient-to-r from-teal-800 to-emerald-600 rounded-2xl p-3.5 sm:p-4 text-white shadow-xs transition-colors";
         bannerTitle.innerHTML = "<span>🍃</span> 鮮茶道 PRESOTEA";
-        bannerSub.innerText = "現點現萃・即時同步至【鮮茶道】分頁";
       }
 
       selectedCategory = '全部';
@@ -776,6 +783,7 @@
       renderRoomStatus();
       renderPaidPanel();
       renderCollector();
+      renderRound();
 
       // 若當前在「訂單」或「後台」分頁，使用快取或更新
       if (currentViewMode !== 'user') {
@@ -1474,7 +1482,9 @@
         ordersCache[currentStore] = [];
         paidData[currentStore] = [];   // 開新團，收款紀錄一起重來
         collectorData[currentStore] = '';
+        roundData[currentStore] = { start: '', end: '' };
         renderCollector();
+        renderRound();
         renderAdminStats();
         renderAdminOrders();
       } catch (err) {
@@ -1737,11 +1747,85 @@
         const data = await res.json();
         if (data && data.status === 'ok' && data.open) roomOpen = data.open;
         if (data && data.collector) collectorData = data.collector;
+        if (data && data.round) roundData = data.round;
         renderCollector();
+        renderRound();
       } catch (e) {
         console.log('點餐狀態載入失敗，暫時全部視為開放');
       }
       renderRoomStatus();
+    }
+
+    // 開團起訖時間：顯示在橫幅上，讓同事知道這一團什麼時候截止
+    const ROUND_BTN_STYLE = {
+      idle:   { bg: 'rgba(255,255,255,0.9)', fg: '#334155', icon: 'fa-solid fa-floppy-disk', text: '儲存' },
+      dirty:  { bg: '#d97706', fg: '#ffffff', icon: 'fa-solid fa-floppy-disk', text: '儲存' },
+      saving: { bg: '#94a3b8', fg: '#ffffff', icon: 'fa-solid fa-spinner fa-spin', text: '儲存中' },
+      saved:  { bg: '#059669', fg: '#ffffff', icon: 'fa-solid fa-check', text: '已儲存' }
+    };
+
+    function setRoundBtn(state) {
+      const btn = document.getElementById('btn-save-round');
+      const txt = document.getElementById('btn-save-round-text');
+      if (!btn || !txt) return;
+      const st = ROUND_BTN_STYLE[state] || ROUND_BTN_STYLE.idle;
+      btn.style.backgroundColor = st.bg;
+      btn.style.color = st.fg;
+      btn.querySelector('i').className = st.icon;
+      txt.innerText = st.text;
+    }
+
+    function renderRound() {
+      const a = document.getElementById('round-start');
+      const b = document.getElementById('round-end');
+      if (!a || !b) return;
+      if (document.activeElement === a || document.activeElement === b) return;
+      const r = roundData[currentStore] || { start: '', end: '' };
+      a.value = r.start || '';
+      b.value = r.end || '';
+      setRoundBtn('idle');
+    }
+
+    function onRoundInput() {
+      const a = document.getElementById('round-start');
+      const b = document.getElementById('round-end');
+      const r = roundData[currentStore] || { start: '', end: '' };
+      setRoundBtn((a.value === (r.start || '') && b.value === (r.end || '')) ? 'idle' : 'dirty');
+    }
+
+    async function saveRound() {
+      const a = document.getElementById('round-start');
+      const b = document.getElementById('round-end');
+      if (!a || !b) return;
+      const store = currentStore;
+      const start = a.value, end = b.value;
+      const prev = roundData[store] || { start: '', end: '' };
+
+      if (start === (prev.start || '') && end === (prev.end || '')) {
+        setRoundBtn('saved');
+        setTimeout(() => { if (currentStore === store) setRoundBtn('idle'); }, 1500);
+        return;
+      }
+      if (start && end && start > end) {
+        alert('⚠️ 截止時間不能早於開始時間。');
+        return;
+      }
+
+      setRoundBtn('saving');
+      try {
+        const result = await postToGas({ action: 'set_round', store: store, start: start, end: end });
+        if (result.status !== 'ok') {
+          alert(`❌ 開團時間存檔失敗：${result.message || result.status}`);
+          renderRound();
+          return;
+        }
+        roundData[store] = { start: start, end: end };
+        setRoundBtn('saved');
+        setTimeout(() => { if (currentStore === store) setRoundBtn('idle'); }, 1500);
+      } catch (err) {
+        alert('⚠️ 連線失敗，開團時間沒有存到。請再按一次儲存。');
+        renderRound();
+      }
     }
 
     // 收款人員：這一團的錢交給誰，存在試算表所以同事也看得到
