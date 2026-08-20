@@ -400,7 +400,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260820-205936';
+    const APP_VERSION = '20260820-211533';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -471,9 +471,9 @@
       { cat: '濃醇鮮奶系列', name: '嫩仙草鮮奶烏龍', l: 70, xl: null, fixedSweet: false, heavyMilkOption: true, icon: '🌿' },
       { cat: '濃醇鮮奶系列', name: '榛果紅茶拿鐵', l: 65, xl: null, fixedSweet: false, heavyMilkOption: false, icon: '🌰' },
       { cat: '濃醇鮮奶系列', name: '鮮奶老冬瓜', l: 65, xl: null, fixedSweet: false, heavyMilkOption: false, icon: '🍈' },
-      { cat: '濃醇鮮奶系列', name: '手炒黑糖鮮奶', l: 75, xl: null, fixedSweet: true, heavyMilkOption: false, icon: '🍯' },
-      { cat: '濃醇鮮奶系列', name: '珍珠黑糖鮮奶', l: 80, xl: null, fixedSweet: true, heavyMilkOption: false, icon: '🧋' },
-      { cat: '濃醇鮮奶系列', name: '鮮奶嫩仙草', l: 80, xl: null, fixedSweet: true, heavyMilkOption: false, icon: '🌿' },
+      { cat: '濃醇鮮奶系列', name: '手炒黑糖鮮奶', l: 75, xl: null, fixedSweet: false, heavyMilkOption: false, icon: '🍯' },
+      { cat: '濃醇鮮奶系列', name: '珍珠黑糖鮮奶', l: 80, xl: null, fixedSweet: false, heavyMilkOption: false, icon: '🧋' },
+      { cat: '濃醇鮮奶系列', name: '鮮奶嫩仙草', l: 80, xl: null, fixedSweet: false, heavyMilkOption: false, icon: '🌿' },
       { cat: '濃醇鮮奶系列', name: '鮮奶阿華田', l: 70, xl: null, fixedSweet: false, heavyMilkOption: false, icon: '🍫' },
 
       { cat: '醇品奶香系列', name: '珍珠奶茶', l: 55, xl: null, fixedSweet: false, icon: '🧋' },
@@ -541,8 +541,8 @@
       { cat: '找奶茶', name: '燕麥奶茶', m: 40, l: 55, fixedSweet: false, icon: '🌾' },
       { cat: '找奶茶', name: '蜂蜜奶茶', m: 50, l: 65, fixedSweet: false, note: '不供熱飲', icon: '🍯' },
       { cat: '找奶茶', name: '布丁奶茶', m: 50, l: 65, fixedSweet: false, icon: '🍮' },
-      { cat: '找奶茶', name: '紅茶瑪奇朵', m: 40, l: 55, fixedSweet: false, icon: '☁️' },
-      { cat: '找奶茶', name: '青茶瑪奇朵', m: 40, l: 55, fixedSweet: false, icon: '☁️' },
+      { cat: '找奶茶', name: '紅茶瑪奇朵', m: 40, l: 55, fixedSweet: false, note: '鮮奶油', icon: '☁️' },
+      { cat: '找奶茶', name: '青茶瑪奇朵', m: 40, l: 55, fixedSweet: false, note: '鮮奶油', icon: '☁️' },
       { cat: '找奶茶', name: '阿華田', m: 40, l: 55, fixedSweet: false, icon: '🍫' },
 
       { cat: '找拿鐵', name: '紅茶拿鐵', m: 50, l: 65, fixedSweet: false, icon: '🥛' },
@@ -637,13 +637,13 @@
       { cat: '無咖啡因', name: '蜂蜜檸好', l: 65, xl: 105, fixedSweet: false, icon: '🍯' },
       { cat: '無咖啡因', name: '橙美荔', l: 65, xl: null, fixedSweet: false, icon: '🍊' },
 
-      { cat: '果然續滋味', name: '招牌水果茶', l: 70, xl: null, fixedSweet: false, icon: '🍎' },
-      { cat: '果然續滋味', name: '鮮果雙Q綠茶', l: 70, xl: null, fixedSweet: false, icon: '🍹' },
-      { cat: '果然續滋味', name: '橙香金萱', l: 65, xl: null, fixedSweet: false, icon: '🍊' },
-      { cat: '果然續滋味', name: '鳳梨清茶', l: 55, xl: null, fixedSweet: false, icon: '🍍' },
-      { cat: '果然續滋味', name: '養樂多綠茶', l: 50, xl: null, fixedSweet: false, icon: '🥛' },
-      { cat: '果然續滋味', name: '墾丁冰茶', l: 45, xl: null, fixedSweet: false, icon: '🍹' },
-      { cat: '果然續滋味', name: '荔枝QQ金萱', l: 40, xl: null, fixedSweet: false, icon: '🍑' },
+      { cat: '果然纖滋味', name: '招牌水果茶', l: 70, xl: null, fixedSweet: false, icon: '🍎' },
+      { cat: '果然纖滋味', name: '鮮果雙Q綠茶', l: 70, xl: null, fixedSweet: false, icon: '🍹' },
+      { cat: '果然纖滋味', name: '橙香金萱', l: 65, xl: null, fixedSweet: false, icon: '🍊' },
+      { cat: '果然纖滋味', name: '鳳梨清茶', l: 55, xl: null, fixedSweet: false, icon: '🍍' },
+      { cat: '果然纖滋味', name: '養樂多綠茶', l: 50, xl: null, fixedSweet: false, icon: '🥛' },
+      { cat: '果然纖滋味', name: '墾丁冰茶', l: 45, xl: null, fixedSweet: false, icon: '🍹' },
+      { cat: '果然纖滋味', name: '荔枝QQ金萱', l: 40, xl: null, fixedSweet: false, icon: '🍑' },
 
       { cat: '季節限定', name: '洛神打檸', l: 70, xl: null, fixedSweet: false, icon: '🌺' },
       { cat: '季節限定', name: '洛神多多', l: 65, xl: 105, fixedSweet: false, icon: '🌺' },
@@ -669,13 +669,17 @@
     ];
 
     // 通用規格選項
-    const sweetnessOptions = [
-      { name: '無糖', price: 0 },
-      { name: '微糖', price: 0 },
-      { name: '半糖', price: 0 },
-      { name: '少糖', price: 0 },
-      { name: '全糖', price: 0 }
-    ];
+    // 各店提供的甜度不一樣：甘丹的菜單只有 無糖/微糖/半糖，再加上全糖共四種
+    const STORE_SWEETNESS = {
+      '甘丹茶飲': ['無糖', '微糖', '半糖', '全糖'],
+      '50嵐':     ['無糖', '微糖', '半糖', '少糖', '全糖'],
+      '鮮茶道':   ['無糖', '微糖', '半糖', '少糖', '全糖']
+    };
+
+    function getSweetnessOptions() {
+      const names = STORE_SWEETNESS[currentStore] || ['無糖', '微糖', '半糖', '少糖', '全糖'];
+      return names.map(x => ({ name: x, price: 0 }));
+    }
 
     const fixedSweetnessOptions = [
       { name: '甜度固定', price: 0 }
@@ -971,9 +975,11 @@
       `;
 
       // 2. 甜度
-      const sweetList = p.fixedSweet ? fixedSweetnessOptions : sweetnessOptions;
+      const sweetList = p.fixedSweet ? fixedSweetnessOptions : getSweetnessOptions();
       const sweetSelected = !!currentModalSelections.sweetness;
-      const sweetGridCols = p.fixedSweet ? 'grid-cols-1' : 'grid-cols-3 sm:grid-cols-5';
+      // 四種甜度排成 2×2 比較整齊，五種才用 3+2
+      const sweetGridCols = p.fixedSweet ? 'grid-cols-1'
+        : (sweetList.length === 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3 sm:grid-cols-5');
       html += `
         <div class="space-y-2">
           <div class="flex items-center justify-between">
