@@ -400,7 +400,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260820-211533';
+    const APP_VERSION = '20260820-213412';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -2178,11 +2178,22 @@
       }
     }
 
+    // 密碼一律交給伺服器比對。前端不存放密碼，別人看原始碼也拿不到。
+    async function verifyMasterPin(pin) {
+      try {
+        const r = await postToGas({ action: 'check_pin', pin: String(pin).trim() });
+        return !!(r && r.valid);
+      } catch (e) {
+        alert('⚠️ 連線失敗，無法驗證密碼，請稍後再試。');
+        return false;
+      }
+    }
+
     // -------- 開啟／關閉編輯器 --------
-    function openMenuEditor() {
+    async function openMenuEditor() {
       const pin = prompt('🔐 修改菜單需要主揪密碼，請輸入：');
       if (pin === null) return;
-      if (String(pin).trim() !== '9999') {
+      if (!(await verifyMasterPin(pin))) {
         alert('❌ 主揪密碼錯誤，無法進入編輯。');
         return;
       }
@@ -2460,7 +2471,7 @@
       renderPaidPanel();
     }
 
-    function unlockPaidMode() {
+    async function unlockPaidMode() {
       if (paidPin) {   // 已解鎖 → 再按一次就上鎖
         paidPin = '';
         renderPaidPanel();
@@ -2468,7 +2479,7 @@
       }
       const pin = prompt('🔐 收款登記需要主揪密碼，請輸入：');
       if (pin === null) return;
-      if (String(pin).trim() !== '9999') { alert('❌ 主揪密碼錯誤。'); return; }
+      if (!(await verifyMasterPin(pin))) { alert('❌ 主揪密碼錯誤。'); return; }
       paidPin = String(pin).trim();
       renderPaidPanel();
     }
