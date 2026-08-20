@@ -157,9 +157,14 @@
           <div class="flex items-center gap-1.5 flex-1 sm:flex-none">
             <i class="fa-solid fa-hand-holding-dollar text-emerald-700 text-sm flex-shrink-0"></i>
             <input type="text" id="collector-input" maxlength="30"
-              onchange="saveCollector()" onblur="saveCollector()"
+              oninput="onCollectorInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();saveCollector();}"
               placeholder="收款人員"
-              class="w-full sm:w-36 px-3 py-2 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700">
+              class="w-full sm:w-32 px-3 py-2 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700">
+            <button onclick="saveCollector()" id="btn-save-collector"
+              class="px-3 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1 shadow-xs transition flex-shrink-0"
+              style="background-color:#ffffff;color:#334155;border:1px solid #cbd5e1;">
+              <i class="fa-solid fa-floppy-disk"></i> <span id="btn-save-collector-text">儲存</span>
+            </button>
           </div>
           <button onclick="fetchCloudOrders(true)" class="flex-1 sm:flex-none px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
             <i class="fa-solid fa-rotate"></i> 重新整理
@@ -376,7 +381,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260820-191006';
+    const APP_VERSION = '20260820-191944';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -1744,6 +1749,36 @@
       if (!el) return;
       if (document.activeElement === el) return;   // 正在輸入時不要覆蓋
       el.value = collectorData[currentStore] || '';
+      setCollectorBtn('idle');
+    }
+
+    // 儲存鈕的三種樣子：未存(橘) / 已存(灰) / 剛存好(綠)
+    // 顏色用 inline style 直接指定。動態組 Tailwind class 會跟 CDN 的
+    // 即時產生時機打架，導致顏色時有時無（店家頁籤也踩過同一個坑）。
+    const COLLECTOR_BTN_STYLE = {
+      idle:   { bg: '#ffffff', fg: '#334155', border: '1px solid #cbd5e1', icon: 'fa-solid fa-floppy-disk', text: '儲存' },
+      dirty:  { bg: '#d97706', fg: '#ffffff', border: '1px solid #d97706', icon: 'fa-solid fa-floppy-disk', text: '儲存' },
+      saving: { bg: '#94a3b8', fg: '#ffffff', border: '1px solid #94a3b8', icon: 'fa-solid fa-spinner fa-spin', text: '儲存中' },
+      saved:  { bg: '#059669', fg: '#ffffff', border: '1px solid #059669', icon: 'fa-solid fa-check', text: '已儲存' }
+    };
+
+    function setCollectorBtn(state) {
+      const btn = document.getElementById('btn-save-collector');
+      const txt = document.getElementById('btn-save-collector-text');
+      if (!btn || !txt) return;
+      const st = COLLECTOR_BTN_STYLE[state] || COLLECTOR_BTN_STYLE.idle;
+      btn.style.backgroundColor = st.bg;
+      btn.style.color = st.fg;
+      btn.style.border = st.border;
+      btn.querySelector('i').className = st.icon;
+      txt.innerText = st.text;
+    }
+
+    // 有改動就把儲存鈕變橘色提醒
+    function onCollectorInput() {
+      const el = document.getElementById('collector-input');
+      if (!el) return;
+      setCollectorBtn(el.value.trim() === (collectorData[currentStore] || '') ? 'idle' : 'dirty');
     }
 
     async function saveCollector() {
@@ -1751,20 +1786,29 @@
       if (!el) return;
       const who = el.value.trim();
       const store = currentStore;
-      if ((collectorData[store] || '') === who) return;   // 沒改就不送
+
+      if ((collectorData[store] || '') === who) {   // 沒改動，直接回饋已是最新
+        setCollectorBtn('saved');
+        setTimeout(() => { if (currentStore === store) setCollectorBtn('idle'); }, 1500);
+        return;
+      }
 
       const before = collectorData[store] || '';
-      collectorData[store] = who;
+      setCollectorBtn('saving');
       try {
         const result = await postToGas({ action: 'set_collector', store: store, collector: who });
         if (result.status !== 'ok') {
           collectorData[store] = before;
           alert(`❌ 收款人員存檔失敗：${result.message || result.status}`);
           renderCollector();
+          return;
         }
+        collectorData[store] = who;
+        setCollectorBtn('saved');
+        setTimeout(() => { if (currentStore === store) setCollectorBtn('idle'); }, 1500);
       } catch (err) {
         collectorData[store] = before;
-        alert('⚠️ 連線失敗，收款人員沒有存到。');
+        alert('⚠️ 連線失敗，收款人員沒有存到。請再按一次儲存。');
         renderCollector();
       }
     }
