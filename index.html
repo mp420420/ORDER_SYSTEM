@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>線上點餐系統 | 甘丹・50嵐・鮮茶道</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -365,6 +368,9 @@
 
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
+    // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
+    const APP_VERSION = '20260820-182313';
+
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
     let currentStore = '甘丹茶飲';
@@ -695,6 +701,7 @@
       loadMenuFromCloud();
       loadRoomStatus();
       loadPaidStatus();
+      checkForUpdate();
     });
 
     // 極速切換店家（切換菜單毫秒級反應，不卡網路連線）
@@ -2178,6 +2185,35 @@
       }
     }
 
+
+    // ==================================================================
+    // 版本檢查：GitHub Pages 固定回 Cache-Control: max-age=600，
+    // LINE 等內建瀏覽器又特別愛留快取，所以同事點連結常常看到舊畫面。
+    // 這裡在開頁時抓一次「線上的 index.html」比對版本，不同就自動換新的。
+    // ==================================================================
+    async function checkForUpdate() {
+      try {
+        // 加時間戳＋no-store，確保這一次抓的一定不是快取
+        const res = await fetch('index.html?_nocache=' + Date.now(), { cache: 'no-store' });
+        if (!res.ok) return;
+        const text = await res.text();
+        const m = text.match(/APP_VERSION = '([^']+)'/);
+        if (!m) return;
+
+        const latest = m[1];
+        if (latest === APP_VERSION) return;          // 已經是最新版
+
+        // 同一個版本只重載一次，避免萬一比對失敗造成無限重整
+        if (sessionStorage.getItem('reloadedFor') === latest) return;
+        sessionStorage.setItem('reloadedFor', latest);
+
+        console.log('偵測到新版', latest, '（目前', APP_VERSION, '）→ 重新載入');
+        // 換一個沒看過的網址，瀏覽器才不會再拿舊快取
+        location.replace(location.pathname + '?v=' + encodeURIComponent(latest));
+      } catch (e) {
+        // 離線或抓不到就算了，不影響使用
+      }
+    }
 
     // ==================================================================
     // 收款：以「人」為單位，勾了就存進試算表，換裝置或重整都還在
