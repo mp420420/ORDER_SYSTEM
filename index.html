@@ -193,6 +193,21 @@
         </div>
       </div>
 
+      <!-- 歷史訂單 -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+            <i class="fa-solid fa-clock-rotate-left text-indigo-600"></i> 歷史訂單 (<span id="history-store-label">甘丹茶飲</span>)
+          </h4>
+          <button onclick="loadHistory(true)" id="btn-load-history"
+            class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs transition">
+            <i class="fa-solid fa-clock-rotate-left"></i> <span id="btn-load-history-text">載入歷史</span>
+          </button>
+        </div>
+        <p class="text-xs text-slate-500">每次按「清除此店家訂單（開新團）」時會自動封存，每家店保留最近 10 團。</p>
+        <div id="history-list" class="divide-y divide-slate-100"></div>
+      </div>
+
       <!-- 各員點餐與收款明細 -->
       <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-3">
         <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
@@ -402,7 +417,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260821-183040';
+    const APP_VERSION = '20260821-222440';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -433,6 +448,8 @@
     let ordersReqSeq = 0;   // 訂單請求序號，用來丟棄過期的回應
     let paidData = {};      // 各店已付款的名單，來自試算表
     let collectorData = {}; // 各店這一團的收款人員
+    const historyCache = {};// 各店的歷史訂單，按需載入
+    const historyOpen = {}; // 哪幾團被展開了
     let roundData = {};     // 各店開團的起訖時間
     let paidPin = '';       // 收款模式解鎖後暫存的主揪密碼（關頁面就沒了）
     let ordersLoading = false;
@@ -819,6 +836,7 @@
       renderRoomStatus();
       renderPaidPanel();
       renderCollector();
+      renderHistory();
       closeRoundEdit();
 
       // 若當前在「訂單」或「後台」分頁，使用快取或更新
@@ -1545,6 +1563,7 @@
         paidData[currentStore] = [];   // 開新團，收款紀錄一起重來
         collectorData[currentStore] = '';
         roundData[currentStore] = { end: '' };
+        delete historyCache[currentStore];   // 剛封存了一團，下次要重抓
         renderCollector();
         renderRound();
         renderAdminStats();
@@ -1922,6 +1941,84 @@
         alert('⚠️ 連線失敗，結團時間沒有存到。請再按一次儲存。');
         renderRound();
       }
+    }
+
+    // ---- 歷史訂單：清除訂單時後端會自動封存，這裡按需載入 ----
+    async function loadHistory(force) {
+      const store = currentStore;
+      const btn = document.getElementById('btn-load-history');
+      const txt = document.getElementById('btn-load-history-text');
+      if (!force && historyCache[store]) { renderHistory(); return; }
+
+      if (btn) { btn.disabled = true; }
+      if (txt) txt.innerText = '載入中…';
+      try {
+        const res = await fetch(`${GAS_API_URL}?action=history&store=${encodeURIComponent(store)}`);
+        const data = await res.json();
+        historyCache[store] = (data && data.status === 'ok' && data.batches) ? data.batches : [];
+      } catch (e) {
+        alert('⚠️ 歷史訂單載入失敗，請重試。');
+      } finally {
+        if (btn) btn.disabled = false;
+        if (txt) txt.innerText = '重新載入';
+        renderHistory();
+      }
+    }
+
+    function toggleHistoryBatch(key) {
+      historyOpen[key] = !historyOpen[key];
+      renderHistory();
+    }
+
+    function copyHistoryBatch(store, idx) {
+      const b = (historyCache[store] || [])[idx];
+      if (!b) return;
+      let text = `📋 【${store}】${b.time} 封存\n總杯數：${b.count} 杯 ｜ 總金額：$${b.total} 元\n-------------------------\n`;
+      b.items.forEach(o => { text += orderLineText(o) + `\n`; });
+      navigator.clipboard.writeText(text).then(() => alert(`✅ 已複製這一團的清單！`));
+    }
+
+    function renderHistory() {
+      const box = document.getElementById('history-list');
+      const label = document.getElementById('history-store-label');
+      if (!box) return;
+      if (label) label.innerText = currentStore;
+
+      const batches = historyCache[currentStore];
+      if (!batches) {
+        box.innerHTML = `<p class="text-slate-400 text-xs py-4 text-center">按右上角「載入歷史」查看過去的訂單</p>`;
+        return;
+      }
+      if (!batches.length) {
+        box.innerHTML = `<p class="text-slate-400 text-xs py-4 text-center">【${currentStore}】還沒有任何歷史訂單</p>`;
+        return;
+      }
+
+      box.innerHTML = batches.map((b, i) => {
+        const key = currentStore + '#' + i;
+        const opened = !!historyOpen[key];
+        const detail = opened ? `
+          <div class="mt-2 pl-1 space-y-1">
+            ${b.items.map(o => `<div class="text-xs text-slate-600 break-all">${esc(orderLineText(o))}</div>`).join('')}
+            <button onclick="copyHistoryBatch(${esc(JSON.stringify(currentStore))}, ${i})"
+              class="mt-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg inline-flex items-center gap-1.5">
+              <i class="fa-regular fa-copy"></i> 複製這一團
+            </button>
+          </div>` : '';
+        return `
+          <div class="py-2.5">
+            <button onclick="toggleHistoryBatch(${esc(JSON.stringify(key))})"
+              class="w-full flex items-center justify-between gap-2 text-left hover:opacity-70 transition">
+              <span class="text-sm font-bold text-slate-800">
+                <i class="fa-solid fa-chevron-${opened ? 'down' : 'right'} text-xs text-slate-400 mr-1.5"></i>${esc(b.time)}
+              </span>
+              <span class="text-xs font-bold text-slate-600 whitespace-nowrap">
+                ${b.count}杯 <span class="text-amber-600">$${b.total}</span>
+              </span>
+            </button>
+            ${detail}
+          </div>`;
+      }).join('');
     }
 
     // 收款人員：這一團的錢交給誰，存在試算表所以同事也看得到
