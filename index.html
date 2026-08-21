@@ -40,7 +40,7 @@
 
       <!-- 店家快速切換 Tab（最左邊顯示哪幾家開放點餐）-->
       <div class="flex items-center justify-center sm:justify-start space-x-1 sm:space-x-1.5 bg-slate-100 p-1 rounded-2xl border border-slate-200 overflow-x-auto hide-scrollbar w-full sm:w-auto">
-        <span id="open-notice" class="px-2 py-1 rounded-xl text-xs font-black whitespace-nowrap flex-shrink-0"></span>
+        <span id="open-notice" class="px-2 py-1 rounded-xl text-xs font-black whitespace-nowrap flex-shrink-0 inline-flex items-center gap-1"></span>
         <button onclick="switchStore('甘丹茶飲')" id="btn-store-gandan" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition flex items-center gap-1.5">
           <span id="dot-store-gandan" class="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0"></span> <span id="name-store-gandan">甘丹茶飲</span>
         </button>
@@ -402,7 +402,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260821-182223';
+    const APP_VERSION = '20260821-183040';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -2023,6 +2023,9 @@
 
         btn.title = `${st}：${isOpen ? '點餐開放中' : '已截止點餐'}`;
 
+        // 開放中的店家已經顯示在左邊「開放點餐」標籤裡，這裡就不重複列出
+        btn.style.display = isOpen ? 'none' : '';
+
         // 品牌底色只留給「選中而且開放」的店，已截止就不上色，避免看起來像開著
         if (isActive && isOpen) {
           btn.className = base + 'text-white shadow-xs';
@@ -2048,9 +2051,19 @@
       if (openStores.length === 0) { el.style.display = 'none'; return; }
 
       el.style.display = '';
-      el.style.backgroundColor = '#a7f3d0';   // emerald-200
+      el.style.backgroundColor = '#d1fae5';   // emerald-100
       el.style.color = '#065f46';             // emerald-800
-      el.innerText = '開放點餐：' + openStores.join('、');
+
+      // 開放中的店家只出現在這裡，右邊的店家列不再重複顯示
+      const chips = openStores.map(st => {
+        const active = (st === currentStore);
+        const bg = active ? (STORE_ACTIVE_BG[st] || '#334155') : '#ffffff';
+        const fg = active ? '#ffffff' : '#065f46';
+        return `<button onclick="switchStore(${esc(JSON.stringify(st))})"
+          class="px-2 py-0.5 rounded-lg font-black transition hover:opacity-80"
+          style="background-color:${bg};color:${fg};">${esc(st)}</button>`;
+      }).join('');
+      el.innerHTML = `<span>開放點餐：</span>${chips}`;
       el.title = '目前開放點餐：' + openStores.join('、');
     }
 
