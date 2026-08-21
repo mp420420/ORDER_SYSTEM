@@ -400,7 +400,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260820-213412';
+    const APP_VERSION = '20260821-125712';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -409,6 +409,24 @@
 
     // 叫餐加總是否顯示「誰點的」（發飲料時很好用），選擇會記在這台裝置上
     let showOrderNames = (localStorage.getItem('showOrderNames') === '1');
+    // ---- 本機快取：Apps Script 每次往返要 1.5~2.5 秒（冷啟動更久），
+    //      所以先把上次的結果存在瀏覽器，開頁立刻有畫面，背景再去更新。----
+    const LS_PREFIX = 'orderSys_';
+
+    function cacheSet(key, val) {
+      try { localStorage.setItem(LS_PREFIX + key, JSON.stringify({ t: Date.now(), v: val })); }
+      catch (e) { /* 空間滿了或隱私模式，忽略 */ }
+    }
+
+    function cacheGet(key) {
+      try {
+        const raw = localStorage.getItem(LS_PREFIX + key);
+        if (!raw) return null;
+        const o = JSON.parse(raw);
+        return (o && 'v' in o) ? o.v : null;
+      } catch (e) { return null; }
+    }
+
     const ordersCache = {}; // 快取各店訂單資料，避免切換重複等待
     let ordersReqSeq = 0;   // 訂單請求序號，用來丟棄過期的回應
     let paidData = {};      // 各店已付款的名單，來自試算表
@@ -731,9 +749,14 @@
     };
 
     window.addEventListener('DOMContentLoaded', () => {
+      // 先用上次存下來的資料把畫面畫出來（0 秒），再背景跟伺服器同步
+      applyCachedMenu();
       initStoreData('甘丹茶飲');
+      applyCachedState();
+      applyCachedPaid();
       renderCart();
       renderNamesToggle();
+
       loadMenuFromCloud();
       loadRoomStatus();
       loadPaidStatus();
@@ -1355,6 +1378,7 @@
         alert(`🎉 點餐成功！已為 ${userName} 送出 ${result.added} 杯飲料至【${currentStore}】。\n\n📌 您的刪除密碼為：${userPin}（請牢記）`);
         clearCart();
         delete ordersCache[currentStore]; // 清除快取，下次查看自動抓最新
+        try { localStorage.removeItem(LS_PREFIX + 'orders_' + currentStore); } catch (e) {}
       } catch (err) {
         alert(`⚠️ 連線失敗，訂單「沒有」送出。\n\n請檢查網路後再試一次。`);
       } finally {
@@ -1383,6 +1407,12 @@
       const reqStore = currentStore;
       const reqSeq = ++ordersReqSeq;
 
+      // 記憶體沒有就找瀏覽器裡上次存的，避免每次重整都空白等 2 秒
+      if (!Array.isArray(ordersCache[reqStore])) {
+        const saved = cacheGet('orders_' + reqStore);
+        if (Array.isArray(saved)) ordersCache[reqStore] = saved;
+      }
+
       if (!forceRefresh && Array.isArray(ordersCache[reqStore])) {
         orders = ordersCache[reqStore];
         ordersLoading = false;
@@ -1401,6 +1431,7 @@
         if (!Array.isArray(data)) { console.log('訂單格式非預期，忽略'); return; }
 
         ordersCache[reqStore] = data;              // 一定存回它自己那家店
+        cacheSet('orders_' + reqStore, data);      // 也存到瀏覽器，重整後仍可秒開
 
         if (reqStore !== currentStore) return;     // 已經切到別家店了，不要動畫面
         if (reqSeq !== ordersReqSeq) return;       // 有更新的請求在跑，這筆是過期回應
@@ -1493,6 +1524,7 @@
         alert(`✅ 已清空【${currentStore}】分頁，共移除 ${result.removed} 筆訂單。`);
         orders = [];
         ordersCache[currentStore] = [];
+        cacheSet('orders_' + currentStore, []);
         paidData[currentStore] = [];   // 開新團，收款紀錄一起重來
         collectorData[currentStore] = '';
         roundData[currentStore] = { end: '' };
@@ -1754,13 +1786,24 @@
     }
 
     // 讀取各店的點餐開放狀態（讀不到時一律當作開放，不影響點餐）
+    function applyStatePayload(data) {
+      if (!data || data.status !== 'ok') return false;
+      if (data.open) roomOpen = data.open;
+      if (data.collector) collectorData = data.collector;
+      if (data.round) roundData = data.round;
+      return true;
+    }
+
+    function applyCachedState() {
+      const c = cacheGet('state');
+      if (c && applyStatePayload(c)) { renderRoomStatus(); renderCollector(); renderRound(); }
+    }
+
     async function loadRoomStatus() {
       try {
         const res = await fetch(`${GAS_API_URL}?action=state`);
         const data = await res.json();
-        if (data && data.status === 'ok' && data.open) roomOpen = data.open;
-        if (data && data.collector) collectorData = data.collector;
-        if (data && data.round) roundData = data.round;
+        if (applyStatePayload(data)) cacheSet('state', data);
         renderCollector();
         renderRound();
       } catch (e) {
@@ -2120,30 +2163,44 @@
       return !!(menuData && STORE_LIST.some(st => menuData[st] && menuData[st].items.length));
     }
 
+    // 把 API 回來的菜單整理成各店的結構
+    function applyMenuPayload(data) {
+      if (!data || data.status !== 'ok' || !data.items || !data.items.length) return false;
+      const grouped = {};
+      STORE_LIST.forEach(st => { grouped[st] = { items: [], toppings: [] }; });
+      data.items.forEach(it => { if (grouped[it.store]) grouped[it.store].items.push(it); });
+      (data.toppings || []).forEach(t => {
+        if (grouped[t.store]) grouped[t.store].toppings.push({ name: t.name, price: Number(t.price) || 0 });
+      });
+      STORE_LIST.forEach(st => { if (!grouped[st].items.length) grouped[st] = null; });
+      menuData = grouped;
+      return true;
+    }
+
+    // 開頁時立刻套用上次存下來的菜單，不必等網路
+    function applyCachedMenu() {
+      const cached = cacheGet('menu');
+      if (cached && applyMenuPayload(cached)) {
+        initStoreData(currentStore);
+        return true;
+      }
+      return false;
+    }
+
     async function loadMenuFromCloud() {
       try {
         const res = await fetch(`${GAS_API_URL}?action=menu`);
         const data = await res.json();
-        if (!data || data.status !== 'ok' || !data.items || !data.items.length) {
-          menuData = null;           // 試算表還沒有菜單，繼續用內建的
+        if (applyMenuPayload(data)) {
+          cacheSet('menu', data);    // 存起來，下次開頁先用它
         } else {
-          const grouped = {};
-          STORE_LIST.forEach(st => { grouped[st] = { items: [], toppings: [] }; });
-          data.items.forEach(it => {
-            if (grouped[it.store]) grouped[it.store].items.push(it);
-          });
-          (data.toppings || []).forEach(t => {
-            if (grouped[t.store]) grouped[t.store].toppings.push({ name: t.name, price: Number(t.price) || 0 });
-          });
-          // 某家店在試算表裡沒有資料時，該店仍用內建菜單，不會變成空白
-          STORE_LIST.forEach(st => {
-            if (!grouped[st].items.length) grouped[st] = null;
-          });
-          menuData = grouped;
+          menuData = null;           // 試算表還沒有菜單，繼續用內建的
         }
       } catch (e) {
-        menuData = null;
-        console.log('菜單載入失敗，改用程式內建菜單');
+        // 網路失敗時保留目前（可能來自快取）的菜單，不要退回內建把畫面洗掉
+        console.log('菜單更新失敗，沿用目前的菜單');
+        renderMenuCard();
+        return;
       }
       initStoreData(currentStore);   // 用新菜單重畫點餐畫面
     }
@@ -2460,11 +2517,16 @@
       return arr.indexOf(who) > -1;
     }
 
+    function applyCachedPaid() {
+      const c = cacheGet('paid');
+      if (c && c.paid) { paidData = c.paid; renderPaidPanel(); }
+    }
+
     async function loadPaidStatus() {
       try {
         const res = await fetch(`${GAS_API_URL}?action=paid`);
         const data = await res.json();
-        if (data && data.status === 'ok' && data.paid) paidData = data.paid;
+        if (data && data.status === 'ok' && data.paid) { paidData = data.paid; cacheSet('paid', data); }
       } catch (e) {
         console.log('收款狀態載入失敗');
       }
