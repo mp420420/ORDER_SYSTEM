@@ -417,7 +417,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260821-222440';
+    const APP_VERSION = '20260821-224952';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -503,7 +503,7 @@
       { cat: '濃醇鮮奶系列', name: '小山鮮奶紅茶', l: 60, xl: null, fixedSweet: false, heavyMilkOption: true, icon: '🥛' },
       { cat: '濃醇鮮奶系列', name: '穀香大麥拿鐵', l: 60, xl: null, fixedSweet: false, heavyMilkOption: true, icon: '🌾' },
       { cat: '濃醇鮮奶系列', name: '厚焙烏龍鮮奶茶', l: 60, xl: null, fixedSweet: false, heavyMilkOption: true, icon: '🥛' },
-      { cat: '濃醇鮮奶系列', name: '鮮奶烏龍/綠/青', l: 60, xl: null, fixedSweet: false, heavyMilkOption: true, icon: '🥛' },
+      { cat: '濃醇鮮奶系列', name: '鮮奶烏龍/綠/青', l: 60, xl: null, fixedSweet: false, heavyMilkOption: true, variants: '烏龍/綠茶/青茶', icon: '🥛' },
       { cat: '濃醇鮮奶系列', name: '琥珀凍鮮奶紅茶', l: 70, xl: null, fixedSweet: false, heavyMilkOption: true, icon: '🧋' },
       { cat: '濃醇鮮奶系列', name: '嫩仙草鮮奶烏龍', l: 70, xl: null, fixedSweet: false, heavyMilkOption: true, icon: '🌿' },
       { cat: '濃醇鮮奶系列', name: '榛果紅茶拿鐵', l: 65, xl: null, fixedSweet: false, heavyMilkOption: false, icon: '🌰' },
@@ -524,8 +524,8 @@
       { cat: '醇品奶香系列', name: '阿華田', l: 55, xl: null, fixedSweet: false, icon: '🍫' },
 
       { cat: '海鹽雲朵奶霜', name: '雲朵紅茶奶霜', l: 50, xl: null, fixedSweet: false, icon: '☁️' },
-      { cat: '海鹽雲朵奶霜', name: '雲朵四季/烏龍奶霜', l: 50, xl: null, fixedSweet: false, icon: '☁️' },
-      { cat: '海鹽雲朵奶霜', name: '雲朵綠茶/麥茶奶霜', l: 50, xl: null, fixedSweet: false, icon: '☁️' },
+      { cat: '海鹽雲朵奶霜', name: '雲朵四季/烏龍奶霜', l: 50, xl: null, fixedSweet: false, variants: '四季/烏龍', icon: '☁️' },
+      { cat: '海鹽雲朵奶霜', name: '雲朵綠茶/麥茶奶霜', l: 50, xl: null, fixedSweet: false, variants: '綠茶/麥茶', icon: '☁️' },
 
       { cat: '自然純蜜系列', name: '鮮榨檸檬蜜', l: 65, xl: null, fixedSweet: false, icon: '🍯' },
       { cat: '自然純蜜系列', name: '四季春茶蜜', l: 55, xl: null, fixedSweet: false, icon: '🍯' },
@@ -553,20 +553,20 @@
 
     // 2. 50嵐 菜單
     const raw50LanMenu = [
-      { cat: '找好茶', name: '茉莉綠茶 / 阿薩姆紅茶', m: 30, l: 35, fixedSweet: false, icon: '🍵' },
+      { cat: '找好茶', name: '茉莉綠茶 / 阿薩姆紅茶', m: 30, l: 35, fixedSweet: false, variants: '茉莉綠茶/阿薩姆紅茶', icon: '🍵' },
       { cat: '找好茶', name: '四季春青茶', m: 30, l: 35, fixedSweet: false, icon: '🍵' },
       { cat: '找好茶', name: '黃金烏龍', m: 30, l: 35, fixedSweet: false, icon: '🍵' },
       { cat: '找好茶', name: '珍波椰青茶', m: 35, l: 45, fixedSweet: false, icon: '🧋' },
-      { cat: '找好茶', name: '波霸紅 / 綠', m: 35, l: 45, fixedSweet: false, icon: '🧋' },
-      { cat: '找好茶', name: '燕麥紅 / 綠', m: 35, l: 45, fixedSweet: false, icon: '🌾' },
-      { cat: '找好茶', name: '微檸檬紅 / 青', m: 35, l: 45, fixedSweet: false, icon: '🍋' },
-      { cat: '找好茶', name: '麵茶紅 / 烏', m: 40, l: 55, fixedSweet: false, icon: '🌾' },
+      { cat: '找好茶', name: '波霸紅 / 綠', m: 35, l: 45, fixedSweet: false, variants: '紅茶/綠茶', icon: '🧋' },
+      { cat: '找好茶', name: '燕麥紅 / 綠', m: 35, l: 45, fixedSweet: false, variants: '紅茶/綠茶', icon: '🌾' },
+      { cat: '找好茶', name: '微檸檬紅 / 青', m: 35, l: 45, fixedSweet: false, variants: '紅茶/青茶', icon: '🍋' },
+      { cat: '找好茶', name: '麵茶紅 / 烏', m: 40, l: 55, fixedSweet: false, variants: '紅茶/烏龍', icon: '🌾' },
       { cat: '找好茶', name: '檸檬綠', m: 40, l: 55, fixedSweet: false, icon: '🍋' },
       { cat: '找好茶', name: '梅の綠', m: 40, l: 55, fixedSweet: false, icon: '🫐' },
-      { cat: '找好茶', name: '8冰綠 / 情人茶', m: 40, l: 55, fixedSweet: false, icon: '🍹' },
-      { cat: '找好茶', name: '多多綠 / 蜂蜜綠', m: 40, l: 55, fixedSweet: false, note: '不供熱飲', icon: '🥛' },
-      { cat: '找好茶', name: '旺來紅 / 青', m: 40, l: 55, fixedSweet: false, icon: '🍍' },
-      { cat: '找好茶', name: '柚子紅 / 烏', m: 40, l: 55, fixedSweet: false, icon: '🍊' },
+      { cat: '找好茶', name: '8冰綠 / 情人茶', m: 40, l: 55, fixedSweet: false, variants: '8冰綠/情人茶', icon: '🍹' },
+      { cat: '找好茶', name: '多多綠 / 蜂蜜綠', m: 40, l: 55, fixedSweet: false, note: '不供熱飲', variants: '多多綠/蜂蜜綠', icon: '🥛' },
+      { cat: '找好茶', name: '旺來紅 / 青', m: 40, l: 55, fixedSweet: false, variants: '紅茶/青茶', icon: '🍍' },
+      { cat: '找好茶', name: '柚子紅 / 烏', m: 40, l: 55, fixedSweet: false, variants: '紅茶/烏龍', icon: '🍊' },
       { cat: '找好茶', name: '鮮柚綠', m: 50, l: 65, fixedSweet: false, note: '季節限定・不供熱飲', icon: '🍊' },
 
       { cat: '找奶茶', name: '奶茶', m: 40, l: 55, fixedSweet: false, icon: '🧋' },
@@ -596,10 +596,10 @@
       { cat: '找拿鐵', name: '麵茶紅茶拿鐵', m: 55, l: 75, fixedSweet: false, icon: '🌾' },
 
       { cat: '找新鮮', name: '蜜茶', m: 40, l: 55, fixedSweet: false, note: '不供熱飲', icon: '🍯' },
-      { cat: '找新鮮', name: '8冰茶 / 柚子茶', m: 40, l: 55, fixedSweet: false, icon: '🍹' },
+      { cat: '找新鮮', name: '8冰茶 / 柚子茶', m: 40, l: 55, fixedSweet: false, variants: '8冰茶/柚子茶', icon: '🍹' },
       { cat: '找新鮮', name: '檸檬汁', m: 50, l: 65, fixedSweet: false, icon: '🍋' },
       { cat: '找新鮮', name: '葡萄柚汁', m: 50, l: 65, fixedSweet: false, note: '季節限定・不供熱飲', icon: '🍊' },
-      { cat: '找新鮮', name: '金桔檸檬 / 檸檬梅汁', m: 50, l: 65, fixedSweet: false, icon: '🍋' },
+      { cat: '找新鮮', name: '金桔檸檬 / 檸檬梅汁', m: 50, l: 65, fixedSweet: false, variants: '金桔檸檬/檸檬梅汁', icon: '🍋' },
       { cat: '找新鮮', name: '檸檬多多', m: 55, l: 75, fixedSweet: false, note: '不供熱飲', icon: '🥛' },
       { cat: '找新鮮', name: '葡萄柚多多', m: 55, l: 75, fixedSweet: false, note: '季節限定・不供熱飲', icon: '🍊' },
 
@@ -646,7 +646,7 @@
       { cat: '奶茶繽紛樂', name: '泰式奶茶', l: 60, xl: null, fixedSweet: false, icon: '🧋' },
 
       { cat: '鮮奶系列', name: '黑糖珍珠撞奶', l: 65, xl: null, fixedSweet: false, icon: '🧋' },
-      { cat: '鮮奶系列', name: '紅/綠茶拿鐵', l: 60, xl: 100, fixedSweet: false, icon: '🥛' },
+      { cat: '鮮奶系列', name: '紅/綠茶拿鐵', l: 60, xl: 100, fixedSweet: false, variants: '紅茶/綠茶', icon: '🥛' },
       { cat: '鮮奶系列', name: '伯爵拿鐵', l: 65, xl: 105, fixedSweet: false, icon: '🥛' },
 
       { cat: '奶霜系列', name: '英倫奶霜', l: 55, xl: null, fixedSweet: false, icon: '☁️' },
@@ -931,8 +931,10 @@
       document.getElementById('modal-item-icon').innerText = currentModalProduct.icon;
       document.getElementById('modal-item-baseprice').innerText = `$${currentModalProduct.basePrice} 起`;
 
+      const vlist = parseVariants(currentModalProduct.variants);
       currentModalSelections = {
         size: null,
+        variant: vlist.length === 1 ? vlist[0] : null,   // 只有一種就直接選好
         sweetness: currentModalProduct.fixedSweet ? fixedSweetnessOptions[0] : null,
         ice: null,
         heavyMilk: null,
@@ -990,6 +992,32 @@
       }
 
       let html = '';
+
+      // 0. 口味 / 茶底（只有設定了選項的品項才會出現）
+      const variantList = parseVariants(p.variants);
+      if (variantList.length) {
+        const vSelected = !!currentModalSelections.variant;
+        html += `
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <h4 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                <span>口味選擇</span>
+                <span class="text-xs px-2 py-0.5 rounded-full ${vSelected ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-600 font-bold'}">
+                  ${vSelected ? '已選擇 ✓' : '必選 *'}
+                </span>
+              </h4>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              ${variantList.map(v => `
+                <button type="button" onclick="selectModalVariant(${esc(JSON.stringify(v))})"
+                  class="px-3 py-2.5 rounded-2xl text-sm font-bold border text-center transition ${
+                    currentModalSelections.variant === v ? themeColor + ' text-white' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+                  }">${esc(v)}</button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
 
       // 1. 容量規格
       const sizeSelected = !!currentModalSelections.size;
@@ -1137,6 +1165,17 @@
       currentModalSelections.note = String(v || '').slice(0, 30);
     }
 
+    // 「紅茶/綠茶」拆成陣列；沒設定就回空陣列
+    function parseVariants(v) {
+      return String(v == null ? '' : v)
+        .split(/[\/,、]/).map(x => x.trim()).filter(Boolean);
+    }
+
+    function selectModalVariant(name) {
+      currentModalSelections.variant = name;
+      renderModalOptions();
+    }
+
     function selectModalSize(name, price) {
       currentModalSelections.size = { name, price };
       if (name.includes('生活瓶') || name.includes('瓶')) currentModalSelections.toppings = [];
@@ -1187,6 +1226,10 @@
     }
 
     function confirmAddToCart() {
+      if (parseVariants(currentModalProduct.variants).length && !currentModalSelections.variant) {
+        alert('⚠️ 請選擇【口味】！');
+        return;
+      }
       if (!currentModalSelections.size) {
         alert('⚠️ 請選擇【容量規格】！');
         return;
@@ -1204,6 +1247,7 @@
       specs.push(currentModalSelections.size.name);
       specs.push(currentModalSelections.sweetness.name);
       specs.push(currentModalSelections.ice.name);
+      if (currentModalSelections.variant) specs.push('口味:' + currentModalSelections.variant);
       if (currentModalSelections.heavyMilk) specs.push('升級重乳(+5)');
       currentModalSelections.toppings.forEach(t => {
         specs.push(t.price > 0 ? `${t.name}(+${t.price})` : t.name);
@@ -1638,19 +1682,24 @@
     function orderLineSegments(o) {
       const sp = splitSpecs(o.specs);
 
-      // 把「需求:xxx」從加料裡挑出來，其餘視為加料
-      let note = '';
+      // 把「口味:xxx」「需求:xxx」從加料裡挑出來，其餘視為加料
+      let note = '', variant = '';
       const toppings = [];
       sp.extras.forEach(x => {
-        const m = String(x).match(/^需求[:：]\s*(.+)$/);
-        if (m) { note = m[1].trim(); } else { toppings.push(x); }
+        const mv = String(x).match(/^口味[:：]\s*(.+)$/);
+        const mn = String(x).match(/^需求[:：]\s*(.+)$/);
+        if (mv)      { variant = mv[1].trim(); }
+        else if (mn) { note = mn[1].trim(); }
+        else         { toppings.push(x); }
       });
 
       const seg = [];
       seg.push({ t: String(o.user == null ? '' : o.user).trim() || '(未填姓名)', k: 'user' });
       seg.push({ t: String(o.item == null ? '' : o.item).trim(), k: 'item' });
       // 加料與需求一起放進品項後面的括號：不知四季春(加冬瓜琥珀凍)
-      const inner = toppings.map(cleanTopping);
+      const inner = [];
+      if (variant) inner.push(variant);          // 口味排最前面，一眼看到是哪種茶底
+      toppings.forEach(x => inner.push(cleanTopping(x)));
       if (note) inner.push(note);
       if (inner.length) {
         seg.push({ t: '(' + inner.join('、') + ')', k: note ? 'note' : 'addon', glue: true });
@@ -2412,7 +2461,8 @@
           l: (it.l === null || it.l === undefined || it.l === '') ? '' : it.l,
           xl: (it.xl === null || it.xl === undefined || it.xl === '') ? '' : it.xl,
           fixedSweet: !!it.fixedSweet, heavyMilkOption: !!it.heavyMilkOption,
-          note: it.note || '', icon: it.icon || '🍵', off: !!it.off
+          note: it.note || '', icon: it.icon || '🍵', off: !!it.off,
+          variants: it.variants || ''
         }));
         menuToppingDraft[st] = m.toppings.map(t => ({ name: t.name, price: Number(t.price) || 0 }));
       });
@@ -2481,6 +2531,8 @@
               </label>
               <input value="${esc(it.note)}" oninput="editMenuField(${i},'note',this.value)" placeholder="備註（例：5-9月限定）"
                 class="flex-1 min-w-[8rem] px-3 py-1.5 text-xs border border-slate-200 rounded-xl bg-slate-50">
+              <input value="${esc(it.variants)}" oninput="editMenuField(${i},'variants',this.value)" placeholder="選項（例：紅茶/綠茶）"
+                class="flex-1 min-w-[8rem] px-3 py-1.5 text-xs border border-slate-200 rounded-xl bg-slate-50">
             </div>
           </div>
         `).join('');
@@ -2527,7 +2579,7 @@
       const list = menuDraft[currentStore];
       const lastCat = list.length ? list[list.length - 1].cat : '未分類';
       list.push({ cat: lastCat, name: '', m: '', l: '', xl: '', fixedSweet: false,
-                  heavyMilkOption: false, note: '', icon: '🍵', off: false });
+                  heavyMilkOption: false, note: '', icon: '🍵', off: false, variants: '' });
       document.getElementById('menu-filter').value = '';
       renderMenuEditor();
       const body = document.getElementById('menu-editor-body');
@@ -2576,7 +2628,7 @@
             m: it.m, l: it.l, xl: it.xl,
             fixedSweet: !!it.fixedSweet, heavyMilkOption: !!it.heavyMilkOption,
             note: String(it.note || '').trim(), icon: String(it.icon || '🍵').trim() || '🍵',
-            off: !!it.off
+            off: !!it.off, variants: String(it.variants || '').trim()
           });
         });
         (menuToppingDraft[st] || []).forEach(t => {
