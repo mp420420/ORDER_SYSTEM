@@ -133,7 +133,7 @@
             <!-- 姓名/分機 -->
             <div>
               <label class="block text-xs font-bold text-slate-700 mb-1">姓名 / 分機 <span class="text-red-500">*</span></label>
-              <p class="text-xs text-slate-500 mb-1.5">請填「2 個中文字」或「4 位數分機」，方便主揪核對</p>
+              <p class="text-xs text-slate-500 mb-1.5">請填「2 個中文字」或「4 位數分機」，方便核對</p>
               <input type="text" id="user-name" placeholder="例如：大華　或　3051" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-700 bg-slate-50 focus:bg-white">
             </div>
 
@@ -232,7 +232,7 @@
       </div>
     </section>
 
-    <!-- ==================== 3. 主揪管理介面 (後台：店家叫餐加總與管理功能) ==================== -->
+    <!-- ==================== 3. 管理介面 (後台：店家叫餐加總與管理功能) ==================== -->
     <section id="view-admin" class="hidden space-y-4 sm:space-y-6">
       
       <!-- 統計數據卡片 -->
@@ -351,7 +351,7 @@
         </h4>
         <p class="text-xs text-slate-500">
           局號帳號設定一次就好，之後在訂單頁選名字即可。<br>
-          每個人的帳號與收款碼只有本人（或主揪）改得了。
+          每個人的帳號與收款碼<b>只有本人改得了</b>，忘記密碼只能刪掉重建。
         </p>
         <div id="profile-list" class="divide-y divide-slate-100"></div>
         <button onclick="addProfile()"
@@ -454,7 +454,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260826-210855';
+    const APP_VERSION = '20260826-213216';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -490,7 +490,7 @@
     const historyCache = {};// 各店的歷史訂單，按需載入
     const historyOpen = {}; // 哪幾團被展開了
     let roundData = {};     // 各店開團的起訖時間
-    let paidPin = '';       // 收款模式解鎖後暫存的主揪密碼（關頁面就沒了）
+    let paidPin = '';       // 收款模式解鎖後暫存的管理密碼（關頁面就沒了）
     let ordersLoading = false;
 
     // 1. 甘丹茶飲 菜單
@@ -785,7 +785,7 @@
 
     let menuData = null;        // 從試算表載入的菜單；null 代表目前用內建的
     let menuDraft = null;       // 編輯中的暫存（按取消就丟掉）
-    let menuPin = '';           // 進入編輯時輸入的主揪密碼，關閉即清除
+    let menuPin = '';           // 進入編輯時輸入的管理密碼，關閉即清除
     let menuToppingDraft = null;
 
     let products = [];
@@ -1486,7 +1486,7 @@
           return;
         }
         if (result.status !== 'success') {
-          alert(`❌ 送出失敗：${result.message || result.status}\n\n請重試一次，若持續失敗請通知主揪。`);
+          alert(`❌ 送出失敗：${result.message || result.status}\n\n請重試一次，若持續失敗請通知管理人員。`);
           return;
         }
 
@@ -1581,7 +1581,7 @@
 
     // 刪除單筆訂單
     async function deleteSingleOrder(rowIndex, userName, itemName) {
-      const inputPin = prompt(`🔐 安全防護：欲刪除【${userName} - ${itemName}】\n\n請輸入您點餐時設定的 4 位數密碼：\n（忘記的話請找主揪幫忙刪）`);
+      const inputPin = prompt(`🔐 安全防護：欲刪除【${userName} - ${itemName}】\n\n請輸入您點餐時設定的 4 位數密碼：\n（忘記的話請找管理人員協助）`);
       if (inputPin === null) return;
 
       if (!inputPin.trim()) {
@@ -1632,7 +1632,7 @@
       const confirmClear = confirm(`⚠️ 確定要清除【${currentStore}】的全部 ${orders.length} 筆訂單嗎？\n\n此動作只會清空【${currentStore}】的訂單，其他店家不受影響。\n\n‼️ 清除後無法復原。`);
       if (!confirmClear) return;
 
-      const masterPin = prompt('🔐 清空全店訂單需要主揪密碼，請輸入：');
+      const masterPin = prompt('🔐 清空全店訂單需要管理密碼，請輸入：');
       if (masterPin === null) return;
 
       try {
@@ -1643,7 +1643,7 @@
         });
 
         if (result.status === 'wrong_password') {
-          alert('❌ 主揪密碼錯誤，未清除任何資料。');
+          alert('❌ 管理密碼錯誤，未清除任何資料。');
           return;
         }
         if (result.status !== 'cleared') {
@@ -2236,7 +2236,7 @@
       // 這一步每次都問，不用快取，因為它本身就是「確認」。
       let pw = '';
       if (who) {
-        const input = prompt(`確定由【${who}】收款？\n\n請輸入【${who}】的密碼（主揪密碼也可以）：`);
+        const input = prompt(`確定由【${who}】收款？\n\n請輸入【${who}】本人的密碼：`);
         if (input === null) { renderCollector(); return; }
         pw = String(input).trim();
         if (!pw) { alert('⚠️ 沒有輸入密碼，沒有變更。'); renderCollector(); return; }
@@ -2245,10 +2245,8 @@
       collectorData[store] = who;
       renderPayMethod();
       try {
-        const result = await postToGas({
-          action: 'set_collector', store, collector: who,
-          pw, pin: paidPin || pw
-        });
+        // 這裡刻意不帶 pin：指定收款人只認本人的密碼
+        const result = await postToGas({ action: 'set_collector', store, collector: who, pw });
         if (result.status !== 'ok') {
           collectorData[store] = before;
           alert(`❌ ${result.message || result.status}`);
@@ -2401,7 +2399,7 @@
         : `要截止【${currentStore}】的點餐嗎？\n\n截止後同事就送不出這家店的訂單了（其他店家不受影響）。`);
       if (!ok) return;
 
-      const pin = prompt('🔐 切換點餐狀態需要主揪密碼，請輸入：');
+      const pin = prompt('🔐 切換點餐狀態需要管理密碼，請輸入：');
       if (pin === null) return;
 
       const btn = document.getElementById('btn-toggle-room');
@@ -2413,7 +2411,7 @@
           action: 'set_open', store: currentStore,
           open: wantOpen, pin: String(pin).trim()
         });
-        if (result.status === 'wrong_password') { alert('❌ 主揪密碼錯誤，狀態沒有變更。'); return; }
+        if (result.status === 'wrong_password') { alert('❌ 管理密碼錯誤，狀態沒有變更。'); return; }
         if (result.status !== 'ok') { alert(`❌ 變更失敗：${result.message || result.status}`); return; }
 
         roomOpen[currentStore] = result.open;
@@ -2565,10 +2563,10 @@
 
     // -------- 開啟／關閉編輯器 --------
     async function openMenuEditor() {
-      const pin = prompt('🔐 修改菜單需要主揪密碼，請輸入：');
+      const pin = prompt('🔐 修改菜單需要管理密碼，請輸入：');
       if (pin === null) return;
       if (!(await verifyMasterPin(pin))) {
-        alert('❌ 主揪密碼錯誤，無法進入編輯。');
+        alert('❌ 管理密碼錯誤，無法進入編輯。');
         return;
       }
       menuPin = String(pin).trim();
@@ -2770,7 +2768,7 @@
 
       try {
         const result = await postToGas({ action: 'save_menu', pin: menuPin, items: items, toppings: toppings });
-        if (result.status === 'wrong_password') { alert('❌ 主揪密碼錯誤，沒有存檔。'); return; }
+        if (result.status === 'wrong_password') { alert('❌ 管理密碼錯誤，沒有存檔。'); return; }
         if (result.status !== 'saved') { alert(`❌ 儲存失敗：${result.message || result.status}`); return; }
 
         alert(`✅ 菜單已儲存！共 ${result.items} 個品項、${result.toppings} 種加料。\n\n所有同事重新整理後就會看到新價格。`);
@@ -2859,9 +2857,9 @@
         renderPaidPanel();
         return;
       }
-      const pin = prompt('🔐 收款登記需要主揪密碼，請輸入：');
+      const pin = prompt('🔐 收款登記需要管理密碼，請輸入：');
       if (pin === null) return;
-      if (!(await verifyMasterPin(pin))) { alert('❌ 主揪密碼錯誤。'); return; }
+      if (!(await verifyMasterPin(pin))) { alert('❌ 管理密碼錯誤。'); return; }
       paidPin = String(pin).trim();
       renderPaidPanel();
     }
@@ -2923,14 +2921,14 @@
 
     // ==================================================================
     // 付款方式：轉帳帳號與收款 QR。
-    // 兩者都直接決定錢匯到哪裡，所以修改一定要主揪密碼。
+    // 兩者都直接決定錢匯到哪裡，所以修改一定要管理密碼。
     // ==================================================================
-    // 名冊要有誰、要刪誰，由主揪決定；各自的帳號則靠個人密碼守。
+    // 名冊要有誰、要刪誰，由管理人員決定；各自的帳號則靠個人密碼守。
     async function ensurePayPin() {
       if (paidPin) return true;
-      const pin = prompt('\u{1F510} 新增或刪除收款人員需要主揪密碼，請輸入：');
+      const pin = prompt('\u{1F510} 新增或刪除收款人員需要管理密碼，請輸入：');
       if (pin === null) return false;
-      if (!(await verifyMasterPin(pin))) { alert('❌ 主揪密碼錯誤。'); return false; }
+      if (!(await verifyMasterPin(pin))) { alert('❌ 管理密碼錯誤。'); return false; }
       paidPin = String(pin).trim();
       renderPaidPanel();
       return true;
@@ -3046,7 +3044,7 @@
 
     function askProfilePw(name, why) {
       if (profilePw[name]) return profilePw[name];
-      const pw = prompt(`\u{1F512} 【${name}】${why}\n\n請輸入【${name}】的個人密碼（主揪密碼也可以）：`);
+      const pw = prompt(`\u{1F512} 【${name}】${why}\n\n請輸入【${name}】本人的密碼：`);
       if (pw === null) return null;
       const v = String(pw).trim();
       if (!v) return null;
@@ -3056,9 +3054,8 @@
 
     async function saveProfile(payload) {
       const body = Object.assign({ action: 'save_profile' }, payload);
-      // 使用者若輸入的是主揪密碼，也讓後端用主揪的規則驗一次，
-      // 不然提示寫「主揪密碼也可以」就變成騙人。
-      body.pin = paidPin || payload.pw || '';
+      // 只有「新增」會用到管理密碼；改帳號、換收款碼一律認本人的密碼。
+      body.pin = paidPin || '';
       const r = await postToGas(body);
       if (r.status === 'wrong_password') {
         if (payload.name) delete profilePw[payload.name];   // 密碼不對就別快取
@@ -3206,7 +3203,7 @@
       if (!modal || !img || !who) return;
 
       title.innerText = '掃碼付款給 ' + who;
-      note.innerText = '【' + currentStore + '】付完請告知主揪勾記';
+      note.innerText = '【' + currentStore + '】付完請告知收款人員勾記';
 
       modal.classList.remove('hidden');
       modal.classList.add('flex');
@@ -3269,7 +3266,7 @@
     }
 
     async function togglePaid(who, wantPaid) {
-      if (!paidPin) { alert('⚠️ 請先按「開始收款」並輸入主揪密碼。'); renderPaidPanel(); return; }
+      if (!paidPin) { alert('⚠️ 請先按「開始收款」並輸入管理密碼。'); renderPaidPanel(); return; }
 
       // 先在畫面上反映，失敗再改回來
       if (!paidData[currentStore]) paidData[currentStore] = [];
