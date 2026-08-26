@@ -311,7 +311,31 @@
           <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600"><span id="paid-progress">0 / 0 人</span></span>
         </div>
 
+        <!-- 付款方式：轉帳帳號與收款碼 -->
+        <div id="pay-method" class="rounded-xl bg-slate-50 border border-slate-200 p-3 space-y-2"></div>
+
         <div id="paid-list" class="divide-y divide-slate-100 max-h-96 overflow-y-auto pr-1"></div>
+
+        <div class="flex flex-wrap gap-2 pt-1">
+          <button onclick="shareUnpaidToLine()"
+            class="px-3.5 py-2 bg-[#06C755] hover:opacity-90 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs transition">
+            <i class="fa-brands fa-line"></i> 傳未付名單到 LINE
+          </button>
+          <button onclick="copyUnpaidText()"
+            class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs transition">
+            <i class="fa-regular fa-copy"></i> 複製未付名單
+          </button>
+        </div>
+      </div>
+
+      <!-- 收款碼放大顯示 -->
+      <div id="qr-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center p-4" onclick="closeQrModal()">
+        <div class="bg-white rounded-2xl p-5 max-w-xs w-full text-center space-y-3" onclick="event.stopPropagation()">
+          <h4 class="font-black text-slate-800" id="qr-modal-title">掃碼付款</h4>
+          <img id="qr-modal-img" alt="收款碼" class="w-full rounded-xl border border-slate-200">
+          <p class="text-xs text-slate-500" id="qr-modal-note"></p>
+          <button onclick="closeQrModal()" class="w-full px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-xl">關閉</button>
+        </div>
       </div>
 
       <!-- 菜單管理 -->
@@ -417,7 +441,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260826-123836';
+    const APP_VERSION = '20260826-193922';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -448,6 +472,9 @@
     let ordersReqSeq = 0;   // 訂單請求序號，用來丟棄過期的回應
     let paidData = {};      // 各店已付款的名單，來自試算表
     let collectorData = {}; // 各店這一團的收款人員
+    let payInfoData = {};   // 各店的轉帳帳號
+    let hasQrData   = {};   // 各店有沒有收款 QR
+    let qrCache     = {};   // 拿過的收款碼存起來，不用每次重拿
     const historyCache = {};// 各店的歷史訂單，按需載入
     const historyOpen = {}; // 哪幾團被展開了
     let roundData = {};     // 各店開團的起訖時間
@@ -1967,6 +1994,8 @@
       if (data.open) roomOpen = data.open;
       if (data.collector) collectorData = data.collector;
       if (data.round) roundData = data.round;
+      if (data.payInfo) payInfoData = data.payInfo;
+      if (data.hasQr)   hasQrData   = data.hasQr;
       return true;
     }
 
@@ -2862,6 +2891,7 @@
       document.getElementById('paid-sum').innerText = `$${paidSum}`;
       document.getElementById('unpaid-sum').innerText = `$${unpaidSum}`;
       document.getElementById('paid-progress').innerText = `${paidCount} / ${people.length} 人`;
+      renderPayMethod();
 
       if (people.length === 0) {
         box.innerHTML = `<p class="text-slate-400 text-xs py-4 text-center">【${currentStore}】目前沒有訂單</p>`;
@@ -2885,6 +2915,225 @@
           </div>
         `;
       }).join('');
+    }
+
+
+    // ==================================================================
+    // 付款方式：轉帳帳號與收款 QR。
+    // 兩者都直接決定錢匯到哪裡，所以修改一定要主揪密碼。
+    // ==================================================================
+    const NO_INFO_HTML = '<span class="text-slate-400 font-normal">尚未填寫</span>';
+
+    function renderPayMethod() {
+      const box = document.getElementById('pay-method');
+      if (!box) return;
+
+      const who   = collectorData[currentStore] || '';
+      const info  = payInfoData[currentStore] || '';
+      const hasQr = !!hasQrData[currentStore];
+      const unlocked = !!paidPin;
+
+      const rows = [];
+
+      rows.push(`<div class="flex items-center gap-2 text-xs">
+        <span class="text-slate-500 flex-shrink-0">收款人員</span>
+        <span class="font-black text-slate-800">${who ? esc(who) : NO_INFO_HTML}</span>
+      </div>`);
+
+      if (info) {
+        rows.push(`<div class="flex items-start gap-2 text-xs">
+          <span class="text-slate-500 flex-shrink-0 pt-0.5">轉帳帳號</span>
+          <span class="font-black text-slate-800 break-all">${esc(info)}</span>
+          <button onclick="copyPayInfo()" class="flex-shrink-0 px-2 py-0.5 rounded-lg bg-white border border-slate-300 text-slate-600 font-bold hover:bg-slate-50">複製</button>
+        </div>`);
+      }
+
+      const btns = [];
+      if (hasQr) {
+        btns.push(`<button onclick="openQrModal()"
+          class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg flex items-center gap-1.5">
+          <i class="fa-solid fa-qrcode"></i> 掃碼付款</button>`);
+      }
+      if (unlocked) {
+        btns.push(`<button onclick="editPayInfo()"
+          class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg">${info ? '改帳號' : '設定轉帳帳號'}</button>`);
+        btns.push(`<label class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg cursor-pointer">
+          ${hasQr ? '換收款碼' : '上傳收款碼'}
+          <input type="file" accept="image/*" class="hidden" onchange="uploadPayCode(this)">
+        </label>`);
+        if (hasQr) {
+          btns.push(`<button onclick="removePayCode()"
+            class="px-3 py-1.5 bg-white border border-rose-200 text-rose-600 text-xs font-bold rounded-lg">刪收款碼</button>`);
+        }
+      }
+      if (!info && !hasQr && !unlocked) {
+        rows.push(`<p class="text-xs text-slate-400">主揪還沒有設定付款方式。</p>`);
+      }
+      if (btns.length) rows.push(`<div class="flex flex-wrap gap-2 pt-0.5">${btns.join('')}</div>`);
+
+      box.innerHTML = rows.join('');
+    }
+
+    function copyPayInfo() {
+      const info = payInfoData[currentStore] || '';
+      if (!info) return;
+      navigator.clipboard.writeText(info).then(() => alert('✅ 已複製轉帳帳號'));
+    }
+
+    async function editPayInfo() {
+      if (!paidPin) { alert('⚠️ 請先按「開始收款」並輸入主揪密碼。'); return; }
+      const now = payInfoData[currentStore] || '';
+      const val = prompt('轉帳帳號（例：國泰 013 帳號 1234567890 王小明）：', now);
+      if (val === null) return;
+      const info = String(val).trim();
+      try {
+        const r = await postToGas({ action: 'set_payinfo', store: currentStore, info, pin: paidPin });
+        if (r.status === 'wrong_password') { alert('❌ 主揪密碼錯誤。'); return; }
+        if (r.status !== 'ok') { alert(`❌ 儲存失敗：${r.message || r.status}`); return; }
+        payInfoData[currentStore] = info;
+        renderPayMethod();
+      } catch (e) { alert('⚠️ 連線失敗，帳號沒有存到。'); }
+    }
+
+    // 圖片先縮小再存：試算表一格有字數上限，而且 QR 不需要高解析度
+    function shrinkImage(file, maxPx, quality) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('讀不到圖片'));
+        reader.onload = () => {
+          const img = new Image();
+          img.onerror = () => reject(new Error('圖片格式不對'));
+          img.onload = () => {
+            const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+            const w = Math.max(1, Math.round(img.width * scale));
+            const h = Math.max(1, Math.round(img.height * scale));
+            const cv = document.createElement('canvas');
+            cv.width = w; cv.height = h;
+            const ctx = cv.getContext('2d');
+            ctx.fillStyle = '#ffffff';        // QR 底色要白的，透明背景會變黑
+            ctx.fillRect(0, 0, w, h);
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(cv.toDataURL('image/jpeg', quality));
+          };
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function uploadPayCode(input) {
+      const file = input.files && input.files[0];
+      input.value = '';
+      if (!file) return;
+      if (!paidPin) { alert('⚠️ 請先按「開始收款」並輸入主揪密碼。'); return; }
+
+      let qr;
+      try {
+        qr = await shrinkImage(file, 480, 0.7);
+        if (qr.length > 38000) qr = await shrinkImage(file, 360, 0.6);
+        if (qr.length > 38000) qr = await shrinkImage(file, 280, 0.5);
+      } catch (e) { alert('⚠️ ' + e.message); return; }
+      if (qr.length > 38000) { alert('⚠️ 圖片太大，請改用單純一點的收款碼截圖。'); return; }
+
+      try {
+        const r = await postToGas({ action: 'set_paycode', store: currentStore, qr, pin: paidPin });
+        if (r.status === 'wrong_password') { alert('❌ 主揪密碼錯誤。'); return; }
+        if (r.status !== 'ok') { alert(`❌ 上傳失敗：${r.message || r.status}`); return; }
+        hasQrData[currentStore] = true;
+        qrCache[currentStore] = qr;
+        renderPayMethod();
+        alert('✅ 收款碼已上傳，同事現在可以掃碼了。');
+      } catch (e) { alert('⚠️ 連線失敗，收款碼沒有存到。'); }
+    }
+
+    async function removePayCode() {
+      if (!paidPin) return;
+      if (!confirm('確定要刪掉【' + currentStore + '】的收款碼嗎？')) return;
+      try {
+        const r = await postToGas({ action: 'set_paycode', store: currentStore, qr: '', pin: paidPin });
+        if (r.status !== 'ok') { alert(`❌ 刪除失敗：${r.message || r.status}`); return; }
+        hasQrData[currentStore] = false;
+        delete qrCache[currentStore];
+        renderPayMethod();
+      } catch (e) { alert('⚠️ 連線失敗。'); }
+    }
+
+    async function openQrModal() {
+      const store = currentStore;
+      const modal = document.getElementById('qr-modal');
+      const img   = document.getElementById('qr-modal-img');
+      const title = document.getElementById('qr-modal-title');
+      const note  = document.getElementById('qr-modal-note');
+      if (!modal || !img) return;
+
+      const who = collectorData[store] || '';
+      title.innerText = who ? ('掃碼付款給 ' + who) : '掃碼付款';
+      note.innerText = '【' + store + '】付完請告知主揪勾記';
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+
+      if (qrCache[store]) { img.src = qrCache[store]; return; }
+      img.removeAttribute('src');
+      try {
+        const res = await fetch(`${GAS_API_URL}?action=paycode&store=${encodeURIComponent(store)}`);
+        const d = await res.json();
+        if (d && d.status === 'ok' && d.qr) {
+          qrCache[store] = d.qr;
+          if (currentStore === store) img.src = d.qr;
+        } else {
+          alert('⚠️ 還沒有上傳收款碼。');
+          closeQrModal();
+        }
+      } catch (e) {
+        alert('⚠️ 收款碼載入失敗，請重試。');
+        closeQrModal();
+      }
+    }
+
+    function closeQrModal() {
+      const modal = document.getElementById('qr-modal');
+      if (!modal) return;
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    // ---- 未付名單：複製或直接丟到 LINE ----
+    function unpaidText() {
+      const people = buildPersonTotals().filter(pp => !isPaid(pp.user));
+      const end  = (roundData[currentStore] || {}).end || '';
+      const who  = collectorData[currentStore] || '';
+      const info = payInfoData[currentStore] || '';
+
+      let t = '💰 【' + currentStore + '】還沒付款的名單\n';
+      if (end)  t += '結團時間：' + end + '\n';
+      if (who)  t += '收款人員：' + who + '\n';
+      if (info) t += '轉帳帳號：' + info + '\n';
+      t += '-------------------------\n';
+      if (!people.length) {
+        t += '全部都付清了，辛苦了 ✅\n';
+        return t;
+      }
+      let sum = 0;
+      people.forEach(pp => {
+        t += pp.user + '：$' + pp.total + '（' + pp.cups + '杯）\n';
+        sum += pp.total;
+      });
+      t += '-------------------------\n';
+      t += '共 ' + people.length + ' 人、合計 $' + sum;
+      return t;
+    }
+
+    function copyUnpaidText() {
+      navigator.clipboard.writeText(unpaidText())
+        .then(() => alert('✅ 已複製未付名單，貼到 LINE 就行了。'));
+    }
+
+    // LINE Notify 已於 2025/3 停止服務，全自動推播需要官方帳號。
+    // 這裡用分享連結：點下去會開 LINE、訊息已經幫你打好，選群組按送出就完成。
+    function shareUnpaidToLine() {
+      const url = 'https://line.me/R/share?text=' + encodeURIComponent(unpaidText());
+      window.open(url, '_blank');
     }
 
     async function togglePaid(who, wantPaid) {
