@@ -222,6 +222,7 @@
               <tr class="bg-slate-50 text-slate-500 border-b border-slate-100">
                 <th class="p-2.5 whitespace-nowrap">姓名</th>
                 <th class="p-2.5">品項與規格</th>
+                <th class="p-2.5 whitespace-nowrap">付款方式</th>
                 <th class="p-2.5 text-right whitespace-nowrap">金額</th>
                 <th class="p-2.5 text-center whitespace-nowrap">操作</th>
               </tr>
@@ -454,7 +455,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260826-222006';
+    const APP_VERSION = '20260826-223923';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -484,6 +485,8 @@
     const ordersCache = {}; // 快取各店訂單資料，避免切換重複等待
     let ordersReqSeq = 0;   // 訂單請求序號，用來丟棄過期的回應
     let paidData = {};      // 各店已付款的名單，來自試算表
+    let paidPayAll = {};    // 各店的付款方式
+    let paidPayData = {};   // 目前這家店的付款方式：{ 姓名: {m, last5} }
     let collectorData = {}; // 各店這一團的收款人員
     let collectorList = [];  // 收款人員名冊：[{name, info, hasQr}]
     let qrCache     = {};   // 拿過的收款碼存起來，不用每次重拿
@@ -873,6 +876,7 @@
       document.getElementById('stat-title-amount').innerText = `${currentStore} 總金額`;
       renderMenuCard();
       renderRoomStatus();
+      syncPayForStore();
       renderPaidPanel();
       renderCollector();
       renderHistory();
@@ -1938,13 +1942,14 @@
       const tableBody = document.getElementById('orders-table-body');
       if (orders.length === 0) {
         tableBody.innerHTML = ordersLoading
-          ? `<tr><td colspan="4" class="text-center py-6 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>正在載入【${currentStore}】的訂單…</td></tr>`
-          : `<tr><td colspan="4" class="text-center py-6 text-slate-400">目前【${currentStore}】分頁中尚無訂單</td></tr>`;
+          ? `<tr><td colspan="5" class="text-center py-6 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>正在載入【${currentStore}】的訂單…</td></tr>`
+          : `<tr><td colspan="5" class="text-center py-6 text-slate-400">目前【${currentStore}】分頁中尚無訂單</td></tr>`;
       } else {
         tableBody.innerHTML = orders.map(o => `
           <tr class="hover:bg-slate-50 transition text-sm">
             <td class="p-2.5 font-bold text-slate-900 whitespace-nowrap">${esc(o.user)} <span class="text-xs font-normal text-slate-400 block">${esc(o.time)}</span></td>
-            <td class="p-2.5 text-slate-700">${esc(o.item)} <span class="text-slate-400 text-xs block">${esc(o.specs)}</span></td>
+            <td class="p-2.5 text-slate-700">${esc(shownItemName(o))} <span class="text-slate-400 text-xs block">${esc(specsForDisplay(o))}</span></td>
+            <td class="p-2.5 whitespace-nowrap">${payMethodCell(o.user)}</td>
             <td class="p-2.5 text-right font-bold text-amber-600 whitespace-nowrap">$${esc(o.price)}</td>
             <td class="p-2.5 text-center whitespace-nowrap">
               <button onclick="deleteSingleOrder(${o.rowIndex}, ${esc(JSON.stringify(o.user))}, ${esc(JSON.stringify(o.item))})" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-bold transition">
@@ -1954,6 +1959,65 @@
           </tr>
         `).join('');
       }
+    }
+
+    // ---- 付款方式：一人一筆，同一個人的每一杯都會一起變 ----
+    function payOf(user) {
+      const p = (paidPayData || {})[String(user == null ? '' : user).trim()];
+      return p || { m: '', last5: '' };
+    }
+
+    function payMethodCell(user) {
+      const p = payOf(user);
+      const u = esc(JSON.stringify(String(user == null ? '' : user).trim()));
+      const dot = (on) => `<span class="inline-block w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 ${
+        on ? 'border-emerald-700 bg-emerald-700' : 'border-slate-300 bg-white'}"></span>`;
+
+      return `
+        <div class="space-y-1">
+          <button type="button" onclick="setPayMethod(${u}, 'cash')"
+            class="flex items-center gap-1.5 text-xs font-bold ${p.m === 'cash' ? 'text-emerald-800' : 'text-slate-500'}">
+            ${dot(p.m === 'cash')} 現金
+          </button>
+          <div class="flex items-center gap-1.5">
+            <button type="button" onclick="setPayMethod(${u}, 'transfer')"
+              class="flex items-center gap-1.5 text-xs font-bold ${p.m === 'transfer' ? 'text-emerald-800' : 'text-slate-500'}">
+              ${dot(p.m === 'transfer')} 轉帳
+            </button>
+            <input type="text" inputmode="numeric" maxlength="5" placeholder="末5碼"
+              value="${esc(p.last5)}"
+              onchange="setPayLast5(${u}, this.value)"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+              class="w-16 px-1.5 py-0.5 text-xs text-center font-bold border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700">
+          </div>
+        </div>`;
+    }
+
+    async function savePayMethod(user, method, last5) {
+      const store = currentStore;
+      const before = JSON.parse(JSON.stringify(paidPayData || {}));
+      paidPayData[user] = { m: method, last5: last5 };
+      renderAdminOrders();
+      try {
+        const r = await postToGas({ action: 'set_paymethod', store, user, method, last5 });
+        if (r.status !== 'ok') throw new Error(r.message || r.status);
+      } catch (e) {
+        paidPayData = before;
+        renderAdminOrders();
+        alert('⚠️ 付款方式沒有存到，請再試一次。');
+      }
+    }
+
+    function setPayMethod(user, method) {
+      const p = payOf(user);
+      const next = (p.m === method) ? '' : method;    // 再按一次取消
+      savePayMethod(user, next, next === 'transfer' ? p.last5 : '');
+    }
+
+    function setPayLast5(user, val) {
+      const l5 = String(val || '').replace(/[^0-9]/g, '').slice(0, 5);
+      const p = payOf(user);
+      savePayMethod(user, l5 ? 'transfer' : p.m, l5);
     }
 
     function copyStoreSummary() {
@@ -2857,16 +2921,32 @@
       return arr.indexOf(who) > -1;
     }
 
+    // 切店家時把付款方式換成那家的
+    function syncPayForStore() {
+      paidPayData = (paidPayAll || {})[currentStore] || {};
+    }
+
     function applyCachedPaid() {
       const c = cacheGet('paid');
-      if (c && c.paid) { paidData = c.paid; renderPaidPanel(); }
+      if (c && c.paid) {
+        paidData = c.paid;
+        paidPayAll = c.pay || {};
+        syncPayForStore();
+        renderPaidPanel();
+      }
     }
 
     async function loadPaidStatus() {
       try {
         const res = await fetch(`${GAS_API_URL}?action=paid`);
         const data = await res.json();
-        if (data && data.status === 'ok' && data.paid) { paidData = data.paid; cacheSet('paid', data); }
+        if (data && data.status === 'ok' && data.paid) {
+          paidData = data.paid;
+          paidPayAll = data.pay || {};
+          paidPayData = paidPayAll[currentStore] || {};
+          cacheSet('paid', data);
+          renderAdminOrders();
+        }
       } catch (e) {
         console.log('收款狀態載入失敗');
       }
