@@ -458,7 +458,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260826-201656';
+    const APP_VERSION = '20260826-202700';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -2924,7 +2924,6 @@
 
       const who = collectorData[currentStore] || '';
       const p = profileOf(who);
-      const rows = [];
 
       if (!who) {
         box.innerHTML = `<p class="text-xs text-slate-400">還沒有指定收款人員。</p>`;
@@ -2935,22 +2934,29 @@
         return;
       }
 
-      if (p.info) {
-        // 帳號單獨一行、字大一點，旁邊就是複製，避免同事手打打錯
-        rows.push(`<div class="rounded-xl bg-slate-50 border border-slate-200 p-3 space-y-1.5">
-          <div class="text-xs text-slate-500">轉帳帳號（收款：${esc(p.name)}）</div>
+      const rows = [];
+
+      if (p.code || p.acct) {
+        // 局號與帳號分開兩行，各自一個複製鈕。
+        // 複製只會帶走那一欄的數字，不會把標題或姓名一起複進去。
+        const line = (label, val, fn, strong) => `
           <div class="flex items-center gap-2">
-            <span class="font-black text-slate-900 text-sm break-all flex-1">${esc(p.info)}</span>
-            <button onclick="copyPayInfo()"
-              class="flex-shrink-0 px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg flex items-center gap-1.5">
-              <i class="fa-regular fa-copy"></i> 複製
-            </button>
-          </div>
+            <span class="text-xs text-slate-500 w-9 flex-shrink-0">${label}</span>
+            <span class="font-black text-slate-900 ${strong ? 'text-base' : 'text-sm'} tracking-wide break-all flex-1">${val ? esc(val) : '<span class="text-slate-400 font-normal text-sm">—</span>'}</span>
+            ${val ? `<button onclick="${fn}"
+              class="flex-shrink-0 px-3 py-1.5 ${strong ? 'bg-slate-800 hover:bg-slate-900 text-white' : 'bg-white hover:bg-slate-50 text-slate-600 border border-slate-300'} text-xs font-bold rounded-lg flex items-center gap-1.5">
+              <i class="fa-regular fa-copy"></i> 複製</button>` : ''}
+          </div>`;
+
+        rows.push(`<div class="rounded-xl bg-slate-50 border border-slate-200 p-3 space-y-2">
+          <div class="text-xs text-slate-500">收款：<span class="font-bold text-slate-700">${esc(p.name)}</span></div>
+          ${line('局號', p.code, 'copyPayCodeNo()', false)}
+          ${line('帳號', p.acct, 'copyPayAcct()', true)}
         </div>`);
+      } else {
+        rows.push(`<p class="text-xs text-slate-400">【${esc(p.name)}】還沒有填局號帳號。</p>`);
       }
-      if (!p.info && !p.hasQr) {
-        rows.push(`<p class="text-xs text-slate-400">【${esc(p.name)}】還沒有填帳號也沒有收款碼。</p>`);
-      }
+
       if (p.hasQr) {
         rows.push(`<button onclick="openQrModal()"
           class="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-bold rounded-xl flex items-center gap-2 shadow-xs">
@@ -2960,11 +2966,20 @@
       box.innerHTML = rows.join('');
     }
 
-    function copyPayInfo() {
+    function copyOne(text, label) {
+      if (!text) return;
+      navigator.clipboard.writeText(text)
+        .then(() => alert('✅ 已複製' + label + '：' + text));
+    }
+
+    function copyPayAcct() {
       const p = profileOf(collectorData[currentStore] || '');
-      const info = p ? p.info : '';
-      if (!info) return;
-      navigator.clipboard.writeText(info).then(() => alert('✅ 已複製轉帳帳號'));
+      copyOne(p ? p.acct : '', '帳號');
+    }
+
+    function copyPayCodeNo() {
+      const p = profileOf(collectorData[currentStore] || '');
+      copyOne(p ? p.code : '', '局號');
     }
 
     // ---- 名冊管理 ----
@@ -3014,7 +3029,9 @@
             </div>
           </div>
           <div class="text-xs text-slate-600 break-all">
-            ${p.info ? esc(p.info) : '<span class="text-slate-400">尚未填帳號</span>'}
+            ${(p.code || p.acct)
+              ? `局號 ${esc(p.code || '—')}　帳號 ${esc(p.acct || '—')}`
+              : '<span class="text-slate-400">尚未填局號帳號</span>'}
             ${p.hasQr ? '<span class="ml-1.5 text-emerald-700 font-bold">✓ 有收款碼</span>' : ''}
           </div>
         </div>`;
@@ -3057,8 +3074,10 @@
       if (!nm) { alert('⚠️ 請填寫姓名。'); return; }
       if (collectorList.some(p => p.name === nm)) { alert('⚠️ 名冊裡已經有這個人了。'); return; }
 
-      const info = prompt(`【${nm}】的轉帳帳號（例：國泰 013 1234567890 王小明）：`, '');
-      if (info === null) return;
+      const code = prompt(`【${nm}】的局號／銀行代號（例：700 或 013）：`, '');
+      if (code === null) return;
+      const acct = prompt(`【${nm}】的帳號（只填數字，同事會直接複製這一段）：`, '');
+      if (acct === null) return;
 
       const pw = prompt(`設一組【${nm}】自己的密碼（4～20 個字）\n\n以後要改這個人的帳號或收款碼，就要靠這組密碼，別人改不了。`);
       if (pw === null) return;
@@ -3066,7 +3085,7 @@
       if (pwv.length < 4 || pwv.length > 20) { alert('⚠️ 密碼請設 4～20 個字。'); return; }
 
       try {
-        if (!(await saveProfile({ name: nm, info: String(info).trim(), newPw: pwv }))) return;
+        if (!(await saveProfile({ name: nm, code: String(code).trim(), acct: String(acct).trim(), newPw: pwv }))) return;
         profilePw[nm] = pwv;
         await reloadCollectors();
         alert('✅ 已新增。要加收款碼的話按「上傳碼」。');
@@ -3077,10 +3096,12 @@
       const pw = askProfilePw(name, '要改轉帳帳號');
       if (pw === null) return;
       const p = profileOf(name);
-      const info = prompt(`【${name}】的轉帳帳號：`, p ? p.info : '');
-      if (info === null) return;
+      const code = prompt(`【${name}】的局號／銀行代號：`, p ? p.code : '');
+      if (code === null) return;
+      const acct = prompt(`【${name}】的帳號：`, p ? p.acct : '');
+      if (acct === null) return;
       try {
-        if (!(await saveProfile({ name, info: String(info).trim(), pw }))) return;
+        if (!(await saveProfile({ name, code: String(code).trim(), acct: String(acct).trim(), pw }))) return;
         await reloadCollectors();
       } catch (e) { alert('⚠️ 連線失敗，沒有存到。'); }
     }
@@ -3094,7 +3115,7 @@
       if (npv.length < 4 || npv.length > 20) { alert('⚠️ 密碼請設 4～20 個字。'); return; }
       const p = profileOf(name);
       try {
-        if (!(await saveProfile({ name, info: p ? p.info : '', pw, newPw: npv }))) return;
+        if (!(await saveProfile({ name, code: p ? p.code : '', acct: p ? p.acct : '', pw, newPw: npv }))) return;
         profilePw[name] = npv;
         await reloadCollectors();
         alert('✅ 密碼已更新。');
@@ -3166,7 +3187,7 @@
 
       try {
         const p = profileOf(name);
-        if (!(await saveProfile({ name, info: p ? p.info : '', qr, pw }))) return;
+        if (!(await saveProfile({ name, code: p ? p.code : '', acct: p ? p.acct : '', qr, pw }))) return;
         qrCache[name] = qr;
         await reloadCollectors();
         alert('✅ 收款碼已上傳，同事現在可以掃碼了。');
@@ -3218,12 +3239,12 @@
       const end  = (roundData[currentStore] || {}).end || '';
       const who  = collectorData[currentStore] || '';
       const p    = profileOf(who);
-      const info = p ? p.info : '';
 
       let t = '💰 【' + currentStore + '】還沒付款的名單\n';
       if (end)  t += '結團時間：' + end + '\n';
       if (who)  t += '收款人員：' + who + '\n';
-      if (info) t += '轉帳帳號：' + info + '\n';
+      if (p && p.code) t += '局號：' + p.code + '\n';
+      if (p && p.acct) t += '帳號：' + p.acct + '\n';
       t += '-------------------------\n';
       if (!people.length) {
         t += '全部都付清了，辛苦了 ✅\n';
