@@ -176,21 +176,28 @@
         <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <div class="flex items-center gap-1.5 flex-1 sm:flex-none min-w-0">
             <i class="fa-solid fa-hand-holding-dollar text-emerald-700 text-sm flex-shrink-0"></i>
-            <input type="text" id="collector-input" maxlength="30"
-              oninput="onCollectorInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();saveCollector();}"
-              placeholder="收款人員"
-              class="w-full min-w-0 sm:w-32 px-3 py-2 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700">
-            <button onclick="saveCollector()" id="btn-save-collector"
-              class="px-3 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1 shadow-xs transition flex-shrink-0"
-              style="background-color:#ffffff;color:#334155;border:1px solid #cbd5e1;">
-              <i class="fa-solid fa-floppy-disk"></i> <span id="btn-save-collector-text">儲存</span>
-            </button>
+            <select id="collector-select" onchange="onCollectorPick(this.value)"
+              class="w-full min-w-0 sm:w-36 px-2.5 py-2 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700"></select>
           </div>
           <button onclick="fetchCloudOrders(true)" title="重新整理"
             class="flex-shrink-0 px-3 sm:px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
             <i class="fa-solid fa-rotate"></i><span class="hidden sm:inline">重新整理</span>
           </button>
         </div>
+      </div>
+
+      <!-- 付款方式：同事在訂單頁就看得到要轉去哪、能直接掃碼 -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+            <i class="fa-solid fa-money-check-dollar text-emerald-700"></i> 付款方式
+          </h4>
+          <button onclick="openProfileManager()"
+            class="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-600 border border-slate-300 text-xs font-bold rounded-xl flex items-center gap-1.5">
+            <i class="fa-solid fa-address-book"></i> 管理收款人員
+          </button>
+        </div>
+        <div id="pay-method" class="space-y-2"></div>
       </div>
 
       <!-- 歷史訂單 -->
@@ -311,9 +318,6 @@
           <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600"><span id="paid-progress">0 / 0 人</span></span>
         </div>
 
-        <!-- 付款方式：轉帳帳號與收款碼 -->
-        <div id="pay-method" class="rounded-xl bg-slate-50 border border-slate-200 p-3 space-y-2"></div>
-
         <div id="paid-list" class="divide-y divide-slate-100 max-h-96 overflow-y-auto pr-1"></div>
 
         <div class="flex flex-wrap gap-2 pt-1">
@@ -324,15 +328,6 @@
         </div>
       </div>
 
-      <!-- 收款碼放大顯示 -->
-      <div id="qr-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center p-4" onclick="closeQrModal()">
-        <div class="bg-white rounded-2xl p-5 max-w-xs w-full text-center space-y-3" onclick="event.stopPropagation()">
-          <h4 class="font-black text-slate-800" id="qr-modal-title">掃碼付款</h4>
-          <img id="qr-modal-img" alt="收款碼" class="w-full rounded-xl border border-slate-200">
-          <p class="text-xs text-slate-500" id="qr-modal-note"></p>
-          <button onclick="closeQrModal()" class="w-full px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-xl">關閉</button>
-        </div>
-      </div>
 
       <!-- 菜單管理 -->
       <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
@@ -355,6 +350,32 @@
 
     </section>
 
+
+    <!-- 收款碼放大顯示 -->
+    <!-- 收款人員名冊 -->
+    <div id="profile-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center p-4" onclick="closeProfileManager()">
+      <div class="bg-white rounded-2xl p-5 max-w-md w-full space-y-3 max-h-[85vh] overflow-y-auto" onclick="event.stopPropagation()">
+        <h4 class="font-black text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-address-book text-emerald-700"></i> 收款人員名冊
+        </h4>
+        <p class="text-xs text-slate-500">帳號設定一次就好，之後在訂單頁選名字即可。修改需要主揪密碼。</p>
+        <div id="profile-list" class="divide-y divide-slate-100"></div>
+        <button onclick="addProfile()"
+          class="w-full px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-bold rounded-xl flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-plus"></i> 新增收款人員
+        </button>
+        <button onclick="closeProfileManager()" class="w-full px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-xl">關閉</button>
+      </div>
+    </div>
+
+    <div id="qr-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center p-4" onclick="closeQrModal()">
+      <div class="bg-white rounded-2xl p-5 max-w-xs w-full text-center space-y-3" onclick="event.stopPropagation()">
+        <h4 class="font-black text-slate-800" id="qr-modal-title">掃碼付款</h4>
+        <img id="qr-modal-img" alt="收款碼" class="w-full rounded-xl border border-slate-200">
+        <p class="text-xs text-slate-500" id="qr-modal-note"></p>
+        <button onclick="closeQrModal()" class="w-full px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-xl">關閉</button>
+      </div>
+    </div>
   </main>
 
   <!-- 菜單編輯彈窗 -->
@@ -437,7 +458,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260826-194556';
+    const APP_VERSION = '20260826-200500';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -468,8 +489,7 @@
     let ordersReqSeq = 0;   // 訂單請求序號，用來丟棄過期的回應
     let paidData = {};      // 各店已付款的名單，來自試算表
     let collectorData = {}; // 各店這一團的收款人員
-    let payInfoData = {};   // 各店的轉帳帳號
-    let hasQrData   = {};   // 各店有沒有收款 QR
+    let collectorList = [];  // 收款人員名冊：[{name, info, hasQr}]
     let qrCache     = {};   // 拿過的收款碼存起來，不用每次重拿
     const historyCache = {};// 各店的歷史訂單，按需載入
     const historyOpen = {}; // 哪幾團被展開了
@@ -1990,8 +2010,7 @@
       if (data.open) roomOpen = data.open;
       if (data.collector) collectorData = data.collector;
       if (data.round) roundData = data.round;
-      if (data.payInfo) payInfoData = data.payInfo;
-      if (data.hasQr)   hasQrData   = data.hasQr;
+      if (Array.isArray(data.collectors)) collectorList = data.collectors;
       return true;
     }
 
@@ -2186,72 +2205,42 @@
       }).join('');
     }
 
-    // 收款人員：這一團的錢交給誰，存在試算表所以同事也看得到
+    // ---- 收款人員：從名冊選，不用每次重打 ----
+    function profileOf(name) {
+      const key = String(name == null ? '' : name).trim();
+      if (!key) return null;
+      return collectorList.find(p => p.name === key) || null;
+    }
+
     function renderCollector() {
-      const el = document.getElementById('collector-input');
+      renderPayMethod();
+      const el = document.getElementById('collector-select');
       if (!el) return;
-      if (document.activeElement === el) return;   // 正在輸入時不要覆蓋
-      el.value = collectorData[currentStore] || '';
-      setCollectorBtn('idle');
+
+      const cur = collectorData[currentStore] || '';
+      const names = collectorList.map(p => p.name);
+      // 舊資料的名字可能不在名冊裡，也要能顯示出來
+      if (cur && names.indexOf(cur) === -1) names.unshift(cur);
+
+      const opts = [`<option value="">— 未指定收款人 —</option>`];
+      names.forEach(nm => {
+        opts.push(`<option value="${esc(nm)}"${nm === cur ? ' selected' : ''}>${esc(nm)}</option>`);
+      });
+      el.innerHTML = opts.join('');
+      el.value = cur;
     }
 
-    // 儲存鈕的三種樣子：未存(橘) / 已存(灰) / 剛存好(綠)
-    // 顏色用 inline style 直接指定。動態組 Tailwind class 會跟 CDN 的
-    // 即時產生時機打架，導致顏色時有時無（店家頁籤也踩過同一個坑）。
-    const COLLECTOR_BTN_STYLE = {
-      idle:   { bg: '#ffffff', fg: '#334155', border: '1px solid #cbd5e1', icon: 'fa-solid fa-floppy-disk', text: '儲存' },
-      dirty:  { bg: '#d97706', fg: '#ffffff', border: '1px solid #d97706', icon: 'fa-solid fa-floppy-disk', text: '儲存' },
-      saving: { bg: '#94a3b8', fg: '#ffffff', border: '1px solid #94a3b8', icon: 'fa-solid fa-spinner fa-spin', text: '儲存中' },
-      saved:  { bg: '#059669', fg: '#ffffff', border: '1px solid #059669', icon: 'fa-solid fa-check', text: '已儲存' }
-    };
-
-    function setCollectorBtn(state) {
-      const btn = document.getElementById('btn-save-collector');
-      const txt = document.getElementById('btn-save-collector-text');
-      if (!btn || !txt) return;
-      const st = COLLECTOR_BTN_STYLE[state] || COLLECTOR_BTN_STYLE.idle;
-      btn.style.backgroundColor = st.bg;
-      btn.style.color = st.fg;
-      btn.style.border = st.border;
-      btn.querySelector('i').className = st.icon;
-      txt.innerText = st.text;
-    }
-
-    // 有改動就把儲存鈕變橘色提醒
-    function onCollectorInput() {
-      const el = document.getElementById('collector-input');
-      if (!el) return;
-      setCollectorBtn(el.value.trim() === (collectorData[currentStore] || '') ? 'idle' : 'dirty');
-    }
-
-    async function saveCollector() {
-      const el = document.getElementById('collector-input');
-      if (!el) return;
-      const who = el.value.trim();
+    async function onCollectorPick(who) {
       const store = currentStore;
-
-      if ((collectorData[store] || '') === who) {   // 沒改動，直接回饋已是最新
-        setCollectorBtn('saved');
-        setTimeout(() => { if (currentStore === store) setCollectorBtn('idle'); }, 1500);
-        return;
-      }
-
       const before = collectorData[store] || '';
-      setCollectorBtn('saving');
+      collectorData[store] = who;
+      renderPayMethod();
       try {
-        const result = await postToGas({ action: 'set_collector', store: store, collector: who });
-        if (result.status !== 'ok') {
-          collectorData[store] = before;
-          alert(`❌ 收款人員存檔失敗：${result.message || result.status}`);
-          renderCollector();
-          return;
-        }
-        collectorData[store] = who;
-        setCollectorBtn('saved');
-        setTimeout(() => { if (currentStore === store) setCollectorBtn('idle'); }, 1500);
+        const result = await postToGas({ action: 'set_collector', store, collector: who });
+        if (result.status !== 'ok') throw new Error(result.message || result.status);
       } catch (err) {
         collectorData[store] = before;
-        alert('⚠️ 連線失敗，收款人員沒有存到。請再按一次儲存。');
+        alert('⚠️ 收款人員沒有存到，請再選一次。');
         renderCollector();
       }
     }
@@ -2918,77 +2907,162 @@
     // 付款方式：轉帳帳號與收款 QR。
     // 兩者都直接決定錢匯到哪裡，所以修改一定要主揪密碼。
     // ==================================================================
-    const NO_INFO_HTML = '<span class="text-slate-400 font-normal">尚未填寫</span>';
+    // 修改名冊要主揪密碼。問過一次就記著，不用重複輸入。
+    async function ensurePayPin() {
+      if (paidPin) return true;
+      const pin = prompt('\u{1F510} 修改收款人員需要主揪密碼，請輸入：');
+      if (pin === null) return false;
+      if (!(await verifyMasterPin(pin))) { alert('❌ 主揪密碼錯誤。'); return false; }
+      paidPin = String(pin).trim();
+      renderPaidPanel();
+      return true;
+    }
 
     function renderPayMethod() {
       const box = document.getElementById('pay-method');
       if (!box) return;
 
-      const who   = collectorData[currentStore] || '';
-      const info  = payInfoData[currentStore] || '';
-      const hasQr = !!hasQrData[currentStore];
-      const unlocked = !!paidPin;
-
+      const who = collectorData[currentStore] || '';
+      const p = profileOf(who);
       const rows = [];
 
-      rows.push(`<div class="flex items-center gap-2 text-xs">
-        <span class="text-slate-500 flex-shrink-0">收款人員</span>
-        <span class="font-black text-slate-800">${who ? esc(who) : NO_INFO_HTML}</span>
-      </div>`);
+      if (!who) {
+        box.innerHTML = `<p class="text-xs text-slate-400">還沒有指定收款人員。</p>`;
+        return;
+      }
+      if (!p) {
+        box.innerHTML = `<p class="text-xs text-slate-400">【${esc(who)}】還沒有設定付款方式，按右上角「管理收款人員」新增。</p>`;
+        return;
+      }
 
-      if (info) {
-        rows.push(`<div class="flex items-start gap-2 text-xs">
-          <span class="text-slate-500 flex-shrink-0 pt-0.5">轉帳帳號</span>
-          <span class="font-black text-slate-800 break-all">${esc(info)}</span>
-          <button onclick="copyPayInfo()" class="flex-shrink-0 px-2 py-0.5 rounded-lg bg-white border border-slate-300 text-slate-600 font-bold hover:bg-slate-50">複製</button>
+      if (p.info) {
+        // 帳號單獨一行、字大一點，旁邊就是複製，避免同事手打打錯
+        rows.push(`<div class="rounded-xl bg-slate-50 border border-slate-200 p-3 space-y-1.5">
+          <div class="text-xs text-slate-500">轉帳帳號（收款：${esc(p.name)}）</div>
+          <div class="flex items-center gap-2">
+            <span class="font-black text-slate-900 text-sm break-all flex-1">${esc(p.info)}</span>
+            <button onclick="copyPayInfo()"
+              class="flex-shrink-0 px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg flex items-center gap-1.5">
+              <i class="fa-regular fa-copy"></i> 複製
+            </button>
+          </div>
         </div>`);
       }
-
-      const btns = [];
-      if (hasQr) {
-        btns.push(`<button onclick="openQrModal()"
-          class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg flex items-center gap-1.5">
+      if (!p.info && !p.hasQr) {
+        rows.push(`<p class="text-xs text-slate-400">【${esc(p.name)}】還沒有填帳號也沒有收款碼。</p>`);
+      }
+      if (p.hasQr) {
+        rows.push(`<button onclick="openQrModal()"
+          class="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-bold rounded-xl flex items-center gap-2 shadow-xs">
           <i class="fa-solid fa-qrcode"></i> 掃碼付款</button>`);
       }
-      if (unlocked) {
-        btns.push(`<button onclick="editPayInfo()"
-          class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg">${info ? '改帳號' : '設定轉帳帳號'}</button>`);
-        btns.push(`<label class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg cursor-pointer">
-          ${hasQr ? '換收款碼' : '上傳收款碼'}
-          <input type="file" accept="image/*" class="hidden" onchange="uploadPayCode(this)">
-        </label>`);
-        if (hasQr) {
-          btns.push(`<button onclick="removePayCode()"
-            class="px-3 py-1.5 bg-white border border-rose-200 text-rose-600 text-xs font-bold rounded-lg">刪收款碼</button>`);
-        }
-      }
-      if (!info && !hasQr && !unlocked) {
-        rows.push(`<p class="text-xs text-slate-400">主揪還沒有設定付款方式。</p>`);
-      }
-      if (btns.length) rows.push(`<div class="flex flex-wrap gap-2 pt-0.5">${btns.join('')}</div>`);
 
       box.innerHTML = rows.join('');
     }
 
     function copyPayInfo() {
-      const info = payInfoData[currentStore] || '';
+      const p = profileOf(collectorData[currentStore] || '');
+      const info = p ? p.info : '';
       if (!info) return;
       navigator.clipboard.writeText(info).then(() => alert('✅ 已複製轉帳帳號'));
     }
 
-    async function editPayInfo() {
-      if (!paidPin) { alert('⚠️ 請先按「開始收款」並輸入主揪密碼。'); return; }
-      const now = payInfoData[currentStore] || '';
-      const val = prompt('轉帳帳號（例：國泰 013 帳號 1234567890 王小明）：', now);
-      if (val === null) return;
-      const info = String(val).trim();
+    // ---- 名冊管理 ----
+    function openProfileManager() {
+      const m = document.getElementById('profile-modal');
+      if (!m) return;
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+      renderProfileList();
+    }
+
+    function closeProfileManager() {
+      const m = document.getElementById('profile-modal');
+      if (!m) return;
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    function renderProfileList() {
+      const box = document.getElementById('profile-list');
+      if (!box) return;
+      if (!collectorList.length) {
+        box.innerHTML = `<p class="text-xs text-slate-400 py-4 text-center">還沒有任何收款人員</p>`;
+        return;
+      }
+      box.innerHTML = collectorList.map(p => `
+        <div class="py-2.5 space-y-1.5">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-black text-sm text-slate-900">${esc(p.name)}</span>
+            <div class="flex gap-1.5 flex-shrink-0">
+              <button onclick="editProfile(${esc(JSON.stringify(p.name))})"
+                class="px-2.5 py-1 bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg">改帳號</button>
+              <label class="px-2.5 py-1 bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg cursor-pointer">
+                ${p.hasQr ? '換碼' : '上傳碼'}
+                <input type="file" accept="image/*" class="hidden" onchange="uploadPayCode(this, ${esc(JSON.stringify(p.name))})">
+              </label>
+              <button onclick="deleteProfile(${esc(JSON.stringify(p.name))})"
+                class="px-2.5 py-1 bg-white border border-rose-200 text-rose-600 text-xs font-bold rounded-lg">刪除</button>
+            </div>
+          </div>
+          <div class="text-xs text-slate-600 break-all">
+            ${p.info ? esc(p.info) : '<span class="text-slate-400">尚未填帳號</span>'}
+            ${p.hasQr ? '<span class="ml-1.5 text-emerald-700 font-bold">✓ 有收款碼</span>' : ''}
+          </div>
+        </div>`).join('');
+    }
+
+    async function saveProfile(payload) {
+      const r = await postToGas(Object.assign({ action: 'save_profile', pin: paidPin }, payload));
+      if (r.status === 'wrong_password') { paidPin = ''; alert('❌ 主揪密碼錯誤。'); return false; }
+      if (r.status !== 'ok') { alert(`❌ 儲存失敗：${r.message || r.status}`); return false; }
+      return true;
+    }
+
+    async function addProfile() {
+      if (!(await ensurePayPin())) return;
+      const name = prompt('收款人員姓名：');
+      if (name === null) return;
+      if (!String(name).trim()) { alert('⚠️ 請填寫姓名。'); return; }
+      const info = prompt('轉帳帳號（例：國泰 013 1234567890 王小明）：', '');
+      if (info === null) return;
       try {
-        const r = await postToGas({ action: 'set_payinfo', store: currentStore, info, pin: paidPin });
-        if (r.status === 'wrong_password') { alert('❌ 主揪密碼錯誤。'); return; }
-        if (r.status !== 'ok') { alert(`❌ 儲存失敗：${r.message || r.status}`); return; }
-        payInfoData[currentStore] = info;
-        renderPayMethod();
-      } catch (e) { alert('⚠️ 連線失敗，帳號沒有存到。'); }
+        if (!(await saveProfile({ name: String(name).trim(), info: String(info).trim() }))) return;
+        await reloadCollectors();
+        alert('✅ 已新增。要加收款碼的話按「上傳碼」。');
+      } catch (e) { alert('⚠️ 連線失敗，沒有存到。'); }
+    }
+
+    async function editProfile(name) {
+      if (!(await ensurePayPin())) return;
+      const p = profileOf(name);
+      const info = prompt(`【${name}】的轉帳帳號：`, p ? p.info : '');
+      if (info === null) return;
+      try {
+        if (!(await saveProfile({ name, info: String(info).trim() }))) return;
+        await reloadCollectors();
+      } catch (e) { alert('⚠️ 連線失敗，沒有存到。'); }
+    }
+
+    async function deleteProfile(name) {
+      if (!(await ensurePayPin())) return;
+      if (!confirm(`確定要從名冊刪掉【${name}】嗎？`)) return;
+      try {
+        const r = await postToGas({ action: 'delete_profile', name, pin: paidPin });
+        if (r.status !== 'ok') { alert(`❌ 刪除失敗：${r.message || r.status}`); return; }
+        delete qrCache[name];
+        await reloadCollectors();
+      } catch (e) { alert('⚠️ 連線失敗。'); }
+    }
+
+    async function reloadCollectors() {
+      try {
+        const res = await fetch(`${GAS_API_URL}?action=state`);
+        const d = await res.json();
+        if (applyStatePayload(d)) cacheSet('state', d);
+      } catch (e) {}
+      renderProfileList();
+      renderCollector();
     }
 
     // 圖片先縮小再存：試算表一格有字數上限，而且 QR 不需要高解析度
@@ -3017,11 +3091,12 @@
       });
     }
 
-    async function uploadPayCode(input) {
+    async function uploadPayCode(input, name) {
       const file = input.files && input.files[0];
       input.value = '';
       if (!file) return;
-      if (!paidPin) { alert('⚠️ 請先按「開始收款」並輸入主揪密碼。'); return; }
+      if (!name) return;
+      if (!(await ensurePayPin())) return;
 
       let qr;
       try {
@@ -3032,51 +3107,36 @@
       if (qr.length > 38000) { alert('⚠️ 圖片太大，請改用單純一點的收款碼截圖。'); return; }
 
       try {
-        const r = await postToGas({ action: 'set_paycode', store: currentStore, qr, pin: paidPin });
-        if (r.status === 'wrong_password') { alert('❌ 主揪密碼錯誤。'); return; }
-        if (r.status !== 'ok') { alert(`❌ 上傳失敗：${r.message || r.status}`); return; }
-        hasQrData[currentStore] = true;
-        qrCache[currentStore] = qr;
-        renderPayMethod();
+        const p = profileOf(name);
+        if (!(await saveProfile({ name, info: p ? p.info : '', qr }))) return;
+        qrCache[name] = qr;
+        await reloadCollectors();
         alert('✅ 收款碼已上傳，同事現在可以掃碼了。');
       } catch (e) { alert('⚠️ 連線失敗，收款碼沒有存到。'); }
     }
 
-    async function removePayCode() {
-      if (!paidPin) return;
-      if (!confirm('確定要刪掉【' + currentStore + '】的收款碼嗎？')) return;
-      try {
-        const r = await postToGas({ action: 'set_paycode', store: currentStore, qr: '', pin: paidPin });
-        if (r.status !== 'ok') { alert(`❌ 刪除失敗：${r.message || r.status}`); return; }
-        hasQrData[currentStore] = false;
-        delete qrCache[currentStore];
-        renderPayMethod();
-      } catch (e) { alert('⚠️ 連線失敗。'); }
-    }
-
     async function openQrModal() {
-      const store = currentStore;
+      const who = collectorData[currentStore] || '';
       const modal = document.getElementById('qr-modal');
       const img   = document.getElementById('qr-modal-img');
       const title = document.getElementById('qr-modal-title');
       const note  = document.getElementById('qr-modal-note');
-      if (!modal || !img) return;
+      if (!modal || !img || !who) return;
 
-      const who = collectorData[store] || '';
-      title.innerText = who ? ('掃碼付款給 ' + who) : '掃碼付款';
-      note.innerText = '【' + store + '】付完請告知主揪勾記';
+      title.innerText = '掃碼付款給 ' + who;
+      note.innerText = '【' + currentStore + '】付完請告知主揪勾記';
 
       modal.classList.remove('hidden');
       modal.classList.add('flex');
 
-      if (qrCache[store]) { img.src = qrCache[store]; return; }
+      if (qrCache[who]) { img.src = qrCache[who]; return; }
       img.removeAttribute('src');
       try {
-        const res = await fetch(`${GAS_API_URL}?action=paycode&store=${encodeURIComponent(store)}`);
+        const res = await fetch(`${GAS_API_URL}?action=paycode&name=${encodeURIComponent(who)}`);
         const d = await res.json();
         if (d && d.status === 'ok' && d.qr) {
-          qrCache[store] = d.qr;
-          if (currentStore === store) img.src = d.qr;
+          qrCache[who] = d.qr;
+          if ((collectorData[currentStore] || '') === who) img.src = d.qr;
         } else {
           alert('⚠️ 還沒有上傳收款碼。');
           closeQrModal();
@@ -3099,7 +3159,8 @@
       const people = buildPersonTotals().filter(pp => !isPaid(pp.user));
       const end  = (roundData[currentStore] || {}).end || '';
       const who  = collectorData[currentStore] || '';
-      const info = payInfoData[currentStore] || '';
+      const p    = profileOf(who);
+      const info = p ? p.info : '';
 
       let t = '💰 【' + currentStore + '】還沒付款的名單\n';
       if (end)  t += '結團時間：' + end + '\n';
