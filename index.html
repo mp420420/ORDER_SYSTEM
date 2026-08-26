@@ -454,7 +454,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260826-205719';
+    const APP_VERSION = '20260826-210855';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -2230,14 +2230,35 @@
     async function onCollectorPick(who) {
       const store = currentStore;
       const before = collectorData[store] || '';
+      if (who === before) return;
+
+      // 指定收款人 = 把大家的錢導向他的帳號，所以要本人輸入密碼確認。
+      // 這一步每次都問，不用快取，因為它本身就是「確認」。
+      let pw = '';
+      if (who) {
+        const input = prompt(`確定由【${who}】收款？\n\n請輸入【${who}】的密碼（主揪密碼也可以）：`);
+        if (input === null) { renderCollector(); return; }
+        pw = String(input).trim();
+        if (!pw) { alert('⚠️ 沒有輸入密碼，沒有變更。'); renderCollector(); return; }
+      }
+
       collectorData[store] = who;
       renderPayMethod();
       try {
-        const result = await postToGas({ action: 'set_collector', store, collector: who });
-        if (result.status !== 'ok') throw new Error(result.message || result.status);
+        const result = await postToGas({
+          action: 'set_collector', store, collector: who,
+          pw, pin: paidPin || pw
+        });
+        if (result.status !== 'ok') {
+          collectorData[store] = before;
+          alert(`❌ ${result.message || result.status}`);
+          renderCollector();
+          return;
+        }
+        if (who && pw) profilePw[who] = pw;   // 驗過了，同一次改帳號就不用再打
       } catch (err) {
         collectorData[store] = before;
-        alert('⚠️ 收款人員沒有存到，請再選一次。');
+        alert('⚠️ 連線失敗，收款人員沒有存到。');
         renderCollector();
       }
     }
