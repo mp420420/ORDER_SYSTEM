@@ -358,7 +358,7 @@
         <h4 class="font-black text-slate-800 flex items-center gap-2">
           <i class="fa-solid fa-address-book text-emerald-700"></i> 收款人員名冊
         </h4>
-        <p class="text-xs text-slate-500">帳號設定一次就好，之後在訂單頁選名字即可。修改需要主揪密碼。</p>
+        <p class="text-xs text-slate-500">帳號設定一次就好，之後在訂單頁選名字即可。<br>每個人的帳號與收款碼只有本人（或主揪）改得了。</p>
         <div id="profile-list" class="divide-y divide-slate-100"></div>
         <button onclick="addProfile()"
           class="w-full px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-bold rounded-xl flex items-center justify-center gap-1.5">
@@ -458,7 +458,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260826-200500';
+    const APP_VERSION = '20260826-201656';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -2907,10 +2907,10 @@
     // 付款方式：轉帳帳號與收款 QR。
     // 兩者都直接決定錢匯到哪裡，所以修改一定要主揪密碼。
     // ==================================================================
-    // 修改名冊要主揪密碼。問過一次就記著，不用重複輸入。
+    // 名冊要有誰、要刪誰，由主揪決定；各自的帳號則靠個人密碼守。
     async function ensurePayPin() {
       if (paidPin) return true;
-      const pin = prompt('\u{1F510} 修改收款人員需要主揪密碼，請輸入：');
+      const pin = prompt('\u{1F510} 新增或刪除收款人員需要主揪密碼，請輸入：');
       if (pin === null) return false;
       if (!(await verifyMasterPin(pin))) { alert('❌ 主揪密碼錯誤。'); return false; }
       paidPin = String(pin).trim();
@@ -2990,18 +2990,26 @@
         box.innerHTML = `<p class="text-xs text-slate-400 py-4 text-center">還沒有任何收款人員</p>`;
         return;
       }
-      box.innerHTML = collectorList.map(p => `
+      box.innerHTML = collectorList.map(p => {
+        const nm = esc(JSON.stringify(p.name));
+        return `
         <div class="py-2.5 space-y-1.5">
           <div class="flex items-center justify-between gap-2">
-            <span class="font-black text-sm text-slate-900">${esc(p.name)}</span>
-            <div class="flex gap-1.5 flex-shrink-0">
-              <button onclick="editProfile(${esc(JSON.stringify(p.name))})"
+            <span class="font-black text-sm text-slate-900 flex items-center gap-1.5">
+              ${esc(p.name)}
+              ${p.hasPw ? '<i class="fa-solid fa-lock text-emerald-600 text-xs" title="已設個人密碼"></i>'
+                        : '<i class="fa-solid fa-lock-open text-amber-500 text-xs" title="還沒設個人密碼"></i>'}
+            </span>
+            <div class="flex flex-wrap gap-1.5 flex-shrink-0 justify-end">
+              <button onclick="editProfile(${nm})"
                 class="px-2.5 py-1 bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg">改帳號</button>
               <label class="px-2.5 py-1 bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg cursor-pointer">
                 ${p.hasQr ? '換碼' : '上傳碼'}
-                <input type="file" accept="image/*" class="hidden" onchange="uploadPayCode(this, ${esc(JSON.stringify(p.name))})">
+                <input type="file" accept="image/*" class="hidden" onchange="uploadPayCode(this, ${nm})">
               </label>
-              <button onclick="deleteProfile(${esc(JSON.stringify(p.name))})"
+              <button onclick="changeProfilePw(${nm})"
+                class="px-2.5 py-1 bg-white border border-slate-300 text-slate-500 text-xs font-bold rounded-lg">改密碼</button>
+              <button onclick="deleteProfile(${nm})"
                 class="px-2.5 py-1 bg-white border border-rose-200 text-rose-600 text-xs font-bold rounded-lg">刪除</button>
             </div>
           </div>
@@ -3009,12 +3017,34 @@
             ${p.info ? esc(p.info) : '<span class="text-slate-400">尚未填帳號</span>'}
             ${p.hasQr ? '<span class="ml-1.5 text-emerald-700 font-bold">✓ 有收款碼</span>' : ''}
           </div>
-        </div>`).join('');
+        </div>`;
+      }).join('');
+    }
+
+    // 每個人自己的密碼。問過一次就暫存起來，同一次操作不用重打。
+    const profilePw = {};
+
+    function askProfilePw(name, why) {
+      if (profilePw[name]) return profilePw[name];
+      const pw = prompt(`\u{1F512} 【${name}】${why}\n\n請輸入【${name}】的個人密碼（主揪密碼也可以）：`);
+      if (pw === null) return null;
+      const v = String(pw).trim();
+      if (!v) return null;
+      profilePw[name] = v;
+      return v;
     }
 
     async function saveProfile(payload) {
-      const r = await postToGas(Object.assign({ action: 'save_profile', pin: paidPin }, payload));
-      if (r.status === 'wrong_password') { paidPin = ''; alert('❌ 主揪密碼錯誤。'); return false; }
+      const body = Object.assign({ action: 'save_profile' }, payload);
+      // 使用者若輸入的是主揪密碼，也讓後端用主揪的規則驗一次，
+      // 不然提示寫「主揪密碼也可以」就變成騙人。
+      body.pin = paidPin || payload.pw || '';
+      const r = await postToGas(body);
+      if (r.status === 'wrong_password') {
+        if (payload.name) delete profilePw[payload.name];   // 密碼不對就別快取
+        alert(`❌ ${r.message || '密碼錯誤'}。`);
+        return false;
+      }
       if (r.status !== 'ok') { alert(`❌ 儲存失敗：${r.message || r.status}`); return false; }
       return true;
     }
@@ -3023,25 +3053,52 @@
       if (!(await ensurePayPin())) return;
       const name = prompt('收款人員姓名：');
       if (name === null) return;
-      if (!String(name).trim()) { alert('⚠️ 請填寫姓名。'); return; }
-      const info = prompt('轉帳帳號（例：國泰 013 1234567890 王小明）：', '');
+      const nm = String(name).trim();
+      if (!nm) { alert('⚠️ 請填寫姓名。'); return; }
+      if (collectorList.some(p => p.name === nm)) { alert('⚠️ 名冊裡已經有這個人了。'); return; }
+
+      const info = prompt(`【${nm}】的轉帳帳號（例：國泰 013 1234567890 王小明）：`, '');
       if (info === null) return;
+
+      const pw = prompt(`設一組【${nm}】自己的密碼（4～20 個字）\n\n以後要改這個人的帳號或收款碼，就要靠這組密碼，別人改不了。`);
+      if (pw === null) return;
+      const pwv = String(pw).trim();
+      if (pwv.length < 4 || pwv.length > 20) { alert('⚠️ 密碼請設 4～20 個字。'); return; }
+
       try {
-        if (!(await saveProfile({ name: String(name).trim(), info: String(info).trim() }))) return;
+        if (!(await saveProfile({ name: nm, info: String(info).trim(), newPw: pwv }))) return;
+        profilePw[nm] = pwv;
         await reloadCollectors();
         alert('✅ 已新增。要加收款碼的話按「上傳碼」。');
       } catch (e) { alert('⚠️ 連線失敗，沒有存到。'); }
     }
 
     async function editProfile(name) {
-      if (!(await ensurePayPin())) return;
+      const pw = askProfilePw(name, '要改轉帳帳號');
+      if (pw === null) return;
       const p = profileOf(name);
       const info = prompt(`【${name}】的轉帳帳號：`, p ? p.info : '');
       if (info === null) return;
       try {
-        if (!(await saveProfile({ name, info: String(info).trim() }))) return;
+        if (!(await saveProfile({ name, info: String(info).trim(), pw }))) return;
         await reloadCollectors();
       } catch (e) { alert('⚠️ 連線失敗，沒有存到。'); }
+    }
+
+    async function changeProfilePw(name) {
+      const pw = askProfilePw(name, '要改個人密碼');
+      if (pw === null) return;
+      const np = prompt(`【${name}】的新密碼（4～20 個字）：`);
+      if (np === null) return;
+      const npv = String(np).trim();
+      if (npv.length < 4 || npv.length > 20) { alert('⚠️ 密碼請設 4～20 個字。'); return; }
+      const p = profileOf(name);
+      try {
+        if (!(await saveProfile({ name, info: p ? p.info : '', pw, newPw: npv }))) return;
+        profilePw[name] = npv;
+        await reloadCollectors();
+        alert('✅ 密碼已更新。');
+      } catch (e) { alert('⚠️ 連線失敗。'); }
     }
 
     async function deleteProfile(name) {
@@ -3096,7 +3153,8 @@
       input.value = '';
       if (!file) return;
       if (!name) return;
-      if (!(await ensurePayPin())) return;
+      const pw = askProfilePw(name, '要上傳收款碼');
+      if (pw === null) return;
 
       let qr;
       try {
@@ -3108,7 +3166,7 @@
 
       try {
         const p = profileOf(name);
-        if (!(await saveProfile({ name, info: p ? p.info : '', qr }))) return;
+        if (!(await saveProfile({ name, info: p ? p.info : '', qr, pw }))) return;
         qrCache[name] = qr;
         await reloadCollectors();
         alert('✅ 收款碼已上傳，同事現在可以掃碼了。');
