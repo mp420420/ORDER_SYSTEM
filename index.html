@@ -454,7 +454,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260826-213216';
+    const APP_VERSION = '20260826-214436';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -2232,11 +2232,19 @@
       const before = collectorData[store] || '';
       if (who === before) return;
 
-      // 指定收款人 = 把大家的錢導向他的帳號，所以要本人輸入密碼確認。
-      // 這一步每次都問，不用快取，因為它本身就是「確認」。
-      let pw = '';
-      if (who) {
-        const input = prompt(`確定由【${who}】收款？\n\n請輸入【${who}】本人的密碼：`);
+      // 已經有人在收款 → 要現任本人的密碼才能換。
+      // 這樣別人就不能用自己的密碼把整團的錢接走。
+      let pw = '', ask = '';
+      if (before) {
+        ask = who
+          ? `目前由【${before}】收款。\n要改成【${who}】的話，\n\n請輸入【${before}】本人的密碼：`
+          : `要取消【${before}】的收款身分，\n\n請輸入【${before}】本人的密碼：`;
+      } else if (who) {
+        ask = `確定由【${who}】收款？\n\n請輸入【${who}】本人的密碼：`;
+      }
+
+      if (ask) {
+        const input = prompt(ask);
         if (input === null) { renderCollector(); return; }
         pw = String(input).trim();
         if (!pw) { alert('⚠️ 沒有輸入密碼，沒有變更。'); renderCollector(); return; }
@@ -2245,15 +2253,22 @@
       collectorData[store] = who;
       renderPayMethod();
       try {
-        // 這裡刻意不帶 pin：指定收款人只認本人的密碼
-        const result = await postToGas({ action: 'set_collector', store, collector: who, pw });
+        // 這裡只帶本人密碼；pin 只有「現任不在名冊裡」的舊資料才用得到
+        let result = await postToGas({ action: 'set_collector', store, collector: who, pw });
+
+        if (result.status === 'need_master') {
+          const mp = prompt(`${result.message}\n\n請輸入管理密碼：`);
+          if (mp === null) { collectorData[store] = before; renderCollector(); return; }
+          result = await postToGas({ action: 'set_collector', store, collector: who, pw, pin: String(mp).trim() });
+        }
+
         if (result.status !== 'ok') {
           collectorData[store] = before;
           alert(`❌ ${result.message || result.status}`);
           renderCollector();
           return;
         }
-        if (who && pw) profilePw[who] = pw;   // 驗過了，同一次改帳號就不用再打
+        if (who && pw && !before) profilePw[who] = pw;
       } catch (err) {
         collectorData[store] = before;
         alert('⚠️ 連線失敗，收款人員沒有存到。');
