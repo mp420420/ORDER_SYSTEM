@@ -224,7 +224,7 @@
                 <th class="p-1.5 sm:p-2.5">品項與規格</th>
                 <th class="p-1.5 sm:p-2.5 whitespace-nowrap">付款</th>
                 <th class="p-1.5 sm:p-2.5 text-right whitespace-nowrap">金額</th>
-                <th class="p-1.5 sm:p-2.5 text-center whitespace-nowrap"></th>
+                <th class="p-1.5 sm:p-2.5 text-center whitespace-nowrap">操作</th>
               </tr>
             </thead>
             <tbody id="orders-table-body" class="divide-y divide-slate-100"></tbody>
@@ -455,7 +455,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260826-225931';
+    const APP_VERSION = '20260826-230636';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -2013,14 +2013,36 @@
         </div>`;
     }
 
+    // 每個人的點餐密碼，問過一次就暫存，不用每改一次打一次
+    const orderPin = {};
+
+    function askOrderPin(user) {
+      if (orderPin[user]) return orderPin[user];
+      const p = prompt(`\u{1F512} 要設定【${user}】的付款方式\n\n請輸入【${user}】點餐時設的 4 位數密碼：`);
+      if (p === null) return null;
+      const v = String(p).trim();
+      if (!v) return null;
+      orderPin[user] = v;
+      return v;
+    }
+
     async function savePayMethod(user, method, last5) {
       const store = currentStore;
+      const pin = askOrderPin(user);
+      if (pin === null) { renderAdminOrders(); return; }   // 取消 → 畫面彈回原狀
+
       const before = JSON.parse(JSON.stringify(paidPayData || {}));
       paidPayData[user] = { m: method, last5: last5 };
       renderAdminOrders();
       try {
-        const r = await postToGas({ action: 'set_paymethod', store, user, method, last5 });
-        if (r.status !== 'ok') throw new Error(r.message || r.status);
+        const r = await postToGas({ action: 'set_paymethod', store, user, method, last5, pin });
+        if (r.status !== 'ok') {
+          delete orderPin[user];        // 密碼不對就別快取
+          paidPayData = before;
+          renderAdminOrders();
+          alert(`❌ ${r.message || r.status}`);
+          return;
+        }
       } catch (e) {
         paidPayData = before;
         renderAdminOrders();
