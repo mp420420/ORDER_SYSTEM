@@ -454,7 +454,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260826-215618';
+    const APP_VERSION = '20260826-220705';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -1521,13 +1521,17 @@
       const looksValid = data && typeof data === 'object' && !Array.isArray(data) && ('status' in data);
       if (looksValid) return data;
 
-      // 除了「送出訂單」以外都是覆寫型動作，重試不會產生重複資料
-      const canRetry = payload && payload.action && payload.action !== 'add';
+      // 只有「重複執行結果一樣」的動作才能自動重送。
+      // 例如新增收款人員：第一次建立成功、回應却死掉，
+      // 重送那次就變成「修改現有帳號」而被擋，
+      // 使用者會看到「密碼錯誤」但其實已經建好了。
+      const RETRYABLE = ['check_pin', 'set_open', 'set_paid', 'set_round', 'save_menu'];
+      const canRetry = payload && RETRYABLE.indexOf(payload.action) !== -1;
       if (canRetry && !isRetry) {
         await new Promise(r => setTimeout(r, 600));
         return postToGas(payload, true);
       }
-      throw new Error('伺服器回應格式非預期');
+      throw new Error('伺服器回應格式非預期（動作可能已經生效，請重新整理確認）');
     }
 
     // 抓取雲端訂單 (支援背景更新與強制重整)
