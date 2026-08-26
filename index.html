@@ -317,10 +317,6 @@
         <div id="paid-list" class="divide-y divide-slate-100 max-h-96 overflow-y-auto pr-1"></div>
 
         <div class="flex flex-wrap gap-2 pt-1">
-          <button onclick="shareUnpaidToLine()"
-            class="px-3.5 py-2 bg-[#06C755] hover:opacity-90 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs transition">
-            <i class="fa-brands fa-line"></i> 傳未付名單到 LINE
-          </button>
           <button onclick="copyUnpaidText()"
             class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs transition">
             <i class="fa-regular fa-copy"></i> 複製未付名單
@@ -441,7 +437,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260826-193922';
+    const APP_VERSION = '20260826-194556';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -3127,13 +3123,6 @@
     function copyUnpaidText() {
       navigator.clipboard.writeText(unpaidText())
         .then(() => alert('✅ 已複製未付名單，貼到 LINE 就行了。'));
-    }
-
-    // LINE Notify 已於 2025/3 停止服務，全自動推播需要官方帳號。
-    // 這裡用分享連結：點下去會開 LINE、訊息已經幫你打好，選群組按送出就完成。
-    function shareUnpaidToLine() {
-      const url = 'https://line.me/R/share?text=' + encodeURIComponent(unpaidText());
-      window.open(url, '_blank');
     }
 
     async function togglePaid(who, wantPaid) {
