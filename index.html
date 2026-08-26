@@ -217,11 +217,11 @@
           <i class="fa-solid fa-receipt text-amber-600"></i> 各員點餐與收款明細
         </h4>
         <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs sm:text-sm border-collapse">
+          <table class="w-full min-w-[30rem] text-left text-xs sm:text-sm border-collapse">
             <thead>
               <tr class="bg-slate-50 text-slate-500 border-b border-slate-100">
                 <th class="p-2.5 whitespace-nowrap">姓名</th>
-                <th class="p-2.5">品項與規格</th>
+                <th class="p-2.5 min-w-[8rem]">品項與規格</th>
                 <th class="p-2.5 whitespace-nowrap">付款方式</th>
                 <th class="p-2.5 text-right whitespace-nowrap">金額</th>
                 <th class="p-2.5 text-center whitespace-nowrap">操作</th>
@@ -455,7 +455,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260826-223923';
+    const APP_VERSION = '20260826-224847';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -1947,9 +1947,13 @@
       } else {
         tableBody.innerHTML = orders.map(o => `
           <tr class="hover:bg-slate-50 transition text-sm">
-            <td class="p-2.5 font-bold text-slate-900 whitespace-nowrap">${esc(o.user)} <span class="text-xs font-normal text-slate-400 block">${esc(o.time)}</span></td>
-            <td class="p-2.5 text-slate-700">${esc(shownItemName(o))} <span class="text-slate-400 text-xs block">${esc(specsForDisplay(o))}</span></td>
-            <td class="p-2.5 whitespace-nowrap">${payMethodCell(o.user)}</td>
+            <td class="p-2.5 font-bold text-slate-900 whitespace-nowrap align-top">${esc(o.user)}</td>
+            <td class="p-2.5 text-slate-700 align-top">
+              ${esc(shownItemName(o))}
+              <span class="text-slate-400 text-xs block">${esc(specsForDisplay(o))}</span>
+              <span class="text-slate-400 text-xs block">${esc(shortTime(o.time))}</span>
+            </td>
+            <td class="p-2.5 whitespace-nowrap align-top">${payMethodCell(o.user)}</td>
             <td class="p-2.5 text-right font-bold text-amber-600 whitespace-nowrap">$${esc(o.price)}</td>
             <td class="p-2.5 text-center whitespace-nowrap">
               <button onclick="deleteSingleOrder(${o.rowIndex}, ${esc(JSON.stringify(o.user))}, ${esc(JSON.stringify(o.item))})" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-bold transition">
@@ -1959,6 +1963,12 @@
           </tr>
         `).join('');
       }
+    }
+
+    // 訂單時間拿掉年份：2026/08/26 11:45 -> 08/26 11:45
+    // 同一團本來就是同一天，年份只是佔寬度。
+    function shortTime(t) {
+      return String(t == null ? '' : t).trim().replace(/^\d{4}[\/-]/, '');
     }
 
     // ---- 付款方式：一人一筆，同一個人的每一杯都會一起變 ----
@@ -1979,17 +1989,15 @@
             class="flex items-center gap-1.5 text-xs font-bold ${p.m === 'cash' ? 'text-emerald-800' : 'text-slate-500'}">
             ${dot(p.m === 'cash')} 現金
           </button>
-          <div class="flex items-center gap-1.5">
-            <button type="button" onclick="setPayMethod(${u}, 'transfer')"
-              class="flex items-center gap-1.5 text-xs font-bold ${p.m === 'transfer' ? 'text-emerald-800' : 'text-slate-500'}">
-              ${dot(p.m === 'transfer')} 轉帳
-            </button>
-            <input type="text" inputmode="numeric" maxlength="5" placeholder="末5碼"
-              value="${esc(p.last5)}"
-              onchange="setPayLast5(${u}, this.value)"
-              onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
-              class="w-16 px-1.5 py-0.5 text-xs text-center font-bold border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700">
-          </div>
+          <button type="button" onclick="setPayMethod(${u}, 'transfer')"
+            class="flex items-center gap-1.5 text-xs font-bold ${p.m === 'transfer' ? 'text-emerald-800' : 'text-slate-500'}">
+            ${dot(p.m === 'transfer')} 轉帳
+          </button>
+          <input type="text" inputmode="numeric" maxlength="5" placeholder="末5碼"
+            value="${esc(p.last5)}"
+            onchange="setPayLast5(${u}, this.value)"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+            class="w-16 ml-5 px-1.5 py-0.5 text-xs text-center font-bold border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700">
         </div>`;
     }
 
