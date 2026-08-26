@@ -417,7 +417,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260822-000904';
+    const APP_VERSION = '20260826-123836';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -1664,7 +1664,7 @@
       const rows = {};
       orders.forEach(o => {
         const k = zhText(o.item) + '\u0000' + zhText(o.specs);
-        if (!rows[k]) rows[k] = { item: o.item, specs: o.specs, count: 0 };
+        if (!rows[k]) rows[k] = { item: shownItemName(o), specs: specsForDisplay(o), count: 0 };
         rows[k].count++;
       });
       const map = {};
@@ -1683,6 +1683,75 @@
     }
 
     // 加料顯示成口語的「加珍珠」，並去掉 (+10) 這種加價標示（總金額已在行尾）
+    // ---- 選了茶底之後，直接算出那杯飲料實際叫什麼 ----
+    // 菜單為了在沒有茶底功能時把兩種寫在一起，名稱長得像「微檔檬紅 / 青」。
+    // 這裡把名稱用 / 拆開：第一段的尾巴、最後一段的開頭就是各自的選項標記，
+    // 拿掉標記剩下的就是共同的前綴與後綴，中間換成所選的茶底。
+    //   微檔檬紅 / 青  + 青茶   ->  微檔檬青茶
+    //   紅/綠茶拿鐵    + 紅茶   ->  紅茶拿鐵
+    //   8冰綠 / 情人茶 + 情人茶 ->  情人茶
+    function stripOpt(part, opts, fromEnd) {
+      let best = '';
+      for (const o of opts) {
+        for (let k = o.length; k >= 1; k--) {
+          const frag = o.substring(0, k);
+          const hit = fromEnd ? part.endsWith(frag) : part.startsWith(frag);
+          if (hit && frag.length > best.length) best = frag;
+        }
+      }
+      if (!best) return part;
+      return fromEnd ? part.slice(0, part.length - best.length) : part.slice(best.length);
+    }
+
+    function drinkName(itemName, variant, variantsRaw) {
+      const name = String(itemName == null ? '' : itemName).trim();
+      if (!variant) return name;
+      const opts = parseVariants(variantsRaw);
+      if (!opts.length) return name;
+      if (!name.includes('/')) return name + variant;
+
+      const parts = name.split('/').map(x => x.trim()).filter(Boolean);
+      const prefix = stripOpt(parts[0], opts, true);
+      const suffix = parts.length > 1 ? stripOpt(parts[parts.length - 1], opts, false) : '';
+      const out = (prefix + variant + suffix).trim();
+      return out || name;      // 算不出來就退回原名，絕不亂編一個飲料出來
+    }
+
+    // 從目前這家店的菜單找出這個品項有哪些選項
+    function variantsOfItem(itemName) {
+      const m = getStoreMenu(currentStore);
+      const key = String(itemName == null ? '' : itemName).trim();
+      const hit = (m.items || []).find(x => String(x.name).trim() === key);
+      return hit ? (hit.variants || '') : '';
+    }
+
+    // 從規格字串裡挑出茶底
+    function variantOfSpecs(specs) {
+      const sp = splitSpecs(specs);
+      let v = '';
+      sp.extras.forEach(x => {
+        const m = String(x).match(/^口味[:：]\s*(.+)$/);
+        if (m) v = m[1].trim();
+      });
+      return v;
+    }
+
+    // 這一杯實際要顯示的飲料名稱
+    function shownItemName(o) {
+      const item = String(o.item == null ? '' : o.item).trim();
+      const variant = variantOfSpecs(o.specs);
+      if (!variant) return item;
+      return drinkName(item, variant, variantsOfItem(item));
+    }
+
+    // 名稱已經把茶底寫進去的話，規格裡的「口味:xxx」就不用再重複顯示
+    function specsForDisplay(o) {
+      const raw = String(o.specs == null ? '' : o.specs);
+      if (shownItemName(o) === String(o.item == null ? '' : o.item).trim()) return raw;
+      return raw.split(',').map(x => x.trim())
+                .filter(x => x && !/^口味[:：]/.test(x)).join(', ');
+    }
+
     function cleanTopping(x) {
       const t = String(x == null ? '' : x).replace(/\s*\(\+\d+\)\s*$/, '').trim();
       if (/^(加|升級)/.test(t)) return t;   // 「升級重乳」不用再加「加」
@@ -1705,12 +1774,21 @@
         else         { toppings.push(x); }
       });
 
+      const rawItem = String(o.item == null ? '' : o.item).trim();
+      const shown = shownItemName(o);
+
       const seg = [];
       seg.push({ t: String(o.user == null ? '' : o.user).trim() || '(未填姓名)', k: 'user' });
-      seg.push({ t: String(o.item == null ? '' : o.item).trim(), k: 'item' });
+      seg.push({ t: shown, k: 'item' });
+      // 茶底單獨一段、用【】框起來，不跟加料混在一起，
+      // 不然【青茶】跟【珍珠】看起來一模一樣，分不出哪個是茶底。
+      // 只有名稱推算不出來時，才另外把茶底框出來保底
+      if (variant && shown === rawItem) {
+        seg.push({ t: '【' + variant + '】', k: 'variant', glue: true });
+      }
+
       // 加料與需求一起放進品項後面的括號：不知四季春(加冬瓜琥珀凍)
       const inner = [];
-      if (variant) inner.push(variant);          // 口味排最前面，一眼看到是哪種茶底
       toppings.forEach(x => inner.push(cleanTopping(x)));
       if (note) inner.push(note);
       if (inner.length) {
@@ -1789,6 +1867,7 @@
         const segClass = {
           user:  'font-black text-indigo-700',
           item:  'text-slate-800 font-bold',
+          variant: 'text-indigo-700 font-black bg-indigo-50 rounded px-1',
           note:  'text-amber-700 font-black bg-amber-50 rounded px-1',
           addon: 'text-emerald-800 font-bold',
           spec:  'text-slate-700',
