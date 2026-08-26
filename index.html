@@ -164,34 +164,36 @@
     <!-- ==================== 2. 訂單清單介面 (訂單明細頁面) ==================== -->
     <section id="view-orders" class="hidden space-y-4 sm:space-y-6">
       
-      <!-- 統計快覽與操作列 -->
-      <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div>
-          <span class="text-xs text-slate-500 font-bold block" id="orders-store-badge">甘丹茶飲 點餐名單</span>
-          <div class="flex items-baseline gap-3 mt-1">
-            <span class="text-2xl font-black text-amber-600" id="orders-total-amount">$0</span>
-            <span class="text-sm font-bold text-slate-700" id="orders-total-count">0人 / 0杯</span>
-          </div>
-        </div>
-        <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-          <div class="flex items-center gap-1.5 flex-1 sm:flex-none min-w-0">
-            <i class="fa-solid fa-hand-holding-dollar text-emerald-700 text-sm flex-shrink-0"></i>
-            <select id="collector-select" onchange="onCollectorPick(this.value)"
-              class="w-full min-w-0 sm:w-36 px-2.5 py-2 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700"></select>
-          </div>
-          <button onclick="fetchCloudOrders(true)" title="重新整理"
-            class="flex-shrink-0 px-3 sm:px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
-            <i class="fa-solid fa-rotate"></i><span class="hidden sm:inline">重新整理</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- 付款方式：同事在訂單頁就看得到要轉去哪、能直接掃碼 -->
+      <!-- 統計快覽 + 收款人 + 付款方式（同一張卡，一眼看完） -->
       <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-3">
-        <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-          <i class="fa-solid fa-money-check-dollar text-emerald-700"></i> 付款方式
-        </h4>
-        <div id="pay-method" class="space-y-2"></div>
+
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <span class="text-xs text-slate-500 font-bold block" id="orders-store-badge">甘丹茶飲 點餐名單</span>
+            <div class="flex items-baseline gap-3 mt-1">
+              <span class="text-2xl font-black text-amber-600" id="orders-total-amount">$0</span>
+              <span class="text-sm font-bold text-slate-700" id="orders-total-count">0人 / 0杯</span>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <div class="flex items-center gap-1.5 flex-1 sm:flex-none min-w-0">
+              <i class="fa-solid fa-hand-holding-dollar text-emerald-700 text-sm flex-shrink-0"></i>
+              <select id="collector-select" onchange="onCollectorPick(this.value)"
+                class="w-full min-w-0 sm:w-36 px-2.5 py-2 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700"></select>
+            </div>
+            <button onclick="fetchCloudOrders(true)" title="重新整理"
+              class="flex-shrink-0 px-3 sm:px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition">
+              <i class="fa-solid fa-rotate"></i><span class="hidden sm:inline">重新整理</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-100 pt-3 space-y-2">
+          <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+            <i class="fa-solid fa-money-check-dollar text-emerald-700"></i> 付款方式
+          </h4>
+          <div id="pay-method" class="space-y-2"></div>
+        </div>
       </div>
 
       <!-- 歷史訂單 -->
@@ -452,7 +454,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260826-205204';
+    const APP_VERSION = '20260826-205719';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
