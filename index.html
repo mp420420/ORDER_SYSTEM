@@ -365,7 +365,7 @@
 
     <!-- 收款碼放大顯示 -->
     <div id="qr-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center p-4" onclick="closeQrModal()">
-      <div class="bg-white rounded-2xl p-5 max-w-xs w-full text-center space-y-3" onclick="event.stopPropagation()">
+      <div class="bg-white rounded-2xl p-5 max-w-sm w-full text-center space-y-3" onclick="event.stopPropagation()">
         <h4 class="font-black text-slate-800" id="qr-modal-title">掃碼付款</h4>
         <img id="qr-modal-img" alt="收款碼" class="w-full rounded-xl border border-slate-200">
         <p class="text-xs text-slate-500" id="qr-modal-note"></p>
@@ -454,7 +454,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260826-220705';
+    const APP_VERSION = '20260826-222006';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -3165,8 +3165,9 @@
       renderCollector();
     }
 
-    // 圖片先縮小再存：試算表一格有字數上限，而且 QR 不需要高解析度
-    function shrinkImage(file, maxPx, quality) {
+    // QR 是高對比的黑白圖形，JPEG 會在邊緣產生靈點變模糊，
+    // 所以優先用 PNG（無損），真的放不下才退而求其次。
+    function renderImage(file, maxPx, type, quality) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onerror = () => reject(new Error('讀不到圖片'));
@@ -3176,20 +3177,36 @@
           img.onload = () => {
             const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
             const w = Math.max(1, Math.round(img.width * scale));
-            const h = Math.max(1, Math.round(img.height * scale));
+            const h2 = Math.max(1, Math.round(img.height * scale));
             const cv = document.createElement('canvas');
-            cv.width = w; cv.height = h;
+            cv.width = w; cv.height = h2;
             const ctx = cv.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
             ctx.fillStyle = '#ffffff';        // QR 底色要白的，透明背景會變黑
-            ctx.fillRect(0, 0, w, h);
-            ctx.drawImage(img, 0, 0, w, h);
-            resolve(cv.toDataURL('image/jpeg', quality));
+            ctx.fillRect(0, 0, w, h2);
+            ctx.drawImage(img, 0, 0, w, h2);
+            resolve(cv.toDataURL(type, quality));
           };
           img.src = reader.result;
         };
         reader.readAsDataURL(file);
       });
     }
+
+    const QR_MAX_CHARS = 175000;   // 後端分 4 格存，上限 180000，這裡留點余裕
+
+    // 由清楚到模糊依序試，第一個裝得下的就用。
+    // 機率上幾乎都會停在第一、二項（PNG 1000px）。
+    const QR_TRIES = [
+      { px: 1000, type: 'image/png' },
+      { px: 800,  type: 'image/png' },
+      { px: 640,  type: 'image/png' },
+      { px: 1000, type: 'image/jpeg', q: 0.95 },
+      { px: 800,  type: 'image/jpeg', q: 0.92 },
+      { px: 640,  type: 'image/jpeg', q: 0.88 },
+      { px: 480,  type: 'image/jpeg', q: 0.8  }
+    ];
 
     async function uploadPayCode(input, name) {
       const file = input.files && input.files[0];
@@ -3199,13 +3216,15 @@
       const pw = askProfilePw(name, '要上傳收款碼');
       if (pw === null) return;
 
-      let qr;
+      let qr = null, used = null;
       try {
-        qr = await shrinkImage(file, 480, 0.7);
-        if (qr.length > 38000) qr = await shrinkImage(file, 360, 0.6);
-        if (qr.length > 38000) qr = await shrinkImage(file, 280, 0.5);
+        for (const t of QR_TRIES) {
+          const out = await renderImage(file, t.px, t.type, t.q);
+          if (out.length <= QR_MAX_CHARS) { qr = out; used = t; break; }
+        }
       } catch (e) { alert('⚠️ ' + e.message); return; }
-      if (qr.length > 38000) { alert('⚠️ 圖片太大，請改用單純一點的收款碼截圖。'); return; }
+      if (!qr) { alert('⚠️ 圖片太大，請改用裁切過、只留 QR 的截圖。'); return; }
+      console.log('收款碼：' + used.px + 'px ' + used.type + '，' + Math.round(qr.length / 1024) + ' KB');
 
       try {
         const p = profileOf(name);
