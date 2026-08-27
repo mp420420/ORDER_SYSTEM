@@ -235,7 +235,10 @@
 
     <!-- ==================== 3. 管理介面 (後台：店家叫餐加總與管理功能) ==================== -->
     <section id="view-admin" class="hidden space-y-4 sm:space-y-6">
-      
+
+      <!-- 後台鎖定狀態 -->
+      <div id="admin-lock-banner" class="rounded-2xl p-3 sm:p-3.5 shadow-xs flex items-center justify-between gap-2 text-sm font-bold"></div>
+
       <!-- 統計數據卡片 -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
@@ -455,7 +458,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260827-184157';
+    const APP_VERSION = '20260827-194346';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -493,7 +496,7 @@
     const historyCache = {};// 各店的歷史訂單，按需載入
     const historyOpen = {}; // 哪幾團被展開了
     let roundData = {};     // 各店開團的起訖時間
-    let paidPin = '';       // 收款模式解鎖後暫存的管理密碼（關頁面就沒了）
+    let adminPin = '';      // 後台解鎖後暫存的管理密碼（輸入一次，關頁面即失效）
     let ordersLoading = false;
 
     // 1. 甘丹茶飲 菜單
@@ -788,7 +791,6 @@
 
     let menuData = null;        // 從試算表載入的菜單；null 代表目前用內建的
     let menuDraft = null;       // 編輯中的暫存（按取消就丟掉）
-    let menuPin = '';           // 進入編輯時輸入的管理密碼，關閉即清除
     let menuToppingDraft = null;
 
     let products = [];
@@ -1640,14 +1642,13 @@
       const confirmClear = confirm(`⚠️ 確定要清除【${currentStore}】的全部 ${orders.length} 筆訂單嗎？\n\n此動作只會清空【${currentStore}】的訂單，其他店家不受影響。\n\n‼️ 清除後無法復原。`);
       if (!confirmClear) return;
 
-      const masterPin = prompt('🔐 清空全店訂單需要管理密碼，請輸入：');
-      if (masterPin === null) return;
+      if (!(await ensureAdmin())) return;
 
       try {
         const result = await postToGas({
           action: 'clear',
           store: currentStore,
-          pin: String(masterPin).trim()
+          pin: adminPin
         });
 
         if (result.status === 'wrong_password') {
@@ -2589,8 +2590,7 @@
         : `要截止【${currentStore}】的點餐嗎？\n\n截止後同事就送不出這家店的訂單了（其他店家不受影響）。`);
       if (!ok) return;
 
-      const pin = prompt('🔐 切換點餐狀態需要管理密碼，請輸入：');
-      if (pin === null) return;
+      if (!(await ensureAdmin())) return;
 
       const btn = document.getElementById('btn-toggle-room');
       const before = btn ? btn.innerText : '';
@@ -2599,7 +2599,7 @@
       try {
         const result = await postToGas({
           action: 'set_open', store: currentStore,
-          open: wantOpen, pin: String(pin).trim()
+          open: wantOpen, pin: adminPin
         });
         if (result.status === 'wrong_password') { alert('❌ 管理密碼錯誤，狀態沒有變更。'); return; }
         if (result.status !== 'ok') { alert(`❌ 變更失敗：${result.message || result.status}`); return; }
@@ -2648,6 +2648,8 @@
         adminView.classList.remove('hidden');
         btnAdmin.className = tabActive;
         fetchCloudOrders();
+        renderAdminLock();
+        if (!adminPin) ensureAdmin();   // 一進後台就要密碼；輸錯或取消＝只能檢視
       }
     }
 
@@ -2751,15 +2753,46 @@
       }
     }
 
+    // 後台鎖：輸入一次密碼，本次即可修改所有後台項目
+    async function ensureAdmin(opts) {
+      opts = opts || {};
+      if (adminPin && !opts.force) return true;
+      const pin = prompt('🔐 後台管理密碼（輸入一次，即可修改所有後台項目）：');
+      if (pin === null) { renderAdminLock(); return false; }
+      if (!(await verifyMasterPin(pin))) {
+        alert('❌ 管理密碼錯誤，目前為檢視模式，無法修改。');
+        renderAdminLock();
+        return false;
+      }
+      adminPin = String(pin).trim();
+      renderAdminLock();
+      renderPaidPanel();
+      return true;
+    }
+
+    function lockAdmin() {
+      adminPin = '';
+      renderAdminLock();
+      renderPaidPanel();
+    }
+
+    function renderAdminLock() {
+      const b = document.getElementById('admin-lock-banner');
+      if (!b) return;
+      if (adminPin) {
+        b.className = 'rounded-2xl p-3 sm:p-3.5 shadow-xs flex items-center justify-between gap-2 text-sm font-bold bg-emerald-50 border border-emerald-200 text-emerald-800';
+        b.innerHTML = '<span class="flex items-center gap-2"><i class="fa-solid fa-lock-open"></i> 管理模式：可修改所有後台項目</span>'
+          + '<button onclick="lockAdmin()" class="px-3 py-1.5 rounded-xl bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-100 transition text-xs whitespace-nowrap">鎖定</button>';
+      } else {
+        b.className = 'rounded-2xl p-3 sm:p-3.5 shadow-xs flex items-center justify-between gap-2 text-sm font-bold bg-amber-50 border border-amber-200 text-amber-800';
+        b.innerHTML = '<span class="flex items-center gap-2"><i class="fa-solid fa-lock"></i> 檢視模式：需輸入管理密碼才能修改</span>'
+          + '<button onclick="ensureAdmin({force:true})" class="px-3 py-1.5 rounded-xl bg-amber-600 text-white hover:bg-amber-700 transition text-xs whitespace-nowrap">🔓 解鎖</button>';
+      }
+    }
+
     // -------- 開啟／關閉編輯器 --------
     async function openMenuEditor() {
-      const pin = prompt('🔐 修改菜單需要管理密碼，請輸入：');
-      if (pin === null) return;
-      if (!(await verifyMasterPin(pin))) {
-        alert('❌ 管理密碼錯誤，無法進入編輯。');
-        return;
-      }
-      menuPin = String(pin).trim();
+      if (!(await ensureAdmin())) return;
 
       // 把三家店的菜單都複製一份出來編輯，儲存時整份寫回
       menuDraft = {};
@@ -2788,7 +2821,6 @@
       document.getElementById('modal-menu').classList.add('hidden');
       menuDraft = null;
       menuToppingDraft = null;
-      menuPin = '';
     }
 
     // -------- 畫出編輯器 --------
@@ -2957,7 +2989,7 @@
       btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 儲存中…`;
 
       try {
-        const result = await postToGas({ action: 'save_menu', pin: menuPin, items: items, toppings: toppings });
+        const result = await postToGas({ action: 'save_menu', pin: adminPin, items: items, toppings: toppings });
         if (result.status === 'wrong_password') { alert('❌ 管理密碼錯誤，沒有存檔。'); return; }
         if (result.status !== 'saved') { alert(`❌ 儲存失敗：${result.message || result.status}`); return; }
 
@@ -3059,16 +3091,8 @@
     }
 
     async function unlockPaidMode() {
-      if (paidPin) {   // 已解鎖 → 再按一次就上鎖
-        paidPin = '';
-        renderPaidPanel();
-        return;
-      }
-      const pin = prompt('🔐 收款登記需要管理密碼，請輸入：');
-      if (pin === null) return;
-      if (!(await verifyMasterPin(pin))) { alert('❌ 管理密碼錯誤。'); return; }
-      paidPin = String(pin).trim();
-      renderPaidPanel();
+      if (adminPin) { lockAdmin(); return; }   // 已解鎖 → 鎖回檢視模式
+      await ensureAdmin();
     }
 
     function renderPaidPanel() {
@@ -3080,7 +3104,7 @@
 
       label.innerText = currentStore;
 
-      const unlocked = !!paidPin;
+      const unlocked = !!adminPin;
       if (btn && btnTxt) {
         btn.className = 'px-3.5 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs transition ' +
           (unlocked ? 'bg-emerald-700 hover:bg-emerald-800 text-white'
@@ -3132,13 +3156,7 @@
     // ==================================================================
     // 名冊要有誰、要刪誰，由管理人員決定；各自的帳號則靠個人密碼守。
     async function ensurePayPin() {
-      if (paidPin) return true;
-      const pin = prompt('\u{1F510} 新增或刪除收款人員需要管理密碼，請輸入：');
-      if (pin === null) return false;
-      if (!(await verifyMasterPin(pin))) { alert('❌ 管理密碼錯誤。'); return false; }
-      paidPin = String(pin).trim();
-      renderPaidPanel();
-      return true;
+      return await ensureAdmin();
     }
 
     function renderPayMethod() {
@@ -3262,7 +3280,7 @@
     async function saveProfile(payload) {
       const body = Object.assign({ action: 'save_profile' }, payload);
       // 只有「新增」會用到管理密碼；改帳號、換收款碼一律認本人的密碼。
-      body.pin = paidPin || '';
+      body.pin = adminPin || '';
       const r = await postToGas(body);
       if (r.status === 'wrong_password') {
         if (payload.name) delete profilePw[payload.name];   // 密碼不對就別快取
@@ -3333,7 +3351,7 @@
       if (!(await ensurePayPin())) return;
       if (!confirm(`確定要從名冊刪掉【${name}】嗎？`)) return;
       try {
-        const r = await postToGas({ action: 'delete_profile', name, pin: paidPin });
+        const r = await postToGas({ action: 'delete_profile', name, pin: adminPin });
         if (r.status !== 'ok') { alert(`❌ 刪除失敗：${r.message || r.status}`); return; }
         delete qrCache[name];
         await reloadCollectors();
@@ -3492,7 +3510,7 @@
     }
 
     async function togglePaid(who, wantPaid) {
-      if (!paidPin) { alert('⚠️ 請先按「開始收款」並輸入管理密碼。'); renderPaidPanel(); return; }
+      if (!adminPin) { alert('⚠️ 請先按「開始收款」並輸入管理密碼。'); renderPaidPanel(); return; }
 
       // 先在畫面上反映，失敗再改回來
       if (!paidData[currentStore]) paidData[currentStore] = [];
@@ -3504,11 +3522,11 @@
       renderPaidPanel();
 
       try {
-        const result = await postToGas({ action: 'set_paid', store: currentStore, user: who, paid: wantPaid, pin: paidPin });
+        const result = await postToGas({ action: 'set_paid', store: currentStore, user: who, paid: wantPaid, pin: adminPin });
         if (result.status !== 'ok') {
           paidData[currentStore] = before;
           alert(`❌ 登記失敗：${result.message || result.status}`);
-          if (result.status === 'wrong_password') paidPin = '';
+          if (result.status === 'wrong_password') adminPin = '';
           renderPaidPanel();
         }
       } catch (err) {
