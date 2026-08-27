@@ -503,7 +503,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260827-211726';
+    const APP_VERSION = '20260827-214032';
 
     // ====== 系統設定後端（最高層）======
     // 團體名稱、進團密碼、各團後端網址都由「系統設定後端」集中管理。
@@ -922,8 +922,10 @@
       } else {
         box.innerHTML = GROUPS.map(function (g) {
           return '<button onclick="pickGroup(\'' + g.key + '\')" '
-            + 'class="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 hover:border-emerald-600 hover:bg-emerald-50 font-bold text-slate-800 transition flex items-center justify-between">'
-            + '<span>' + esc(g.name) + '</span><i class="fa-solid fa-chevron-right text-slate-400"></i></button>';
+            + 'class="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 hover:border-emerald-600 hover:bg-emerald-50 transition flex items-center justify-between gap-2 text-left">'
+            + '<span class="min-w-0"><span class="block font-bold text-slate-800">' + esc(g.name) + '</span>'
+            + ((g.openStores && g.openStores.length) ? '<div class="text-xs font-bold text-emerald-600 mt-0.5 truncate">' + g.openStores.map(function (x) { return esc(x) + '開團中'; }).join('、') + '</div>' : '<div class="text-xs text-slate-400 mt-0.5">目前無開團</div>')
+            + '</span><i class="fa-solid fa-chevron-right text-slate-400 flex-shrink-0"></i></button>';
         }).join('');
       }
       document.getElementById('group-gate').classList.remove('hidden');
