@@ -503,7 +503,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260827-214508';
+    const APP_VERSION = '20260827-220029';
 
     // ====== 系統設定後端（最高層）======
     // 團體名稱、進團密碼、各團後端網址都由「系統設定後端」集中管理。
@@ -2321,13 +2321,12 @@
     // 每個人的點餐密碼，問過一次就暫存，不用每改一次打一次
     const orderPin = {};
 
+    // 每次設定/變更付款方式都要輸入密碼（不暫存，跟刪除一致）
     function askOrderPin(user) {
-      if (orderPin[user]) return orderPin[user];
-      const p = prompt(`\u{1F512} 要設定【${user}】的付款方式\n\n請輸入【${user}】點餐時設的 4 位數密碼：`);
+      const p = prompt(`\u{1F512} 要設定【${user}】的付款方式\n\n請輸入【${user}】點餐時設的 4 位數密碼：\n（管理密碼也可以）`);
       if (p === null) return null;
       const v = String(p).trim();
       if (!v) return null;
-      orderPin[user] = v;
       return v;
     }
 
