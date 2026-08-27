@@ -516,7 +516,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260827-232153';
+    const APP_VERSION = '20260827-235617';
 
     // ====== 系統設定後端（最高層）======
     // 團體名稱、進團密碼、各團後端網址都由「系統設定後端」集中管理。
@@ -2601,9 +2601,21 @@
     function copyHistoryBatch(store, idx) {
       const b = (historyCache[store] || [])[idx];
       if (!b) return;
-      let text = `📋 【${store}】${b.time} 封存\n總杯數：${b.count} 杯 ｜ 總金額：$${b.total} 元\n-------------------------\n`;
-      b.items.forEach(o => { text += orderLineText(o) + `\n`; });
+      let text = `📋 【${store}】${b.time} 封存\n總杯數：${b.count} 杯 ｜ 總金額：$${b.total} 元`;
+      if (b.paidTotal != null) text += ` ｜ 已收：$${b.paidTotal} 元`;
+      if (b.collector) text += `\n收款人員：${b.collector}`;
+      text += `\n-------------------------\n`;
+      b.items.forEach(o => { text += orderLineText(o) + ` 〔${histPayText(o)}〕\n`; });
       navigator.clipboard.writeText(text).then(() => alert(`✅ 已複製這一團的清單！`));
+    }
+
+    // 歷史單的付款狀態文字
+    function histPayText(o) {
+      if (o && o.paid) {
+        var m = o.method === 'cash' ? '現金' : (o.method === 'transfer' ? ('轉帳' + (o.last5 ? ('末' + o.last5) : '')) : '');
+        return '✅已付' + (m ? ('・' + m) : '');
+      }
+      return '⭕未付';
     }
 
     function renderHistory() {
@@ -2625,9 +2637,16 @@
       box.innerHTML = batches.map((b, i) => {
         const key = currentStore + '#' + i;
         const opened = !!historyOpen[key];
+        const collectorLine = b.collector
+          ? `<div class="text-xs text-emerald-700 font-bold mb-1"><i class="fa-solid fa-hand-holding-dollar mr-1"></i>收款人員：${esc(b.collector)}</div>`
+          : '';
         const detail = opened ? `
           <div class="mt-2 pl-1 space-y-1">
-            ${b.items.map(o => `<div class="text-xs text-slate-600 break-all">${esc(orderLineText(o))}</div>`).join('')}
+            ${collectorLine}
+            ${b.items.map(o => `<div class="text-xs text-slate-600 break-all flex items-start justify-between gap-2">
+              <span>${esc(orderLineText(o))}</span>
+              <span class="flex-shrink-0 font-bold ${o.paid ? 'text-emerald-700' : 'text-rose-500'}">${histPayText(o)}</span>
+            </div>`).join('')}
             <button onclick="copyHistoryBatch(${esc(JSON.stringify(currentStore))}, ${i})"
               class="mt-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg inline-flex items-center gap-1.5">
               <i class="fa-regular fa-copy"></i> 複製這一團
@@ -2641,7 +2660,7 @@
                 <i class="fa-solid fa-chevron-${opened ? 'down' : 'right'} text-xs text-slate-400 mr-1.5"></i>${esc(b.time)}
               </span>
               <span class="text-xs font-bold text-slate-600 whitespace-nowrap">
-                ${b.count}杯 <span class="text-amber-600">$${b.total}</span>
+                ${b.count}杯 <span class="text-amber-600">$${b.total}</span>${(b.paidTotal != null && b.total) ? ` <span class="text-emerald-700">已收$${b.paidTotal}</span>` : ''}
               </span>
             </button>
             ${detail}
