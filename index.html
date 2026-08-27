@@ -516,7 +516,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260828-002346';
+    const APP_VERSION = '20260828-003319';
 
     // ====== 系統設定後端（最高層）======
     // 團體名稱、進團密碼、各團後端網址都由「系統設定後端」集中管理。
@@ -1806,7 +1806,7 @@
       // 例如新增收款人員：第一次建立成功、回應却死掉，
       // 重送那次就變成「修改現有帳號」而被擋，
       // 使用者會看到「密碼錯誤」但其實已經建好了。
-      const RETRYABLE = ['check_pin', 'check_group', 'set_open', 'set_paid', 'set_round', 'save_menu'];
+      const RETRYABLE = ['check_pin', 'check_group', 'set_open', 'set_paid', 'set_round', 'save_menu', 'set_history_paid'];
       const canRetry = payload && RETRYABLE.indexOf(payload.action) !== -1;
       if (canRetry && !isRetry) {
         await new Promise(r => setTimeout(r, 600));
@@ -2609,6 +2609,52 @@
       navigator.clipboard.writeText(text).then(() => alert(`✅ 已複製這一團的清單！`));
     }
 
+    // ---- 履歷補登收款：開新團後才付錢的人，也能在履歷勾「已確認」----
+    let historyPin = '';
+    async function ensureHistoryPin() {
+      if (adminPin) return adminPin;
+      if (historyPin) return historyPin;
+      const p = prompt('🔐 補登收款需要管理密碼，請輸入：');
+      if (p === null) return '';
+      if (!(await verifyMasterPin(p))) { alert('❌ 管理密碼錯誤。'); return ''; }
+      historyPin = String(p).trim();
+      return historyPin;
+    }
+
+    function recalcBatchPaid(b) {
+      let t = 0;
+      b.items.forEach(o => { if (o.paid) t += Number(o.price) || 0; });
+      b.paidTotal = t;
+    }
+
+    async function toggleHistoryPaid(store, batchIdx, user) {
+      const b = (historyCache[store] || [])[batchIdx];
+      if (!b) return;
+      const pin = await ensureHistoryPin();
+      if (!pin) return;
+      const cur = b.items.some(o => String(o.user) === user && o.paid);
+      const want = !cur;
+      const before = b.items.map(o => o.paid);
+      b.items.forEach(o => { if (String(o.user) === user) o.paid = want; });
+      recalcBatchPaid(b);
+      renderHistory();
+      try {
+        const r = await postToGas({ action: 'set_history_paid', store: store, batch: b.time, user: user, paid: want, pin: pin });
+        if (r.status !== 'ok') {
+          b.items.forEach((o, i) => o.paid = before[i]);
+          recalcBatchPaid(b);
+          renderHistory();
+          if (r.status === 'wrong_password') { historyPin = ''; alert('❌ 管理密碼錯誤。'); }
+          else alert('❌ ' + (r.message || r.status));
+        }
+      } catch (e) {
+        b.items.forEach((o, i) => o.paid = before[i]);
+        recalcBatchPaid(b);
+        renderHistory();
+        alert('⚠️ 連線失敗，沒有存到。請再試一次。');
+      }
+    }
+
     // 歷史單的付款狀態文字
     // 付款人：看自報的付款方式（現金／轉帳）
     function histPayerOk(o) { return !!(o && (o.method === 'cash' || o.method === 'transfer')); }
@@ -2646,12 +2692,12 @@
           : '';
         const detail = opened ? `
           <div class="mt-2 pl-1 space-y-1">
-            ${collectorLine}
+            <p class="text-[11px] text-slate-400">點「收款人」那行可補登／取消確認（需管理密碼）</p>
             ${b.items.map(o => `<div class="text-xs text-slate-600 break-all flex items-start justify-between gap-2">
               <span>${esc(orderLineText(o))}</span>
               <span class="flex-shrink-0 text-right leading-tight">
                 <span class="block font-bold ${histPayerOk(o) ? 'text-emerald-700' : 'text-rose-500'}">${esc(histPayerText(o))}</span>
-                <span class="block font-bold ${o.paid ? 'text-emerald-700' : 'text-slate-400'}">${esc(histConfirmText(o))}</span>
+                <button onclick="toggleHistoryPaid(${esc(JSON.stringify(currentStore))}, ${i}, ${esc(JSON.stringify(o.user))})" class="block font-bold ${o.paid ? 'text-emerald-700' : 'text-slate-400'} hover:underline">${esc(histConfirmText(o))}${o.paid ? '' : ' ✎'}</button>
               </span>
             </div>`).join('')}
             <button onclick="copyHistoryBatch(${esc(JSON.stringify(currentStore))}, ${i})"
@@ -2663,8 +2709,9 @@
           <div class="py-2.5">
             <button onclick="toggleHistoryBatch(${esc(JSON.stringify(key))})"
               class="w-full flex items-center justify-between gap-2 text-left hover:opacity-70 transition">
-              <span class="text-sm font-bold text-slate-800">
+              <span class="text-sm font-bold text-slate-800 min-w-0">
                 <i class="fa-solid fa-chevron-${opened ? 'down' : 'right'} text-xs text-slate-400 mr-1.5"></i>${esc(b.time)}
+                ${b.collector ? `<span class="ml-2 text-xs font-bold text-emerald-700"><i class="fa-solid fa-hand-holding-dollar mr-1"></i>${esc(b.collector)}</span>` : `<span class="ml-2 text-xs font-normal text-slate-400">未指定收款人</span>`}
               </span>
               <span class="text-xs font-bold text-slate-600 whitespace-nowrap">
                 ${b.count}杯 <span class="text-amber-600">$${b.total}</span>${(b.paidTotal != null && b.total) ? ` <span class="text-emerald-700">已確認$${b.paidTotal}</span>` : ''}
