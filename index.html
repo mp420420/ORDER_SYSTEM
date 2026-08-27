@@ -217,14 +217,14 @@
           <i class="fa-solid fa-receipt text-amber-600"></i> 各員點餐與收款明細
         </h4>
         <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs sm:text-sm border-collapse">
+          <table class="w-full table-fixed text-left text-xs sm:text-sm border-collapse">
             <thead>
               <tr class="bg-slate-50 text-slate-500 border-b border-slate-100">
-                <th class="p-1.5 sm:p-2.5 whitespace-nowrap">姓名</th>
+                <th class="p-1.5 sm:p-2.5 w-14 sm:w-20">姓名</th>
                 <th class="p-1.5 sm:p-2.5">品項與規格</th>
-                <th class="p-1.5 sm:p-2.5 whitespace-nowrap">付款</th>
-                <th class="p-1.5 sm:p-2.5 text-right whitespace-nowrap">金額</th>
-                <th class="p-1.5 sm:p-2.5 text-center whitespace-nowrap">操作</th>
+                <th class="p-1.5 sm:p-2.5 w-[4.5rem] sm:w-24">付款</th>
+                <th class="p-1.5 sm:p-2.5 text-right w-10 sm:w-16">金額</th>
+                <th class="p-1.5 sm:p-2.5 text-center w-8 sm:w-16">操作</th>
               </tr>
             </thead>
             <tbody id="orders-table-body" class="divide-y divide-slate-100"></tbody>
@@ -455,7 +455,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260826-230636';
+    const APP_VERSION = '20260827-184157';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -1947,18 +1947,18 @@
       } else {
         tableBody.innerHTML = orders.map(o => `
           <tr class="hover:bg-slate-50 transition text-sm">
-            <td class="p-1.5 sm:p-2.5 font-bold text-slate-900 whitespace-nowrap align-top w-px">
+            <td class="p-1.5 sm:p-2.5 font-bold text-slate-900 align-top break-words">
               ${esc(o.user)}
               <span class="text-xs font-normal text-slate-400 block">${esc(dateOnly(o.time))}</span>
               <span class="text-xs font-normal text-slate-400 block">${esc(timeOnly(o.time))}</span>
             </td>
-            <td class="p-1.5 sm:p-2.5 text-slate-700 align-top">
+            <td class="p-1.5 sm:p-2.5 text-slate-700 align-top break-words">
               ${esc(shownItemName(o))}
               <span class="text-slate-400 text-xs block">${esc(specsForDisplay(o))}</span>
             </td>
-            <td class="p-1.5 sm:p-2.5 align-top w-px">${payMethodCell(o.user)}</td>
-            <td class="p-1.5 sm:p-2.5 text-right font-bold text-amber-600 whitespace-nowrap align-top w-px">$${esc(o.price)}</td>
-            <td class="p-1.5 sm:p-2.5 text-center whitespace-nowrap align-top w-px">
+            <td class="p-1.5 sm:p-2.5 align-top">${payMethodCell(o.user)}</td>
+            <td class="p-1.5 sm:p-2.5 text-right font-bold text-amber-600 whitespace-nowrap align-top">$${esc(o.price)}</td>
+            <td class="p-1.5 sm:p-2.5 text-center whitespace-nowrap align-top">
               <button onclick="deleteSingleOrder(${o.rowIndex}, ${esc(JSON.stringify(o.user))}, ${esc(JSON.stringify(o.item))})"
                 title="刪除" class="px-1.5 sm:px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-bold transition">
                 <span class="hidden sm:inline">刪除 </span>✕
@@ -2010,7 +2010,49 @@
             onchange="setPayLast5(${u}, this.value)"
             onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
             class="w-14 px-1 py-0.5 text-xs text-center font-bold border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700">
+          ${payStatusHtml(String(user == null ? '' : user).trim(), p)}
         </div>`;
+    }
+
+    // ---- 付款方式的儲存狀態 ----
+    // 點下去圓點會立刻變色（樂觀更新），但真正寫進試算表要 1.5~2.5 秒。
+    // 沒有這個指示的話，使用者分不出「已經存好」與「還在送／已經失敗」。
+    const payState = {};        // { 姓名: 'saving' | 'saved' | 'error' }
+    const payStateTimer = {};   // 「已儲存」顯示幾秒後自己消失
+
+    function setPayState(user, state) {
+      if (payStateTimer[user]) { clearTimeout(payStateTimer[user]); delete payStateTimer[user]; }
+      if (state) payState[user] = state; else delete payState[user];
+      if (state === 'saved') {
+        payStateTimer[user] = setTimeout(() => {
+          delete payState[user];
+          delete payStateTimer[user];
+          renderAdminOrders();
+        }, 4000);
+      }
+    }
+
+    function clearPayStates() {
+      Object.keys(payStateTimer).forEach(k => clearTimeout(payStateTimer[k]));
+      Object.keys(payStateTimer).forEach(k => delete payStateTimer[k]);
+      Object.keys(payState).forEach(k => delete payState[k]);
+    }
+
+    // 固定佔一行高度，狀態出現或消失時列高不會跳動
+    function payStatusHtml(user, p) {
+      const st = payState[user];
+      let inner = '';
+      if (st === 'saving') {
+        inner = `<span class="inline-flex items-center gap-1 text-slate-400"><i class="fa-solid fa-spinner fa-spin"></i>儲存中…</span>`;
+      } else if (st === 'saved') {
+        inner = `<span class="inline-flex items-center gap-1 text-emerald-700"><i class="fa-solid fa-circle-check"></i>已儲存</span>`;
+      } else if (st === 'error') {
+        inner = `<span class="inline-flex items-center gap-1 text-rose-600"><i class="fa-solid fa-triangle-exclamation"></i>未存到</span>`;
+      } else if (p && (p.m || p.last5)) {
+        // 沒有進行中的動作，畫面上的值就是試算表裡的值
+        inner = `<span class="inline-flex items-center gap-1 text-slate-400"><i class="fa-solid fa-cloud"></i>已同步</span>`;
+      }
+      return `<div class="h-4 text-[10px] font-bold leading-4 whitespace-nowrap">${inner}</div>`;
     }
 
     // 每個人的點餐密碼，問過一次就暫存，不用每改一次打一次
@@ -2029,23 +2071,43 @@
     async function savePayMethod(user, method, last5) {
       const store = currentStore;
       const pin = askOrderPin(user);
-      if (pin === null) { renderAdminOrders(); return; }   // 取消 → 畫面彈回原狀
+      if (pin === null) { setPayState(user, null); renderAdminOrders(); return; }   // 取消 → 畫面彈回原狀
 
       const before = JSON.parse(JSON.stringify(paidPayData || {}));
       paidPayData[user] = { m: method, last5: last5 };
+      setPayState(user, 'saving');
       renderAdminOrders();
       try {
         const r = await postToGas({ action: 'set_paymethod', store, user, method, last5, pin });
+
+        // 回應回來時使用者可能已經切到別家店，這時只更新資料不動畫面
+        if (store !== currentStore) {
+          if (r.status !== 'ok') delete orderPin[user];
+          return;
+        }
+
         if (r.status !== 'ok') {
           delete orderPin[user];        // 密碼不對就別快取
           paidPayData = before;
+          setPayState(user, 'error');
           renderAdminOrders();
           alert(`❌ ${r.message || r.status}`);
           return;
         }
+
+        // 以伺服器回傳的值為準，確認寫進試算表的真的是這筆
+        paidPayData[user] = { m: r.method || '', last5: r.last5 || '' };
+        if (!paidPayAll[store]) paidPayAll[store] = {};
+        paidPayAll[store][user] = paidPayData[user];
+        cacheSet('paid', { status: 'ok', paid: paidData, pay: paidPayAll });
+        setPayState(user, 'saved');
+        renderAdminOrders();
       } catch (e) {
         paidPayData = before;
-        renderAdminOrders();
+        if (store === currentStore) {
+          setPayState(user, 'error');
+          renderAdminOrders();
+        }
         alert('⚠️ 付款方式沒有存到，請再試一次。');
       }
     }
@@ -2966,6 +3028,7 @@
     // 切店家時把付款方式換成那家的
     function syncPayForStore() {
       paidPayData = (paidPayAll || {})[currentStore] || {};
+      clearPayStates();
     }
 
     function applyCachedPaid() {
