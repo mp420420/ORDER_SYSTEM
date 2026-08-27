@@ -503,7 +503,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260827-214032';
+    const APP_VERSION = '20260827-214508';
 
     // ====== 系統設定後端（最高層）======
     // 團體名稱、進團密碼、各團後端網址都由「系統設定後端」集中管理。
@@ -1141,8 +1141,8 @@
     let userPickedStore = false;
     function autoPickOpenStore() {
       if (userPickedStore) return;
-      if (roomOpen[currentStore] !== false) return;   // 目前這家沒被截止（或狀態未知）就維持
-      const open = STORE_LIST.find(st => roomOpen[st] !== false);
+      if (roomOpen[currentStore] === true) return;   // 目前這家已開團就維持
+      const open = STORE_LIST.find(st => roomOpen[st] === true);
       if (open && open !== currentStore) initStoreData(open);
     }
 
@@ -1676,7 +1676,7 @@
 
     // 點餐送出
     async function submitOrder() {
-      if (roomOpen[currentStore] === false) {
+      if (roomOpen[currentStore] !== true) {
         alert(`⚠️ 【${currentStore}】已經截止點餐了。\n\n可以切換到其他還開放的店家看看。`);
         return;
       }
@@ -2734,7 +2734,7 @@
         const dot = document.getElementById(ref.dot);
         const nameEl = document.getElementById(ref.name);
         const btn = document.getElementById(ref.btn);
-        const isOpen = roomOpen[st] !== false;
+        const isOpen = roomOpen[st] === true;
         const isActive = (st === currentStore);
 
         if (dot) dot.className = 'w-2 h-2 rounded-full flex-shrink-0 ' +
@@ -2766,7 +2766,7 @@
       const el = document.getElementById('open-notice');
       if (!el) return;
 
-      const openStores = STORE_LIST.filter(st => roomOpen[st] !== false);
+      const openStores = STORE_LIST.filter(st => roomOpen[st] === true);
 
       // 都沒開放就不顯示，讓店家列回到原本的樣子
       if (openStores.length === 0) { el.style.display = 'none'; return; }
@@ -2792,7 +2792,7 @@
     function renderRoomStatus() {
       renderStoreTabs();
       renderOpenStoresNotice();
-      const isOpen = roomOpen[currentStore] !== false;
+      const isOpen = roomOpen[currentStore] === true;
       const badge = document.getElementById('room-badge');
       const btn = document.getElementById('btn-toggle-room');
       const submit = document.getElementById('btn-submit-order');
@@ -2845,7 +2845,7 @@
 
     // 只切換「目前這家店」，其他店不受影響
     async function toggleRoomStatus() {
-      const isOpen = roomOpen[currentStore] !== false;
+      const isOpen = roomOpen[currentStore] === true;
       const wantOpen = !isOpen;
 
       const ok = confirm(wantOpen
