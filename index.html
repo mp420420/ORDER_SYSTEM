@@ -34,6 +34,14 @@
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased pb-24 lg:pb-6">
 
   <!-- 頂部導航 (三店家切換 + 點餐 / 訂單 / 後台 三分頁) -->
+  <!-- 頂部團體列（顯示目前團體＋切換）-->
+  <div id="group-bar" class="hidden bg-slate-900 text-white text-xs sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-3.5 sm:px-4 py-1.5 flex items-center justify-between gap-2">
+      <span class="flex items-center gap-1.5 font-bold"><i class="fa-solid fa-users"></i> 目前團體：<b id="group-name-label" class="text-amber-300"></b></span>
+      <button onclick="switchGroup()" class="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 transition font-bold flex items-center gap-1.5"><i class="fa-solid fa-right-left"></i> 切換團體</button>
+    </div>
+  </div>
+
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
 
     <div class="max-w-6xl mx-auto px-3.5 sm:px-4 py-2 sm:py-0 sm:h-16 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -455,12 +463,32 @@
     </div>
   </div>
 
+  <!-- 團體選擇關卡：開頁先選團、輸入該團密碼 -->
+  <div id="group-gate" class="fixed inset-0 z-[60] bg-slate-900/95 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+      <div class="text-center space-y-1">
+        <div class="text-4xl">🧋</div>
+        <h2 class="font-black text-lg text-slate-900">請選擇你的團體</h2>
+        <p class="text-xs text-slate-500">進入需要該團的密碼，避免跑錯團</p>
+      </div>
+      <div id="group-choices" class="space-y-2"></div>
+    </div>
+  </div>
+
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260827-200757';
+    const APP_VERSION = '20260827-202805';
 
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
+    // ====== 三個團體：各自綁一個試算表/後端，資料完全獨立 ======
+    // 部署好每個團的 Apps Script 後，把它的 /exec 網址貼進對應的 url。
+    const GROUPS = [
+      { key: 'A', name: '團A', url: "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec" },
+      { key: 'B', name: '團B', url: "請貼上團B的_exec_網址" },
+      { key: 'C', name: '團C', url: "請貼上團C的_exec_網址" }
+    ];
+    let currentGroupKey = '';   // 目前所在團體（空＝還沒選）
+    let GAS_API_URL = '';       // 進團後才設定成該團的後端網址
 
     let currentStore = '甘丹茶飲';
     let currentViewMode = 'user'; // 'user' | 'orders' | 'admin'
@@ -470,15 +498,17 @@
     // ---- 本機快取：Apps Script 每次往返要 1.5~2.5 秒（冷啟動更久），
     //      所以先把上次的結果存在瀏覽器，開頁立刻有畫面，背景再去更新。----
     const LS_PREFIX = 'orderSys_';
+    // 每個團體的本機快取分開存，避免切團時看到別團的殘影
+    function lsKey(key) { return LS_PREFIX + (currentGroupKey || '_') + '_' + key; }
 
     function cacheSet(key, val) {
-      try { localStorage.setItem(LS_PREFIX + key, JSON.stringify({ t: Date.now(), v: val })); }
+      try { localStorage.setItem(lsKey(key), JSON.stringify({ t: Date.now(), v: val })); }
       catch (e) { /* 空間滿了或隱私模式，忽略 */ }
     }
 
     function cacheGet(key) {
       try {
-        const raw = localStorage.getItem(LS_PREFIX + key);
+        const raw = localStorage.getItem(lsKey(key));
         if (!raw) return null;
         const o = JSON.parse(raw);
         return (o && 'v' in o) ? o.v : null;
@@ -812,7 +842,13 @@
     };
 
     window.addEventListener('DOMContentLoaded', () => {
-      // 先用上次存下來的資料把畫面畫出來（0 秒），再背景跟伺服器同步
+      renderCart();
+      renderNamesToggle();
+      openGroupGate();   // 先選團體＋輸入進入密碼，通過才載入該團資料
+    });
+
+    // 選團通過後才真正載入這一團的資料
+    function bootAfterGroup() {
       applyCachedMenu();
       initStoreData('甘丹茶飲');
       applyCachedState();
@@ -824,7 +860,67 @@
       loadRoomStatus();
       loadPaidStatus();
       checkForUpdate();
-    });
+    }
+
+    // ====== 團體選擇關卡：一個網址，切團要輸入該團密碼 ======
+    function openGroupGate() {
+      currentGroupKey = '';
+      GAS_API_URL = '';
+      document.getElementById('group-bar').classList.add('hidden');
+      const box = document.getElementById('group-choices');
+      box.innerHTML = GROUPS.map(function (g) {
+        return '<button onclick="pickGroup(\'' + g.key + '\')" '
+          + 'class="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 hover:border-emerald-600 hover:bg-emerald-50 font-bold text-slate-800 transition flex items-center justify-between">'
+          + '<span>' + esc(g.name) + '</span><i class="fa-solid fa-chevron-right text-slate-400"></i></button>';
+      }).join('');
+      document.getElementById('group-gate').classList.remove('hidden');
+    }
+
+    async function pickGroup(key) {
+      const g = GROUPS.find(function (x) { return x.key === key; });
+      if (!g) return;
+      if (!g.url || g.url.indexOf('/exec') === -1) {
+        alert('⚠️【' + g.name + '】的後端網址還沒設定。\n\n請先在程式最上面的 GROUPS 把這一團的 Apps Script /exec 網址填進去。');
+        return;
+      }
+      const pin = prompt('🔐 請輸入【' + g.name + '】的進入密碼：');
+      if (pin === null) return;
+      GAS_API_URL = g.url;   // 先指到該團後端才能驗證密碼
+      let ok = false;
+      try {
+        const r = await postToGas({ action: 'check_group', pin: String(pin).trim() });
+        ok = !!(r && r.valid);
+      } catch (e) { alert('⚠️ 連線失敗，請稍後再試。'); GAS_API_URL = ''; return; }
+      if (!ok) { alert('❌ 密碼錯誤，無法進入【' + g.name + '】。'); GAS_API_URL = ''; return; }
+      enterGroup(g);
+    }
+
+    function enterGroup(g) {
+      currentGroupKey = g.key;
+      GAS_API_URL = g.url;
+      document.getElementById('group-name-label').innerText = g.name;
+      document.getElementById('group-bar').classList.remove('hidden');
+      document.getElementById('group-gate').classList.add('hidden');
+      resetGroupState();
+      bootAfterGroup();
+    }
+
+    // 切團一律重新選擇＋輸入密碼
+    function switchGroup() {
+      resetGroupState();
+      openGroupGate();
+    }
+
+    // 清掉記憶體裡上一團的資料，避免殘影
+    function resetGroupState() {
+      for (const k in ordersCache) delete ordersCache[k];
+      for (const k in historyCache) delete historyCache[k];
+      cart = []; orders = [];
+      paidData = {}; paidPayAll = {}; paidPayData = {};
+      collectorData = {}; collectorList = []; roundData = {};
+      menuData = null; adminPin = ''; userPickedStore = false;
+      try { renderCart(); } catch (e) {}
+    }
 
     // 極速切換店家（切換菜單毫秒級反應，不卡網路連線）
     function initStoreData(storeName) {
@@ -1510,7 +1606,7 @@
         alert(`🎉 點餐成功！已為 ${userName} 送出 ${result.added} 杯飲料至【${currentStore}】。\n\n📌 您的刪除密碼為：${userPin}（請牢記）`);
         clearCart();
         delete ordersCache[currentStore]; // 清除快取，下次查看自動抓最新
-        try { localStorage.removeItem(LS_PREFIX + 'orders_' + currentStore); } catch (e) {}
+        try { localStorage.removeItem(lsKey('orders_' + currentStore)); } catch (e) {}
       } catch (err) {
         alert(`⚠️ 連線失敗，訂單「沒有」送出。\n\n請檢查網路後再試一次。`);
       } finally {
@@ -1542,7 +1638,7 @@
       // 例如新增收款人員：第一次建立成功、回應却死掉，
       // 重送那次就變成「修改現有帳號」而被擋，
       // 使用者會看到「密碼錯誤」但其實已經建好了。
-      const RETRYABLE = ['check_pin', 'set_open', 'set_paid', 'set_round', 'save_menu'];
+      const RETRYABLE = ['check_pin', 'check_group', 'set_open', 'set_paid', 'set_round', 'save_menu'];
       const canRetry = payload && RETRYABLE.indexOf(payload.action) !== -1;
       if (canRetry && !isRetry) {
         await new Promise(r => setTimeout(r, 600));
