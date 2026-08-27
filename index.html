@@ -464,14 +464,14 @@
   </div>
 
   <!-- 團體選擇關卡：開頁先選團、輸入該團密碼 -->
-  <div id="group-gate" class="fixed inset-0 z-[60] bg-slate-900/95 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+  <div id="group-gate" class="fixed inset-0 z-[60] bg-slate-900/95 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
       <div class="text-center space-y-1">
         <div class="text-4xl">🧋</div>
         <h2 class="font-black text-lg text-slate-900">請選擇你的團體</h2>
         <p class="text-xs text-slate-500">進入需要該團的密碼，避免跑錯團</p>
       </div>
-      <div id="group-choices" class="space-y-2"></div>
+      <div id="group-choices" class="space-y-2"><p class="text-sm text-slate-400 text-center py-4"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>載入中…</p></div>
       <div class="pt-2 border-t border-slate-100 text-center">
         <button onclick="sysAdminLogin()" class="text-xs font-bold text-slate-400 hover:text-slate-700 transition inline-flex items-center gap-1.5"><i class="fa-solid fa-user-shield"></i> 系統管理者登入</button>
       </div>
@@ -503,14 +503,14 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260827-210404';
+    const APP_VERSION = '20260827-211726';
 
     // ====== 系統設定後端（最高層）======
     // 團體名稱、進團密碼、各團後端網址都由「系統設定後端」集中管理。
     // 部署好「系統_Code.gs」後，把它的 /exec 網址貼在這裡（只有這一個要寫死）。
     // ====== 單一後端（多團體共用；用 group 參數區分）======
     // 部署好 Code.gs 後，把它的 /exec 網址貼在這裡（只有這一個要寫死）。
-    const API_URL = "請貼上後端的_exec_網址";
+    const API_URL = "https://script.google.com/macros/s/AKfycbzp3Cjh-WzodMF83VwTCxFrhv2BAL8kXzRSV_fMCPAwpXpzzB_8OZ6D4dXYcNvBftCLQA/exec";
     let GROUPS = [];            // 開頁時向後端拿（含各團名稱）
     let currentGroupKey = '';   // 目前所在團體（空＝還沒選）
     let GAS_API_URL = API_URL;  // 所有請求都打同一個後端，用 group 參數區分團體
