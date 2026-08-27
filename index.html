@@ -485,6 +485,9 @@
         <h3 class="font-black text-base sm:text-lg text-slate-900"><i class="fa-solid fa-user-shield text-amber-600 mr-1.5"></i> 系統設定（團體）</h3>
         <button onclick="closeSysPanel()" class="w-9 h-9 rounded-full bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-600 font-bold">✕</button>
       </div>
+      <div class="px-4 sm:px-5 pt-3">
+        <button onclick="addSysGroup()" class="w-full px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-bold flex items-center justify-center gap-1.5"><i class="fa-solid fa-plus"></i> 新增團體</button>
+      </div>
       <div id="sys-panel-body" class="p-4 sm:p-5 overflow-y-auto space-y-3 flex-1 bg-white"></div>
       <div class="px-4 sm:px-5 pb-2">
         <label class="block text-xs font-bold text-slate-600">變更系統管理者密碼（留白＝不變）
@@ -500,16 +503,18 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260827-204210';
+    const APP_VERSION = '20260827-210404';
 
     // ====== 系統設定後端（最高層）======
     // 團體名稱、進團密碼、各團後端網址都由「系統設定後端」集中管理。
     // 部署好「系統_Code.gs」後，把它的 /exec 網址貼在這裡（只有這一個要寫死）。
-    const SYS_API_URL = "請貼上系統設定後端的_exec_網址";
-    let GROUPS = [];            // 開頁時向系統設定後端拿
+    // ====== 單一後端（多團體共用；用 group 參數區分）======
+    // 部署好 Code.gs 後，把它的 /exec 網址貼在這裡（只有這一個要寫死）。
+    const API_URL = "請貼上後端的_exec_網址";
+    let GROUPS = [];            // 開頁時向後端拿（含各團名稱）
     let currentGroupKey = '';   // 目前所在團體（空＝還沒選）
-    let GAS_API_URL = '';       // 進團後才設定成該團的後端網址
-    let sysAcct = '', sysPw = '';   // 系統管理者登入後暫存（關頁面就沒了）
+    let GAS_API_URL = API_URL;  // 所有請求都打同一個後端，用 group 參數區分團體
+    let sysAcct = '', sysPw = '', sysGroups = [];   // 系統管理者登入後暫存
 
     let currentStore = '甘丹茶飲';
     let currentViewMode = 'user'; // 'user' | 'orders' | 'admin'
@@ -885,9 +890,9 @@
 
     // ====== 系統設定：向系統後端拿團體清單（名稱/網址）======
     async function loadSysConfig() {
-      if (!SYS_API_URL || SYS_API_URL.indexOf('/exec') === -1) { GROUPS = []; return false; }
+      if (!API_URL || API_URL.indexOf('/exec') === -1) { GROUPS = []; return false; }
       try {
-        const res = await fetch(SYS_API_URL + '?action=config&_=' + Date.now(), { cache: 'no-store' });
+        const res = await fetch(API_URL + '?action=config&_=' + Date.now(), { cache: 'no-store' });
         const data = await res.json();
         if (data && data.status === 'ok' && Array.isArray(data.groups)) {
           GROUPS = data.groups;
@@ -912,7 +917,7 @@
       const box = document.getElementById('group-choices');
       if (!GROUPS.length) {
         box.innerHTML = '<p class="text-sm text-rose-600 font-bold text-center py-2">尚未設定系統後端，或連線失敗。</p>'
-          + '<p class="text-xs text-slate-500 text-center">請先部署「系統_Code.gs」並把網址填進程式最上面的 SYS_API_URL，或按下方重試。</p>'
+          + '<p class="text-xs text-slate-500 text-center">請先部署「Code.gs」並把網址填進程式最上面的 API_URL，或按下方重試。</p>'
           + '<button onclick="startGate()" class="w-full mt-2 px-4 py-2.5 rounded-xl bg-slate-800 text-white text-sm font-bold">重新載入</button>';
       } else {
         box.innerHTML = GROUPS.map(function (g) {
@@ -927,15 +932,11 @@
     async function pickGroup(key) {
       const g = GROUPS.find(function (x) { return x.key === key; });
       if (!g) return;
-      if (!g.url || g.url.indexOf('/exec') === -1) {
-        alert('⚠️【' + g.name + '】的後端網址還沒設定。\n\n請用「系統管理者登入」設定這一團的 Apps Script 網址。');
-        return;
-      }
       const pin = prompt('🔐 請輸入【' + g.name + '】的進入密碼：');
       if (pin === null) return;
       let ok = false;
       try {
-        const r = await postTo(SYS_API_URL, { action: 'check_group', key: key, pin: String(pin).trim() });
+        const r = await postTo(API_URL, { action: 'check_group', key: key, pin: String(pin).trim() });
         ok = !!(r && r.valid);
       } catch (e) { alert('⚠️ 連線失敗，請稍後再試。'); return; }
       if (!ok) { alert('❌ 密碼錯誤，無法進入【' + g.name + '】。'); return; }
@@ -944,7 +945,7 @@
 
     function enterGroup(g) {
       currentGroupKey = g.key;
-      GAS_API_URL = g.url;
+      GAS_API_URL = API_URL;
       document.getElementById('group-name-label').innerText = g.name;
       document.getElementById('group-bar').classList.remove('hidden');
       document.getElementById('group-gate').classList.add('hidden');
@@ -969,8 +970,8 @@
 
     // ====== 系統管理者：登入後可改團體名稱／進團密碼／網址 ======
     async function sysAdminLogin() {
-      if (!SYS_API_URL || SYS_API_URL.indexOf('/exec') === -1) {
-        alert('⚠️ 尚未設定系統後端網址（SYS_API_URL）。'); return;
+      if (!API_URL || API_URL.indexOf('/exec') === -1) {
+        alert('⚠️ 尚未設定後端網址（API_URL）。'); return;
       }
       const acct = prompt('👑 系統管理者帳號：');
       if (acct === null) return;
@@ -978,7 +979,7 @@
       if (pw === null) return;
       let ok = false;
       try {
-        const r = await postTo(SYS_API_URL, { action: 'check_sysadmin', account: String(acct).trim(), pw: String(pw).trim() });
+        const r = await postTo(API_URL, { action: 'check_sysadmin', account: String(acct).trim(), pw: String(pw).trim() });
         ok = !!(r && r.valid);
       } catch (e) { alert('⚠️ 連線失敗。'); return; }
       if (!ok) { alert('❌ 帳號或密碼錯誤。'); return; }
@@ -988,20 +989,56 @@
     }
 
     function openSysPanel() {
-      const body = document.getElementById('sys-panel-body');
-      body.innerHTML = GROUPS.map(function (g, i) {
-        return '<div class="border border-slate-200 rounded-2xl p-3 space-y-2 bg-slate-50">'
-          + '<div class="text-xs font-black text-slate-500">團體代號 ' + esc(g.key) + '</div>'
-          + '<label class="block text-xs font-bold text-slate-600">顯示名稱'
-          + '<input id="sys-name-' + i + '" value="' + esc(g.name) + '" class="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600"></label>'
-          + '<label class="block text-xs font-bold text-slate-600">後端網址（/exec）'
-          + '<input id="sys-url-' + i + '" value="' + esc(g.url || '') + '" placeholder="https://script.google.com/.../exec" class="mt-1 w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600"></label>'
-          + '<label class="block text-xs font-bold text-slate-600">進團密碼（留白＝不變）'
-          + '<input id="sys-pin-' + i + '" value="" placeholder="要改再輸入" class="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600"></label>'
-          + '</div>';
-      }).join('');
+      // 複製一份現有團體來編輯（含新增/移除）
+      sysGroups = GROUPS.map(function (g) { return { key: g.key, name: g.name, pin: '', master: '' }; });
+      renderSysPanel();
       document.getElementById('sys-newpw').value = '';
       document.getElementById('sys-panel').classList.remove('hidden');
+    }
+
+    // 重畫前先把畫面上的輸入收回 sysGroups，才不會在新增/移除時弄丟剛打的字
+    function pullSysPanel() {
+      sysGroups.forEach(function (g, i) {
+        const n = document.getElementById('sys-name-' + i);
+        const p = document.getElementById('sys-pin-' + i);
+        const m = document.getElementById('sys-master-' + i);
+        if (n) g.name = n.value;
+        if (p) g.pin = p.value;
+        if (m) g.master = m.value;
+      });
+    }
+
+    function renderSysPanel() {
+      const body = document.getElementById('sys-panel-body');
+      body.innerHTML = sysGroups.map(function (g, i) {
+        const isNew = !g.key;
+        return '<div class="border border-slate-200 rounded-2xl p-3 space-y-2 bg-slate-50">'
+          + '<div class="flex items-center justify-between">'
+          +   '<div class="text-xs font-black text-slate-500">' + (isNew ? '🆕 新團體' : ('團體代號 ' + esc(g.key))) + '</div>'
+          +   '<button onclick="removeSysGroup(' + i + ')" class="text-xs font-bold text-rose-600 hover:text-rose-700">移除</button>'
+          + '</div>'
+          + '<label class="block text-xs font-bold text-slate-600">顯示名稱'
+          + '<input id="sys-name-' + i + '" value="' + esc(g.name || '') + '" class="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600"></label>'
+          + '<label class="block text-xs font-bold text-slate-600">進團密碼' + (isNew ? '' : '（留白＝不變）')
+          + '<input id="sys-pin-' + i + '" value="' + esc(g.pin || '') + '" placeholder="' + (isNew ? '同事點餐要輸入' : '要改再輸入') + '" class="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600"></label>'
+          + '<label class="block text-xs font-bold text-slate-600">管理密碼（主揪用）' + (isNew ? '' : '（留白＝不變）')
+          + '<input id="sys-master-' + i + '" value="' + esc(g.master || '') + '" placeholder="' + (isNew ? '主揪改訂單/收款/菜單用' : '要改再輸入') + '" class="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600"></label>'
+          + '</div>';
+      }).join('');
+    }
+
+    function addSysGroup() {
+      pullSysPanel();
+      sysGroups.push({ key: '', name: '新團體', pin: '', master: '' });
+      renderSysPanel();
+    }
+
+    function removeSysGroup(i) {
+      pullSysPanel();
+      const g = sysGroups[i];
+      if (!confirm('確定要移除【' + (g.name || '這個團體') + '】嗎？\n\n（它先前的訂單資料會保留在試算表，但選單上不再出現）')) return;
+      sysGroups.splice(i, 1);
+      renderSysPanel();
     }
 
     function closeSysPanel() {
@@ -1009,22 +1046,19 @@
     }
 
     async function saveSysConfig() {
-      const groups = GROUPS.map(function (g, i) {
-        return {
-          key: g.key,
-          name: document.getElementById('sys-name-' + i).value.trim(),
-          url:  document.getElementById('sys-url-' + i).value.trim(),
-          pin:  document.getElementById('sys-pin-' + i).value.trim()   // 留白＝後端沿用舊的
-        };
-      });
+      pullSysPanel();
+      const groups = sysGroups.map(function (g) {
+        return { key: g.key || '', name: (g.name || '').trim(), pin: (g.pin || '').trim(), master: (g.master || '').trim() };
+      }).filter(function (g) { return g.name || g.key; });
+      if (!groups.length) { alert('⚠️ 至少要有一個團體。'); return; }
       const newSysPw = document.getElementById('sys-newpw').value.trim();
       const btn = document.getElementById('sys-save-btn');
       btn.disabled = true; btn.innerText = '儲存中…';
       try {
-        const r = await postTo(SYS_API_URL, { action: 'save_config', account: sysAcct, pw: sysPw, groups: groups, newSysPw: newSysPw });
+        const r = await postTo(API_URL, { action: 'save_config', account: sysAcct, pw: sysPw, groups: groups, newSysPw: newSysPw });
         if (r.status === 'wrong_password') { alert('❌ ' + (r.message || '系統管理者密碼錯誤')); return; }
         if (r.status !== 'saved') { alert('❌ 儲存失敗：' + (r.message || r.status)); return; }
-        if (newSysPw) sysPw = newSysPw;   // 之後同一場沿用新密碼
+        if (newSysPw) sysPw = newSysPw;
         alert('✅ 系統設定已儲存。');
         closeSysPanel();
         await loadSysConfig();
@@ -1733,7 +1767,8 @@
     // 統一的 POST 送出：用 text/plain 避開瀏覽器 preflight，
     // 這樣 GAS 才回得了內容，前端也才能真正判斷成功或失敗。
     async function postToGas(payload, isRetry) {
-      return postTo(GAS_API_URL, payload, isRetry);
+      const body = (currentGroupKey && !('group' in payload)) ? Object.assign({ group: currentGroupKey }, payload) : payload;
+      return postTo(GAS_API_URL, body, isRetry);
     }
 
     async function postTo(url, payload, isRetry) {
@@ -1790,7 +1825,7 @@
       renderAdminOrders();
 
       try {
-        const res = await fetch(`${GAS_API_URL}?store=${encodeURIComponent(reqStore)}`);
+        const res = await fetch(`${GAS_API_URL}?store=${encodeURIComponent(reqStore)}&group=${encodeURIComponent(currentGroupKey)}`);
         const data = await res.json();
         // 後端若回傳錯誤物件而非訂單陣列，就當作沒有資料，避免整個後台壞掉
         if (!Array.isArray(data)) { console.log('訂單格式非預期，忽略'); return; }
@@ -2415,7 +2450,7 @@
 
     async function loadRoomStatus() {
       try {
-        const res = await fetch(`${GAS_API_URL}?action=state`);
+        const res = await fetch(`${GAS_API_URL}?action=state&group=${encodeURIComponent(currentGroupKey)}`);
         const data = await res.json();
         if (applyStatePayload(data)) cacheSet('state', data);
         renderCollector();
@@ -2532,7 +2567,7 @@
       if (btn) { btn.disabled = true; }
       if (txt) txt.innerText = '載入中…';
       try {
-        const res = await fetch(`${GAS_API_URL}?action=history&store=${encodeURIComponent(store)}`);
+        const res = await fetch(`${GAS_API_URL}?action=history&store=${encodeURIComponent(store)}&group=${encodeURIComponent(currentGroupKey)}`);
         const data = await res.json();
         historyCache[store] = (data && data.status === 'ok' && data.batches) ? data.batches : [];
       } catch (e) {
@@ -2922,7 +2957,7 @@
 
     async function loadMenuFromCloud() {
       try {
-        const res = await fetch(`${GAS_API_URL}?action=menu`);
+        const res = await fetch(`${GAS_API_URL}?action=menu&group=${encodeURIComponent(currentGroupKey)}`);
         const data = await res.json();
         if (applyMenuPayload(data)) {
           cacheSet('menu', data);    // 存起來，下次開頁先用它
@@ -3301,7 +3336,7 @@
 
     async function loadPaidStatus() {
       try {
-        const res = await fetch(`${GAS_API_URL}?action=paid`);
+        const res = await fetch(`${GAS_API_URL}?action=paid&group=${encodeURIComponent(currentGroupKey)}`);
         const data = await res.json();
         if (data && data.status === 'ok' && data.paid) {
           paidData = data.paid;
@@ -3586,7 +3621,7 @@
 
     async function reloadCollectors() {
       try {
-        const res = await fetch(`${GAS_API_URL}?action=state`);
+        const res = await fetch(`${GAS_API_URL}?action=state&group=${encodeURIComponent(currentGroupKey)}`);
         const d = await res.json();
         if (applyStatePayload(d)) cacheSet('state', d);
       } catch (e) {}
@@ -3681,7 +3716,7 @@
       if (qrCache[who]) { img.src = qrCache[who]; return; }
       img.removeAttribute('src');
       try {
-        const res = await fetch(`${GAS_API_URL}?action=paycode&name=${encodeURIComponent(who)}`);
+        const res = await fetch(`${GAS_API_URL}?action=paycode&name=${encodeURIComponent(who)}&group=${encodeURIComponent(currentGroupKey)}`);
         const d = await res.json();
         if (d && d.status === 'ok' && d.qr) {
           qrCache[who] = d.qr;
