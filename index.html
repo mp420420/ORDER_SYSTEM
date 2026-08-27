@@ -458,7 +458,7 @@
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260827-194346';
+    const APP_VERSION = '20260827-195159';
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec";
 
@@ -890,7 +890,18 @@
       }
     }
 
+    // 開頁時若目前店家已截止、但有別家開放，就自動帶到第一家開放的店。
+    // 使用者一旦手動選過店家（userPickedStore），就尊重他的選擇不再自動換。
+    let userPickedStore = false;
+    function autoPickOpenStore() {
+      if (userPickedStore) return;
+      if (roomOpen[currentStore] !== false) return;   // 目前這家沒被截止（或狀態未知）就維持
+      const open = STORE_LIST.find(st => roomOpen[st] !== false);
+      if (open && open !== currentStore) initStoreData(open);
+    }
+
     function switchStore(storeName) {
+      userPickedStore = true;   // 使用者手動選過，之後不再自動帶入開放店家
       if (currentStore === storeName) return;
 
       // 購物車不可跨店：切換前先確認，避免 A 店的飲料被記到 B 店分頁
@@ -2185,7 +2196,7 @@
 
     function applyCachedState() {
       const c = cacheGet('state');
-      if (c && applyStatePayload(c)) { renderRoomStatus(); renderCollector(); renderRound(); }
+      if (c && applyStatePayload(c)) { renderRoomStatus(); renderCollector(); renderRound(); autoPickOpenStore(); }
     }
 
     async function loadRoomStatus() {
@@ -2199,6 +2210,7 @@
         console.log('點餐狀態載入失敗，暫時全部視為開放');
       }
       renderRoomStatus();
+      autoPickOpenStore();
     }
 
     // 結團時間：顯示在橫幅上，讓同事知道這一團什麼時候截止
