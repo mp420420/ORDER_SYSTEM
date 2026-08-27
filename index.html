@@ -472,23 +472,44 @@
         <p class="text-xs text-slate-500">進入需要該團的密碼，避免跑錯團</p>
       </div>
       <div id="group-choices" class="space-y-2"></div>
+      <div class="pt-2 border-t border-slate-100 text-center">
+        <button onclick="sysAdminLogin()" class="text-xs font-bold text-slate-400 hover:text-slate-700 transition inline-flex items-center gap-1.5"><i class="fa-solid fa-user-shield"></i> 系統管理者登入</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 系統管理者設定面板 -->
+  <div id="sys-panel" class="fixed inset-0 z-[70] bg-slate-900/95 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+      <div class="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 flex-shrink-0">
+        <h3 class="font-black text-base sm:text-lg text-slate-900"><i class="fa-solid fa-user-shield text-amber-600 mr-1.5"></i> 系統設定（團體）</h3>
+        <button onclick="closeSysPanel()" class="w-9 h-9 rounded-full bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-600 font-bold">✕</button>
+      </div>
+      <div id="sys-panel-body" class="p-4 sm:p-5 overflow-y-auto space-y-3 flex-1 bg-white"></div>
+      <div class="px-4 sm:px-5 pb-2">
+        <label class="block text-xs font-bold text-slate-600">變更系統管理者密碼（留白＝不變）
+          <input id="sys-newpw" type="text" value="" placeholder="要改再輸入" class="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"></label>
+      </div>
+      <div class="p-4 border-t border-slate-100 bg-white flex gap-2 flex-shrink-0">
+        <button onclick="closeSysPanel()" class="flex-1 px-4 py-3 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-bold text-sm rounded-xl">取消</button>
+        <button id="sys-save-btn" onclick="saveSysConfig()" class="flex-1 px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm rounded-xl shadow-md">儲存設定</button>
+      </div>
     </div>
   </div>
 
   <!-- 核心 Javascript (已全面快取化與加速) -->
   <script>
     // 每次改版都會換成新的戳記，用來判斷使用者手上是不是舊畫面
-    const APP_VERSION = '20260827-202805';
+    const APP_VERSION = '20260827-204210';
 
-    // ====== 三個團體：各自綁一個試算表/後端，資料完全獨立 ======
-    // 部署好每個團的 Apps Script 後，把它的 /exec 網址貼進對應的 url。
-    const GROUPS = [
-      { key: 'A', name: '團A', url: "https://script.google.com/macros/s/AKfycbzCiGCAjQXkAglQAaflsouWrcZU32qJ4dO_xpbg87UACMniME4yQC0UtOJIcLOaRMQ4/exec" },
-      { key: 'B', name: '團B', url: "請貼上團B的_exec_網址" },
-      { key: 'C', name: '團C', url: "請貼上團C的_exec_網址" }
-    ];
+    // ====== 系統設定後端（最高層）======
+    // 團體名稱、進團密碼、各團後端網址都由「系統設定後端」集中管理。
+    // 部署好「系統_Code.gs」後，把它的 /exec 網址貼在這裡（只有這一個要寫死）。
+    const SYS_API_URL = "請貼上系統設定後端的_exec_網址";
+    let GROUPS = [];            // 開頁時向系統設定後端拿
     let currentGroupKey = '';   // 目前所在團體（空＝還沒選）
     let GAS_API_URL = '';       // 進團後才設定成該團的後端網址
+    let sysAcct = '', sysPw = '';   // 系統管理者登入後暫存（關頁面就沒了）
 
     let currentStore = '甘丹茶飲';
     let currentViewMode = 'user'; // 'user' | 'orders' | 'admin'
@@ -844,7 +865,7 @@
     window.addEventListener('DOMContentLoaded', () => {
       renderCart();
       renderNamesToggle();
-      openGroupGate();   // 先選團體＋輸入進入密碼，通過才載入該團資料
+      startGate();   // 先載入系統設定→選團體→輸入進入密碼，通過才載入該團資料
     });
 
     // 選團通過後才真正載入這一團的資料
@@ -862,17 +883,44 @@
       checkForUpdate();
     }
 
-    // ====== 團體選擇關卡：一個網址，切團要輸入該團密碼 ======
+    // ====== 系統設定：向系統後端拿團體清單（名稱/網址）======
+    async function loadSysConfig() {
+      if (!SYS_API_URL || SYS_API_URL.indexOf('/exec') === -1) { GROUPS = []; return false; }
+      try {
+        const res = await fetch(SYS_API_URL + '?action=config&_=' + Date.now(), { cache: 'no-store' });
+        const data = await res.json();
+        if (data && data.status === 'ok' && Array.isArray(data.groups)) {
+          GROUPS = data.groups;
+          return true;
+        }
+      } catch (e) { console.log('系統設定載入失敗'); }
+      GROUPS = [];
+      return false;
+    }
+
+    // ====== 團體選擇關卡 ======
+    async function startGate() {
+      await loadSysConfig();
+      openGroupGate();
+    }
+
     function openGroupGate() {
       currentGroupKey = '';
       GAS_API_URL = '';
+      sysAcct = ''; sysPw = '';
       document.getElementById('group-bar').classList.add('hidden');
       const box = document.getElementById('group-choices');
-      box.innerHTML = GROUPS.map(function (g) {
-        return '<button onclick="pickGroup(\'' + g.key + '\')" '
-          + 'class="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 hover:border-emerald-600 hover:bg-emerald-50 font-bold text-slate-800 transition flex items-center justify-between">'
-          + '<span>' + esc(g.name) + '</span><i class="fa-solid fa-chevron-right text-slate-400"></i></button>';
-      }).join('');
+      if (!GROUPS.length) {
+        box.innerHTML = '<p class="text-sm text-rose-600 font-bold text-center py-2">尚未設定系統後端，或連線失敗。</p>'
+          + '<p class="text-xs text-slate-500 text-center">請先部署「系統_Code.gs」並把網址填進程式最上面的 SYS_API_URL，或按下方重試。</p>'
+          + '<button onclick="startGate()" class="w-full mt-2 px-4 py-2.5 rounded-xl bg-slate-800 text-white text-sm font-bold">重新載入</button>';
+      } else {
+        box.innerHTML = GROUPS.map(function (g) {
+          return '<button onclick="pickGroup(\'' + g.key + '\')" '
+            + 'class="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 hover:border-emerald-600 hover:bg-emerald-50 font-bold text-slate-800 transition flex items-center justify-between">'
+            + '<span>' + esc(g.name) + '</span><i class="fa-solid fa-chevron-right text-slate-400"></i></button>';
+        }).join('');
+      }
       document.getElementById('group-gate').classList.remove('hidden');
     }
 
@@ -880,18 +928,17 @@
       const g = GROUPS.find(function (x) { return x.key === key; });
       if (!g) return;
       if (!g.url || g.url.indexOf('/exec') === -1) {
-        alert('⚠️【' + g.name + '】的後端網址還沒設定。\n\n請先在程式最上面的 GROUPS 把這一團的 Apps Script /exec 網址填進去。');
+        alert('⚠️【' + g.name + '】的後端網址還沒設定。\n\n請用「系統管理者登入」設定這一團的 Apps Script 網址。');
         return;
       }
       const pin = prompt('🔐 請輸入【' + g.name + '】的進入密碼：');
       if (pin === null) return;
-      GAS_API_URL = g.url;   // 先指到該團後端才能驗證密碼
       let ok = false;
       try {
-        const r = await postToGas({ action: 'check_group', pin: String(pin).trim() });
+        const r = await postTo(SYS_API_URL, { action: 'check_group', key: key, pin: String(pin).trim() });
         ok = !!(r && r.valid);
-      } catch (e) { alert('⚠️ 連線失敗，請稍後再試。'); GAS_API_URL = ''; return; }
-      if (!ok) { alert('❌ 密碼錯誤，無法進入【' + g.name + '】。'); GAS_API_URL = ''; return; }
+      } catch (e) { alert('⚠️ 連線失敗，請稍後再試。'); return; }
+      if (!ok) { alert('❌ 密碼錯誤，無法進入【' + g.name + '】。'); return; }
       enterGroup(g);
     }
 
@@ -905,13 +952,11 @@
       bootAfterGroup();
     }
 
-    // 切團一律重新選擇＋輸入密碼
     function switchGroup() {
       resetGroupState();
-      openGroupGate();
+      startGate();
     }
 
-    // 清掉記憶體裡上一團的資料，避免殘影
     function resetGroupState() {
       for (const k in ordersCache) delete ordersCache[k];
       for (const k in historyCache) delete historyCache[k];
@@ -920,6 +965,75 @@
       collectorData = {}; collectorList = []; roundData = {};
       menuData = null; adminPin = ''; userPickedStore = false;
       try { renderCart(); } catch (e) {}
+    }
+
+    // ====== 系統管理者：登入後可改團體名稱／進團密碼／網址 ======
+    async function sysAdminLogin() {
+      if (!SYS_API_URL || SYS_API_URL.indexOf('/exec') === -1) {
+        alert('⚠️ 尚未設定系統後端網址（SYS_API_URL）。'); return;
+      }
+      const acct = prompt('👑 系統管理者帳號：');
+      if (acct === null) return;
+      const pw = prompt('🔑 系統管理者密碼：');
+      if (pw === null) return;
+      let ok = false;
+      try {
+        const r = await postTo(SYS_API_URL, { action: 'check_sysadmin', account: String(acct).trim(), pw: String(pw).trim() });
+        ok = !!(r && r.valid);
+      } catch (e) { alert('⚠️ 連線失敗。'); return; }
+      if (!ok) { alert('❌ 帳號或密碼錯誤。'); return; }
+      sysAcct = String(acct).trim();
+      sysPw = String(pw).trim();
+      openSysPanel();
+    }
+
+    function openSysPanel() {
+      const body = document.getElementById('sys-panel-body');
+      body.innerHTML = GROUPS.map(function (g, i) {
+        return '<div class="border border-slate-200 rounded-2xl p-3 space-y-2 bg-slate-50">'
+          + '<div class="text-xs font-black text-slate-500">團體代號 ' + esc(g.key) + '</div>'
+          + '<label class="block text-xs font-bold text-slate-600">顯示名稱'
+          + '<input id="sys-name-' + i + '" value="' + esc(g.name) + '" class="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600"></label>'
+          + '<label class="block text-xs font-bold text-slate-600">後端網址（/exec）'
+          + '<input id="sys-url-' + i + '" value="' + esc(g.url || '') + '" placeholder="https://script.google.com/.../exec" class="mt-1 w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600"></label>'
+          + '<label class="block text-xs font-bold text-slate-600">進團密碼（留白＝不變）'
+          + '<input id="sys-pin-' + i + '" value="" placeholder="要改再輸入" class="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600"></label>'
+          + '</div>';
+      }).join('');
+      document.getElementById('sys-newpw').value = '';
+      document.getElementById('sys-panel').classList.remove('hidden');
+    }
+
+    function closeSysPanel() {
+      document.getElementById('sys-panel').classList.add('hidden');
+    }
+
+    async function saveSysConfig() {
+      const groups = GROUPS.map(function (g, i) {
+        return {
+          key: g.key,
+          name: document.getElementById('sys-name-' + i).value.trim(),
+          url:  document.getElementById('sys-url-' + i).value.trim(),
+          pin:  document.getElementById('sys-pin-' + i).value.trim()   // 留白＝後端沿用舊的
+        };
+      });
+      const newSysPw = document.getElementById('sys-newpw').value.trim();
+      const btn = document.getElementById('sys-save-btn');
+      btn.disabled = true; btn.innerText = '儲存中…';
+      try {
+        const r = await postTo(SYS_API_URL, { action: 'save_config', account: sysAcct, pw: sysPw, groups: groups, newSysPw: newSysPw });
+        if (r.status === 'wrong_password') { alert('❌ ' + (r.message || '系統管理者密碼錯誤')); return; }
+        if (r.status !== 'saved') { alert('❌ 儲存失敗：' + (r.message || r.status)); return; }
+        if (newSysPw) sysPw = newSysPw;   // 之後同一場沿用新密碼
+        alert('✅ 系統設定已儲存。');
+        closeSysPanel();
+        await loadSysConfig();
+        openGroupGate();
+      } catch (e) {
+        alert('⚠️ 連線失敗，設定沒有存到。');
+      } finally {
+        btn.disabled = false; btn.innerText = '儲存設定';
+      }
     }
 
     // 極速切換店家（切換菜單毫秒級反應，不卡網路連線）
@@ -1619,7 +1733,11 @@
     // 統一的 POST 送出：用 text/plain 避開瀏覽器 preflight，
     // 這樣 GAS 才回得了內容，前端也才能真正判斷成功或失敗。
     async function postToGas(payload, isRetry) {
-      const res = await fetch(GAS_API_URL, {
+      return postTo(GAS_API_URL, payload, isRetry);
+    }
+
+    async function postTo(url, payload, isRetry) {
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(payload)
@@ -1642,7 +1760,7 @@
       const canRetry = payload && RETRYABLE.indexOf(payload.action) !== -1;
       if (canRetry && !isRetry) {
         await new Promise(r => setTimeout(r, 600));
-        return postToGas(payload, true);
+        return postTo(url, payload, true);
       }
       throw new Error('伺服器回應格式非預期（動作可能已經生效，請重新整理確認）');
     }
